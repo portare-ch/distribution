@@ -1,0 +1,43 @@
+From: pocknix <pocknix@users.noreply.github.com>
+Subject: [PATCH] drm/panel: il97680a-rpnova: expose only the 120Hz mode
+
+Port of 1021 to the Retroid Pocket Nova panel, which has the same shape.
+
+il97680a_rpnova_init_sequence() programs the panel's frame-rate register
+(0x60: 0x00 for 120Hz, 0x01 for 60Hz) from il97680a_get_current_mode(),
+which guesses the active mode from connector->state->crtc at prepare()
+time - before the new state is reliably committed. With two modes exposed
+the guess races on every panel enable, so the panel can be left programmed
+for 60Hz while the DPU drives 120Hz timings.
+
+The 60Hz entry is synthetic: identical timings to the 120Hz mode with only
+the pixel clock halved. It is not reachable in practice either, since
+gamescope refresh switching requires an EDID this DSI panel does not
+provide. Expose only 120Hz so get_current_mode() has exactly one answer
+and panel programming is deterministic on every enable.
+
+Note the Nova panel is a video-mode panel (MIPI_DSI_MODE_VIDEO), not
+command mode like the RP6, so it does not show the RP6's TE/tearcheck
+CTL_START timeouts. The mis-programming race is the same; the symptom is
+not.
+
+Proper fix upstream would be plumbing the committed mode into prepare()
+instead of guessing.
+
+---
+--- a/drivers/gpu/drm/panel/panel-ilitek-il97680a.c
++++ b/drivers/gpu/drm/panel/panel-ilitek-il97680a.c
+@@ -192,7 +192,12 @@
+
+ static struct panel_desc il97680a_rpnova_desc = {
+ 	.modes = il97680a_rpnova_modes,
+-	.num_modes = ARRAY_SIZE(il97680a_rpnova_modes),
++	/*
++	 * 120Hz only: init_sequence guesses the active mode at prepare() time
++	 * and races when more than one mode is exposed (60Hz frame-rate
++	 * register vs 120Hz DPU timings). See 1021/1022.
++	 */
++	.num_modes = 1,
+ 	.width_mm = 91,
+ 	.height_mm = 68,
+ 	.bpc = 8,
