@@ -9,7 +9,7 @@
 # Everything else keeps the previous behavior (suspend disabled) until
 # their remaining issues are resolved.
 case "${QUIRK_DEVICE}" in
-  "Retroid Pocket 6"*|"AYN Odin 2"*|"AYN-Odin2"|"AYN Thor"|"AYN-Thor")
+  "Retroid Pocket 6"*|"Retroid Pocket Nova"|"AYN Odin 2"*|"AYN-Odin2"|"AYN Thor"|"AYN-Thor")
     # Default to mem suspend and keep systemd on that state.
     mkdir -p /storage/.config/sleep.conf.d
     cat <<EOF >/storage/.config/sleep.conf.d/zz-sm8550-deeponly.conf
