@@ -1,0 +1,43 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026-present ROCKNIX (https://github.com/ROCKNIX)
+
+# The Retroid Pocket Nova has a 1280x960 (4:3) panel. The SM8550 emulator
+# configs are shared with the Retroid Pocket 6, whose panel is 1080x1920
+# (1920x1080 in use), so several standalone emulators are set to render at
+# 1920x1080. On the Nova that is both the wrong aspect - a 16:9 buffer
+# mapped onto a 4:3 display - and 2.07M pixels for a 1.23M-pixel panel,
+# roughly 68% more GPU work than the display can show, then downscaled.
+#
+# Only geometry is corrected here. Taste settings - integer scaling,
+# aspect overrides, shaders - are deliberately left to the user.
+#
+# Each emulator copies its config from /usr/config into /storage on first
+# launch, so every edit is guarded: at first boot the file does not exist
+# yet, and the quirk simply does nothing until the emulator has been run
+# once.
+
+# Supermodel (Sega Model 3): XResolution/YResolution are the render
+# resolution, not just a window size.
+SUPERMODEL_CFG="/storage/.config/supermodel/Supermodel.ini"
+if [ -f "${SUPERMODEL_CFG}" ]; then
+  sed -i -e '/^XResolution =/c\XResolution = 1280' \
+         -e '/^YResolution =/c\YResolution = 960' \
+         "${SUPERMODEL_CFG}"
+fi
+
+# Flycast (Dreamcast): [window] width/height.
+FLYCAST_CFG="/storage/.config/flycast/emu.cfg"
+if [ -f "${FLYCAST_CFG}" ]; then
+  sed -i -e '/^width =/c\width = 1280' \
+         -e '/^height =/c\height = 960' \
+         "${FLYCAST_CFG}"
+fi
+
+# melonDS (Nintendo DS): window size.
+MELONDS_CFG="/storage/.config/melonDS/melonDS.ini"
+if [ -f "${MELONDS_CFG}" ]; then
+  sed -i -e '/^WindowWidth=/c\WindowWidth=1280' \
+         -e '/^WindowHeight=/c\WindowHeight=960' \
+         "${MELONDS_CFG}"
+fi
