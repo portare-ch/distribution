@@ -16,6 +16,11 @@ on:
         required: false
         default: false
         type: boolean
+      incremental:
+        description: 'Only rebuild what changed (skips mame/libretro/standalone when their recipes are untouched)'
+        required: false
+        default: false
+        type: boolean
   workflow_call:
   pull_request:
     types: [ assigned ]
@@ -29,6 +34,7 @@ jobs:
     outputs:
       NIGHTLY: ${{ steps.set-release-type.outputs.NIGHTLY }}
       OFFICIAL: ${{ steps.set-release-type.outputs.OFFICIAL }}
+      INCREMENTAL: ${{ steps.set-release-type.outputs.INCREMENTAL }}
       OWNER_LC: ${{ steps.set-envs.outputs.OWNER_OUTPUT }}
       matrix: ${{ steps.generate.outputs.matrix }}
     steps:
@@ -51,6 +57,17 @@ jobs:
           else
             echo "OFFICIAL=no" >> $GITHUB_OUTPUT
             echo "NIGHTLY=yes" >> $GITHUB_OUTPUT
+          fi
+
+          # Incremental is opt-in, and only ever on a manual run. A scheduled
+          # nightly and anything marked as a release always build cold, so
+          # stale state can never accumulate into something we publish.
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" \
+             && "${{ inputs.incremental }}" == "true" \
+             && "${{ inputs.release }}" != "true" ]]; then
+            echo "INCREMENTAL=yes" >> $GITHUB_OUTPUT
+          else
+            echo "INCREMENTAL=no" >> $GITHUB_OUTPUT
           fi
       - id: generate
         shell: bash
@@ -126,6 +143,7 @@ jobs:
       OWNER_LC: ${{ needs.set-envs.outputs.OWNER_LC }}
       NIGHTLY: ${{ needs.set-envs.outputs.NIGHTLY }}
       OFFICIAL: ${{ needs.set-envs.outputs.OFFICIAL }}
+      INCREMENTAL: ${{ needs.set-envs.outputs.INCREMENTAL }}
 
   rerun-failed-jobs:
     if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next' && (github.event_name != 'schedule' || github.repository == 'ROCKNIX/distribution')

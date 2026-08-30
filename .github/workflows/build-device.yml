@@ -23,6 +23,11 @@ on:
         description: "build official version"
         type: string
         required: true
+      INCREMENTAL:
+        description: "yes to restore saved per-stage build state and rebuild only what changed"
+        type: string
+        required: false
+        default: "no"
 
 jobs:
   build-arm:
@@ -67,6 +72,7 @@ jobs:
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
+      INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
   build-aarch64-qt6:
     needs: build-aarch64
@@ -89,6 +95,7 @@ jobs:
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
+      INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
   build-aarch64-emu-standalone:
     needs:
@@ -102,6 +109,7 @@ jobs:
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
+      INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
   build-aarch64-image:
     needs:
