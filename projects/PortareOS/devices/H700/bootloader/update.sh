@@ -23,7 +23,7 @@ cp -f $SYSTEM_ROOT/usr/share/bootloader/device_trees/* $BOOT_ROOT/device_trees
 mkdir -p $BOOT_ROOT/overlays
 cp -f $SYSTEM_ROOT/usr/share/bootloader/overlays/* $BOOT_ROOT/overlays
 
-DT_ID=$(cat /proc/device-tree/rocknix-dt-id)
+DT_ID=$(cat /proc/device-tree/portareos-dt-id)
 
 UPDATE_DTB_SOURCE="$BOOT_ROOT/device_trees/$DT_ID.dtb"
 if [ -f "$UPDATE_DTB_SOURCE" ]; then

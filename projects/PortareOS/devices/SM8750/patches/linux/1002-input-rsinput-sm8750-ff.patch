@@ -10,12 +10,12 @@ that write rumble to the controller (routed back by InputPlumber) reach
 the PMIH0108 LRA actuator on AYN Odin 3 and similar SM8750 devices.
 
 This mirrors the approach used on SM8550 (r3claimer's 1003-rsinput-add-ff)
-but targets the rewritten rsinput driver that shipped in ROCKNIX next.
+but targets the rewritten rsinput driver that shipped in PortareOS next.
 
 A module parameter `rumble_enable` (default: true) is exposed to allow
 userspace to disable rumble at runtime.
 
-Signed-off-by: Adapted for ROCKNIX next rsinput rewrite
+Signed-off-by: Adapted for PortareOS next rsinput rewrite
 ---
  drivers/input/joystick/rsinput.c | 42 ++++++++++++++++++++++++++++++++
  1 file changed, 42 insertions(+)

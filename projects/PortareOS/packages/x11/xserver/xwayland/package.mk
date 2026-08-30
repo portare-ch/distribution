@@ -30,8 +30,8 @@ PKG_MESON_OPTS_TARGET+=" -Dxvfb=false \
                        -Dinput_thread=true \
                        -Dxkb_dir=${XORG_PATH_XKB} \
                        -Dxkb_output_dir="/var/cache/xkb" \
-                       -Dvendor_name="ROCKNIX" \
-                       -Dvendor_name_short="ROCKNIX" \
+                       -Dvendor_name="PortareOS" \
+                       -Dvendor_name_short="PortareOS" \
                        -Dvendor_web="https://rocknix.org" \
                        -Dlisten_tcp=false \
                        -Dlisten_unix=true \

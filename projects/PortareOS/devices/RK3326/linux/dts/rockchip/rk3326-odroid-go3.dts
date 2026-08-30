@@ -13,7 +13,7 @@
 	compatible = "hardkernel,rk3326-odroid-go3", "rockchip,rk3326";
 
 	joypad: odroidgo3-joypad {
-		compatible = "rocknix-singleadc-joypad";
+		compatible = "portareos-singleadc-joypad";
 
 		joypad-name = "odroidgo3_joypad";
 		joypad-vendor = <0x0001>;

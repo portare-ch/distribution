@@ -1,7 +1,7 @@
 [Unit]
 Description=Sway Wayland Compositor
 Before=graphical.target
-After=multi-user.target rocknix-automount.service
+After=multi-user.target portareos-automount.service
 ConditionKernelCommandLine=!installer
 
 [Service]

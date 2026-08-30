@@ -484,7 +484,7 @@ hdmi_con() {
 }
 
 load_splash() {
-  /usr/bin/rocknix-splash
+  /usr/bin/portareos-splash
 
   echo -en "\033[1000H\033[2K$(cat /sysroot/etc/issue)\n\n" >/dev/console
   if [ -f "/storage/.configured" ]
@@ -564,7 +564,7 @@ recovery_mode() {
   echo "0x0104" > ${g}/idProduct
   mkdir ${g}/strings/0x409
   echo "00000000" > ${g}/strings/0x409/serialnumber
-  echo "ROCKNIX" > ${g}/strings/0x409/manufacturer
+  echo "PortareOS" > ${g}/strings/0x409/manufacturer
   echo "RECOVERY" > ${g}/strings/0x409/product
   mkdir ${g}/configs/c.1
   echo 120 > ${g}/configs/c.1/MaxPower

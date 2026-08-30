@@ -323,7 +323,7 @@
 +};
 +module_spi_driver(mcu_joypad_driver);
 +
-+MODULE_AUTHOR("ROCKNIX");
++MODULE_AUTHOR("PortareOS");
 +MODULE_DESCRIPTION("SPI MCU Joypad — analog sticks and RGB LEDs");
 +MODULE_LICENSE("GPL");
 --- a/drivers/input/joystick/spi-mcu-joypad/spi-mcu-joypad.h

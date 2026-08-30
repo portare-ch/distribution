@@ -21,7 +21,7 @@ index 01d99c3..0b80603 100644
  
 -# ARM64 SM1 Odroid C4
 -else ifeq ($(platform), odroidc4)
-+# ROCKNIX device
++# PortareOS device
 +else ifeq ($(platform), @DEVICE@)
  	EXT ?= so
  	TARGET := $(TARGET_NAME)_libretro.$(EXT)

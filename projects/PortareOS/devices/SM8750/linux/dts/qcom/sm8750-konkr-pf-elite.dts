@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 /*
- * KONKR Pocket FIT Elite (Snapdragon 8 Elite / SM8750) — ROCKNIX board DTS
+ * KONKR Pocket FIT Elite (Snapdragon 8 Elite / SM8750) — PortareOS board DTS
  *
  * Several nodes are derived from the in-tree AYN Odin 3
  * (cq8725s-ayn-common.dtsi), which shares the SM8750 platform. Nodes that are
@@ -31,7 +31,7 @@
 	chassis-type = "handheld";
 
 	/*
-	 * required for ABL dtb selection ROCKNIX appends ALL SM8750
+	 * required for ABL dtb selection PortareOS appends ALL SM8750
 	 * board dtbs into one boot image; the ABL picks by qcom,msm-id + board-id.
 	 * Mirrored verbatim from the stock fdt so it matches this hardware exactly.
 	 * SoC IDs 0x26a(618)/0x27f(639) = SM8750 "sun" — distinct from the Odin 3's
@@ -45,7 +45,7 @@
 	qcom,board-id = <0x2000b 0x0>;
 
 	aliases {
-		serial0 = &uart7;			/* TODO: confirm debug UART pad (ROCKNIX DEBUG_TTY=/dev/ttyMSM0) */
+		serial0 = &uart7;			/* TODO: confirm debug UART pad (PortareOS DEBUG_TTY=/dev/ttyMSM0) */
 	};
 
 	chosen {
@@ -1072,7 +1072,7 @@
 };
 
 /* ===================================================================== *
- *  SD card (sdhc_2 / mmc@8804000) — REQUIRED to boot: ROCKNIX boots from
+ *  SD card (sdhc_2 / mmc@8804000) — REQUIRED to boot: PortareOS boots from
  *  the microSD (the bootloader's update.sh keys on /dev/mmcblk*), so the
  *  kernel needs this controller up to find+mount its SYSTEM rootfs.
  *  Values transcribed from the konkr's stock fdt (sdhci@8804000: cd-gpio

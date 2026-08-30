@@ -7,7 +7,7 @@
 #include "sun50i-h700-anbernic-rg35xx-sp.dts"
 
 / {
-	rocknix-dt-id = "sun50i-h700-anbernic-rg35xx-sp-v2-panel";
+	portareos-dt-id = "sun50i-h700-anbernic-rg35xx-sp-v2-panel";
 };
 
 &panel {

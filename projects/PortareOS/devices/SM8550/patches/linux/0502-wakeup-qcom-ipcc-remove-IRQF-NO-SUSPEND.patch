@@ -9,7 +9,7 @@ system suspend, pulling the SoC back out of deep sleep.
 Drop IRQF_NO_SUSPEND so the IPCC IRQ is masked during suspend like a normal IRQ.
 Co-processor doorbells (charger, sensors, modem) no longer wake the AP while it is
 asleep; pending signals are handled on resume instead. This mirrors the patch
-ROCKNIX already carries for SM8750, which uses the same battmgr/pmic_glink charger
+PortareOS already carries for SM8750, which uses the same battmgr/pmic_glink charger
 model and sleeps reliably with it.
 
 Verified on the Retroid Pocket 6: 30+ minute uninterrupted deep sleeps where

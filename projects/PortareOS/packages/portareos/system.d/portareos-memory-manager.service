@@ -1,0 +1,17 @@
+[Unit]
+Description=PortareOS Memory Manager
+After=local-fs.target
+DefaultDependencies=no
+Conflicts=shutdown.target
+Before=shutdown.target
+
+[Service]
+Environment=HOME=/storage
+Type=oneshot
+ExecStart=/usr/bin/portareos-memory-manager --setup
+ExecReload=/usr/bin/portareos-memory-manager --reload
+ExecStop=/usr/bin/portareos-memory-manager --stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=basic.target

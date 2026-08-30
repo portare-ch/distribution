@@ -27,8 +27,8 @@ index a4a60e4a53d4..8f77b5cbc379 100644
 + * Y, and Z on the top row of buttons and A, B, and C under the bottom
 + * row.
 + */
-+	joypad: rocknix-singleadc-joypad {
-+		compatible = "rocknix-singleadc-joypad";
++	joypad: portareos-singleadc-joypad {
++		compatible = "portareos-singleadc-joypad";
 +		pinctrl-0 = <&btn_pins_ctrl>;
 +		pinctrl-names = "default";
 +		joypad-name = "rg_arc_joypad";
@@ -368,8 +368,8 @@ index 63a18ff36cea..13c679e84446 100644
 -			      <&adc_mux 2>,
 -			      <&adc_mux 3>;
 -		pinctrl-0 = <&joy_mux_en>;
-+	joypad: rocknix-singleadc-joypad {
-+		compatible = "rocknix-singleadc-joypad";
++	joypad: portareos-singleadc-joypad {
++		compatible = "portareos-singleadc-joypad";
 +
 +		joypad-name = "retrogame_joypad";
 +		joypad-product = <0x1101>;
@@ -712,8 +712,8 @@ index 74cf313e0635..a9154162092e 100644
  		sound-name-prefix = "Speaker Amp";
  	};
 +
-+	joypad: rocknix-singleadc-joypad {
-+		compatible = "rocknix-singleadc-joypad";
++	joypad: portareos-singleadc-joypad {
++		compatible = "portareos-singleadc-joypad";
 +
 +		joypad-name = "retrogame_joypad";
 +		joypad-product = <0x1101>;

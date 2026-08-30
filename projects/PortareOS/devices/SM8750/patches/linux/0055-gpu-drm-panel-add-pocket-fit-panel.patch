@@ -599,6 +599,6 @@ new file mode 100644
 +};
 +module_mipi_dsi_driver(panel_ar14_144hz_driver);
 +
-+MODULE_AUTHOR("ROCKNIX");
++MODULE_AUTHOR("PortareOS");
 +MODULE_DESCRIPTION("DRM driver for ar14 1080p 144hz video mode dsi panel");
 +MODULE_LICENSE("GPL");

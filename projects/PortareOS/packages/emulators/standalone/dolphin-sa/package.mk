@@ -60,7 +60,7 @@ post_unpack() {
 
 pre_configure_target() {
   PKG_CMAKE_OPTS_TARGET+=" -DCMAKE_BUILD_TYPE=Release \
-                           -DDISTRIBUTOR="ROCKNIX" \
+                           -DDISTRIBUTOR="PortareOS" \
                            -DENABLE_NOGUI=ON \
                            -DENABLE_EVDEV=ON \
                            -DENABLE_SDL=ON \

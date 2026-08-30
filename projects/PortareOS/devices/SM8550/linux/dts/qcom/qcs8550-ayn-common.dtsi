@@ -27,7 +27,7 @@
 
 / {
 	chassis-type = "handset";
-	rocknix-u-boot-dt-id = "u-boot-odin2";
+	portareos-u-boot-dt-id = "u-boot-odin2";
 
 	aliases {
 		serial0 = &uart7;

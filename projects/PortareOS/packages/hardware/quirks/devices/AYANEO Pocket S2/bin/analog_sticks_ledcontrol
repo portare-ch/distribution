@@ -29,7 +29,7 @@ R=${2}
 G=${3}
 B=${4}
 
-# The S2 protocol applies one colour to both analogue-stick rings. ROCKNIX's
+# The S2 protocol applies one colour to both analogue-stick rings. PortareOS's
 # frontend supplies separate right and left colours, so use the right colour
 # for both rings while retaining four-argument compatibility for system hooks.
 

@@ -3,12 +3,12 @@
  * Copyright (c) 2024 GameKiddy
  *
  * Reconstructed from the vendor-extracted rk3326s-gkd-pixel2.dtsi into a
- * mainline/ROCKNIX-style board .dts on top of the shared rk3326.dtsi,
+ * mainline/PortareOS-style board .dts on top of the shared rk3326.dtsi,
  * mirroring the other standalone RK3326 boards in this tree (e.g.
  * rk3326-gameforce-chi.dts).
  *
  * No analog sticks - every input is a plain GPIO switch - so the gamepad
- * uses rocknix-singleadc-joypad with amux-count = <0>, same as the other
+ * uses portareos-singleadc-joypad with amux-count = <0>, same as the other
  * all-digital RK3326 boards (e.g. rk3326-gameconsole-r33s.dts).
  */
 
@@ -116,7 +116,7 @@
 	};
 
 	builtin_gamepad: gkd-pixel2-joypad {
-		compatible = "rocknix-singleadc-joypad";
+		compatible = "portareos-singleadc-joypad";
 		pinctrl-names = "default";
 		pinctrl-0 = <&btn_pins>;
 		joypad-name = "gkd_pixel2_joypad";
@@ -228,7 +228,7 @@
 
 	/*
 	 * Uses the built-in pwm-vibrator driver (CONFIG_INPUT_PWM_VIBRA=y)
-	 * instead of rocknix-singleadc-joypad's own has_rumble path, which
+	 * instead of portareos-singleadc-joypad's own has_rumble path, which
 	 * is an out-of-tree module that doesn't probe until ~10s into boot
 	 * vs ~0.65s for pwm-vibrator. Sibling boards (rg351m/rg351v/
 	 * gameforce-chi) do the same.
@@ -239,7 +239,7 @@
 	 * any strength. Polarity matches vendor.
 	 *
 	 * pwm-vibra.c's probe left the motor stuck on at boot the same way
-	 * rocknix-singleadc-joypad's did; 030-pwm-vibra-kick-stuck-boot-
+	 * portareos-singleadc-joypad's did; 030-pwm-vibra-kick-stuck-boot-
 	 * state.patch ports the same probe-time kick fix into it.
 	 */
 	vibrator: pwm-vibrator {
@@ -488,7 +488,7 @@
 	internal_display: panel@0 {
 		reg = <0>;
 		/*
-		 * Uses rocknix,generic-dsi (already used by other RK3326
+		 * Uses portareos,generic-dsi (already used by other RK3326
 		 * boards, e.g. rk3326-gameconsole-eeclone.dts) with an init
 		 * sequence reconstructed for this panel. vdd-supply/
 		 * iovcc-supply are this driver's actual regulator property
@@ -496,7 +496,7 @@
 		 * reset-gpios must be GPIO_ACTIVE_LOW - GPIO_ACTIVE_HIGH
 		 * leaves the screen blank.
 		 */
-		compatible = "rocknix,generic-dsi";
+		compatible = "portareos,generic-dsi";
 		/*
 		 * delays= is "prepare,reset,init,enable,ready" (ms) - see
 		 * load_globals() in panel-generic-dsi.c. prepare = wait after

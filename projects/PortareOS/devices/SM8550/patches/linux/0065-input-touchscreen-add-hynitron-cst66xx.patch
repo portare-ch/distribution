@@ -386,7 +386,7 @@ index 0000000..84d4736
 +};
 +module_i2c_driver(cst66xx_driver);
 +
-+MODULE_AUTHOR("ROCKNIX contributors");
++MODULE_AUTHOR("PortareOS contributors");
 +MODULE_DESCRIPTION("Hynitron CST66xx touchscreen driver");
 +MODULE_LICENSE("GPL");
 -- 

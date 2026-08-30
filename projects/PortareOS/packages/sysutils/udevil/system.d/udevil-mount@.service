@@ -1,6 +1,6 @@
 [Unit]
 Description=Udevil mount service
-After=rocknix-automount.service
+After=portareos-automount.service
 
 [Service]
 Type=oneshot

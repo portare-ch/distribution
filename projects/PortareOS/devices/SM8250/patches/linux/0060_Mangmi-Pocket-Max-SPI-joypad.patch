@@ -679,6 +679,6 @@ index 000000000000..82570eff2fbe
 +};
 +module_spi_driver(pmax_driver);
 +
-+MODULE_AUTHOR("ROCKNIX");
++MODULE_AUTHOR("PortareOS");
 +MODULE_DESCRIPTION("MANGMI Pocket Max Joypad");
 +MODULE_LICENSE("GPL");

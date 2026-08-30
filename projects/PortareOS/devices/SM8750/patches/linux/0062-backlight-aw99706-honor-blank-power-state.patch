@@ -7,7 +7,7 @@ ignoring the backlight power/blank state. As a result writing bl_power=4
 (FB_BLANK_POWERDOWN) or a fbblank/suspend did not turn the LED off — the
 backlight stayed lit. Use backlight_get_brightness(), which returns 0 when
 the device is blanked/powered-down, so userspace display-off works (e.g.
-ROCKNIX fake-suspend backlight_off writes bl_power=4).
+PortareOS fake-suspend backlight_off writes bl_power=4).
 ---
 --- a/drivers/video/backlight/aw99706.c
 +++ b/drivers/video/backlight/aw99706.c
@@ -20,7 +20,7 @@ ROCKNIX fake-suspend backlight_off writes bl_power=4).
 +	 * Use backlight_get_brightness() so the LED follows the blank/power
 +	 * state (FB_BLANK_POWERDOWN, BL_CORE_SUSPENDED, fbblank) and not just
 +	 * props.brightness. Without this, writing bl_power=4 is a no-op and
-+	 * userspace display-off (e.g. ROCKNIX fake-suspend backlight_off) never
++	 * userspace display-off (e.g. PortareOS fake-suspend backlight_off) never
 +	 * turns the backlight off.
 +	 */
 +	return aw99706_update_brightness(aw, backlight_get_brightness(bl));

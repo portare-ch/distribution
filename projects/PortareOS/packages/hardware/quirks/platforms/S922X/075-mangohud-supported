@@ -6,11 +6,11 @@
 . /etc/profile
 
 GPUDRIVER=$(/usr/bin/gpudriver)
-MANGOHUD_ENABLED=$(get_setting "rocknix.mangohud.enabled")
+MANGOHUD_ENABLED=$(get_setting "portareos.mangohud.enabled")
 
 # Init setting to 'disabled'
 if [ ! -n "${MANGOHUD_ENABLED}" ]; then
-  set_setting "rocknix.mangohud.enabled" "0"
+  set_setting "portareos.mangohud.enabled" "0"
 fi
 
 # Enable / disable MangoHud support (panfrost / libmali)

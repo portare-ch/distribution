@@ -457,7 +457,7 @@ index 0000000..141da42
 +};
 +module_mipi_dsi_driver(ar16_4inch_driver);
 +
-+MODULE_AUTHOR("ROCKNIX contributors");
++MODULE_AUTHOR("PortareOS contributors");
 +MODULE_DESCRIPTION("DRM driver for AYANEO Pocket S Mini AR16 panel");
 +MODULE_LICENSE("GPL");
 -- 

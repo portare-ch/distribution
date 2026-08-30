@@ -108,7 +108,7 @@ read_controller_input() {
     fi
 }
 
-# Simple controller-friendly confirmation using the same pattern as other ROCKNIX scripts
+# Simple controller-friendly confirmation using the same pattern as other PortareOS scripts
 # Parameters: $1=message, $2=initial_selection (0=yes, 1=no, defaults to 0)
 controller_confirm() {
     local message="$1"

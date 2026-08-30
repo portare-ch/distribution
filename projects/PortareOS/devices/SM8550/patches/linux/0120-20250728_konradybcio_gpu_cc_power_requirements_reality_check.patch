@@ -13,7 +13,7 @@ function. Ensure that's conveyed to the OS.
 
 Fixes: 9f7579423d2d ("arm64: dts: qcom: sm8550: Add graphics clock controller")
 Signed-off-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
-[Modified 8/9/2026 Rocknix: drop RPMHPD_GFX, GX rail is GMU owned confirmed in
+[Modified 8/9/2026 PortareOS: drop RPMHPD_GFX, GX rail is GMU owned confirmed in
 downstream kernel.]
 ---
  arch/arm64/boot/dts/qcom/sm8550.dtsi | 5 +++++

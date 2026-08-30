@@ -16,10 +16,10 @@ fi
 # mount $BOOT_ROOT rw
 mount -o remount,rw $BOOT_ROOT
 
-if [ -d "$SYSTEM_ROOT/usr/share/bootloader/rocknix_abl" ]; then
-  mkdir -p $BOOT_ROOT/rocknix_abl
-  echo "Updating ROCKNIX ABL on SD..."
-  cp $SYSTEM_ROOT/usr/share/bootloader/rocknix_abl/* $BOOT_ROOT/rocknix_abl
+if [ -d "$SYSTEM_ROOT/usr/share/bootloader/portareos_abl" ]; then
+  mkdir -p $BOOT_ROOT/portareos_abl
+  echo "Updating PortareOS ABL on SD..."
+  cp $SYSTEM_ROOT/usr/share/bootloader/portareos_abl/* $BOOT_ROOT/portareos_abl
 fi
 
 if [ -f "$SYSTEM_ROOT/usr/share/bootloader/EFI/BOOT/bootaa64.efi" ]; then

@@ -13,7 +13,7 @@ PKG_TOOLCHAIN="manual"
 
 makeinstall_target() {
   mkdir -p ${INSTALL}/usr/local/share
-    tar -xzf ${PKG_BUILD}/rocknix/gpcal-python-3.13.tgz -C ${INSTALL}/usr/local/share
+    tar -xzf ${PKG_BUILD}/portareos/gpcal-python-3.13.tgz -C ${INSTALL}/usr/local/share
     rm -rf ${INSTALL}/usr/local/share/gpcal/pyxel
 
   case ${DEVICE} in

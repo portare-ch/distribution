@@ -9,7 +9,7 @@
 / {
 	model = "Anbernic RG-SP";
 	compatible = "anbernic,rg-sp", "allwinner,sun50i-h700";
-	rocknix-dt-id = "sun50i-h700-anbernic-rg-sp";
+	portareos-dt-id = "sun50i-h700-anbernic-rg-sp";
 };
 
 &panel {

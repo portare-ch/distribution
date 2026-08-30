@@ -668,7 +668,7 @@ new file mode 100644
 +static DEFINE_SIMPLE_DEV_PM_OPS(mcu_joy_pm_ops, mcu_joy_suspend, mcu_joy_resume);
 +
 +static const struct of_device_id mcu_joy_of_match[] = {
-+	{ .compatible = "rocknix,mangmi-air-x-joypad" },
++	{ .compatible = "portareos,mangmi-air-x-joypad" },
 +	{ /* sentinel */ }
 +};
 +MODULE_DEVICE_TABLE(of, mcu_joy_of_match);
@@ -685,6 +685,6 @@ new file mode 100644
 +
 +module_serdev_device_driver(mcu_joy_driver);
 +
-+MODULE_AUTHOR("ROCKNIX");
++MODULE_AUTHOR("PortareOS");
 +MODULE_DESCRIPTION("MANGMI Air X Joypad Driver");
 +MODULE_LICENSE("GPL");

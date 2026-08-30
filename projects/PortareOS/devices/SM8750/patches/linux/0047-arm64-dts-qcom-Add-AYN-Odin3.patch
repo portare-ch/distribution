@@ -354,7 +354,7 @@ index 00000000000..421d73d4aa5
 + * triggers. They are plain active-low SoC TLMM GPIOs (M1 = GPIO_3,
 + * M2 = GPIO_7), not on the gamepad MCU UART and not ADC (despite AYN's
 + * Android "adckey"/keydetect.ko naming). Expose them as a gpio-keys
-+ * device emitting BTN_Z (M1, left) / BTN_C (M2, right); ROCKNIX's
++ * device emitting BTN_Z (M1, left) / BTN_C (M2, right); PortareOS's
 + * InputPlumber map (ayn_mcu.yaml) already routes BTN_Z -> LeftPaddle1 and
 + * BTN_C -> RightPaddle1. RE'd from the AYN Android keydetect driver
 + * (gpio_request 515/519 = TLMM base 512 + offsets 3/7).

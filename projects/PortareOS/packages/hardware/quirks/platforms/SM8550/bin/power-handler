@@ -4,7 +4,7 @@
 
 # Power key policy for SM8550 devices that have real suspend.
 #
-# rocknix-fake-suspend exists for devices that cannot sleep: it owns a state
+# portareos-fake-suspend exists for devices that cannot sleep: it owns a state
 # machine with timed shutdown, delay flags and lid handling, and it assumes
 # nothing else will suspend underneath it. Running a device that *can* sleep
 # through that machine leaves two owners of the display, and a real suspend
@@ -41,7 +41,7 @@ BLANK_FLAG="/run/power-blank-active.flag"
 # be forwarded.
 if [ "$1" != "release" ] && [ "$(get_setting system.suspendmode)" = "off" ]; then
   ${DEBUG} && log $0 "Suspend not enabled here, deferring to fake suspend."
-  exec /usr/bin/rocknix-fake-suspend "$@"
+  exec /usr/bin/portareos-fake-suspend "$@"
 fi
 
 # Blanking and the "is a display attached" question both come from

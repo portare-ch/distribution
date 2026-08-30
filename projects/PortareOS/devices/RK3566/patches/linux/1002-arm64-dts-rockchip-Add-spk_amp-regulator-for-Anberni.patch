@@ -63,7 +63,7 @@ index a9154162092e..2bbac3dd74ec 100644
 +		VCC-supply = <&vcc_3v3>;
  	};
  
- 	joypad: rocknix-singleadc-joypad {
+ 	joypad: portareos-singleadc-joypad {
 -- 
 2.34.1
 

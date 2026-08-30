@@ -3,4 +3,4 @@
 
 . ${ROOT}/packages/web/curl/package.mk
 
-PKG_CMAKE_OPTS_TARGET="${PKG_CMAKE_OPTS_TARGET//\/run\/libreelec\/cacert.pem/\/run\/rocknix\/cacert.pem}"
+PKG_CMAKE_OPTS_TARGET="${PKG_CMAKE_OPTS_TARGET//\/run\/libreelec\/cacert.pem/\/run\/portareos\/cacert.pem}"

@@ -16,7 +16,7 @@ index 7d5c13e19b587..127a52959f75a 100644
      dispdata->connector.connector = conn;
      dispdata->crtc.crtc = crtc;
  
-+    // rocknix - set resolution from /var/run/drmMode (HDMI only)
++    // portareos - set resolution from /var/run/drmMode (HDMI only)
 +    if (conn->connector_type == DRM_MODE_CONNECTOR_HDMIA ||
 +        conn->connector_type == DRM_MODE_CONNECTOR_HDMIB) {
 +        FILE *fdDrmMode;
@@ -42,7 +42,7 @@ index 7d5c13e19b587..127a52959f75a 100644
      SDL_DisplayMode mode;
      int i;
  
-+    // rocknix - only expose wanted mode if /var/run/drmMode is set (HDMI only)
++    // portareos - only expose wanted mode if /var/run/drmMode is set (HDMI only)
 +    int wantedMode = -1;
 +    if (conn->connector_type == DRM_MODE_CONNECTOR_HDMIA ||
 +        conn->connector_type == DRM_MODE_CONNECTOR_HDMIB) {
@@ -61,7 +61,7 @@ index 7d5c13e19b587..127a52959f75a 100644
      for (i = 0; i < conn->count_modes; i++) {
 -        SDL_DisplayModeData *modedata = SDL_calloc(1, sizeof(SDL_DisplayModeData));
 +        SDL_DisplayModeData *modedata;
-+        if (wantedMode >= 0 && i != wantedMode) continue; // rocknix - only report wanted mode on HDMI
++        if (wantedMode >= 0 && i != wantedMode) continue; // portareos - only report wanted mode on HDMI
 +
 +        modedata = SDL_calloc(1, sizeof(SDL_DisplayModeData));
  

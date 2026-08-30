@@ -64,7 +64,7 @@ generate_custom_extlinux_conf_files() {
   EXTLCONF0=${INSTALL}/usr/share/bootloader/extlinux/extlinux.conf
 
   echo "INI_FILES ${INI_FILES}"
-  for dtbase in $(xmlstarlet sel -t -v "//rocknix/${DEVICE}/*" ${CONFIGXML}); do
+  for dtbase in $(xmlstarlet sel -t -v "//portareos/${DEVICE}/*" ${CONFIGXML}); do
     if ! grep -q "\<${dtbase}.dtb" ${INI_FILES}; then
       EXTLCONF=${EXTLCONF0}.${dtbase##*-}
       echo "Generating ${EXTLCONF} for ${dtbase}"

@@ -12,7 +12,7 @@ PKG_NEED_UNPACK="busybox"
 PKG_LONGDESC="Emulationstation emulator frontend"
 PKG_BUILD_FLAGS="-gold"
 
-PKG_CMAKE_OPTS_TARGET+=" -DROCKNIX=1 \
+PKG_CMAKE_OPTS_TARGET+=" -DPortareOS=1 \
                          -DDISABLE_KODI=1 \
                          -DENABLE_FILEMANAGER=0 \
                          -DCEC=0 \
@@ -79,7 +79,7 @@ makeinstall_target() {
         <system>
                 <name>tools</name>
                 <fullname>Tools</fullname>
-                <manufacturer>ROCKNIX</manufacturer>
+                <manufacturer>PortareOS</manufacturer>
                 <release>2024</release>
                 <hardware>system</hardware>
                 <path>/storage/.config/modules</path>

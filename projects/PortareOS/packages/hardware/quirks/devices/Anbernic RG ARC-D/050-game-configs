@@ -73,7 +73,7 @@ cat <<EOF >/storage/.config/game/configs/hypseus/hypinput.ini
 # SWITCH = Key1 Key2 Joy
 # Start + Select will exit game
 ##################################
-#Button Info for ARC-D running Rocknix by Morfious
+#Button Info for ARC-D running PortareOS by Morfious
 #
 #Controller Button		ID#		Game Function
 #Dpad Up			13		Dpad Up			1073741906		SDLK_UP		BUTTON_DPAD_UP
