@@ -65,6 +65,9 @@ jobs:
   create-pr-kernel-configs-docs:
     runs-on: ubuntu-24.04
     name: Create PR with updated kernel config or docs
+    permissions:
+      contents: write
+      pull-requests: write
     needs:
       - update-kernel-configs-docs
     steps:
@@ -98,13 +101,6 @@ jobs:
 
           git add .
           git commit -m "documentation: SUPPORTED_EMULATORS_AND_CORES" || echo "No changes to commit"
-      - name: Generate installation token for GitHub App
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.NIGHTLY_APP_ID }}
-          private-key: ${{ secrets.NIGHTLY_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
@@ -112,6 +108,5 @@ jobs:
           title: "Update kernel configs/device documentation"
           body: "Automated changes by [create-pull-request]"
           base: next
-          token: ${{ steps.app-token.outputs.token }}
           branch: auto-pr-branch
           delete-branch: true
