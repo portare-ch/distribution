@@ -4,6 +4,8 @@
 
 **PortareOS is a fork of [ROCKNIX](https://github.com/ROCKNIX/distribution), focused exclusively on the Retroid Pocket Nova.**
 
+Home: **os.portare.org** *(not up yet — this repository is the canonical source until it is)*
+
 ROCKNIX is an immutable Linux distribution for handheld gaming devices, developed by a community of enthusiasts, and is itself a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution). All of the work that makes this project possible is theirs; PortareOS only adds a thin layer of device-specific tuning on top.
 
 ## What this fork is for
