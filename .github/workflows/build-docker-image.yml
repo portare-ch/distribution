@@ -20,6 +20,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      # The image is tagged with a hash of the Dockerfile, so an unchanged
+      # Dockerfile means the tag already exists and there is nothing to build.
+      #
+      # This is not really about the few minutes the build costs. The Dockerfile
+      # runs "apt-get dist-upgrade" and installs unpinned compilers on top of a
+      # floating ubuntu:jammy, so it does not describe a fixed image - rebuilt on
+      # a different day it produces a different toolchain. When the host gcc
+      # changes, every ccache hash changes with it and the entire build
+      # recompiles from scratch. Freezing the image until the Dockerfile actually
+      # changes is what keeps the toolchain, and therefore the cache, stable.
+      - name: Derive the image tag from the Dockerfile
+        id: tag
+        run: echo "tag=df-$(sha256sum Dockerfile | cut -c1-16)" >> "${GITHUB_OUTPUT}"
+
       - name: Login to GHCR
         uses: docker/login-action@v4
         with:
@@ -27,10 +41,39 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Has this image already been built?
+        id: check
+        env:
+          IMAGE: ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          if docker buildx imagetools inspect "${IMAGE}:${TAG}" >/dev/null 2>&1; then
+            echo "${TAG} is already in the registry - skipping the build."
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "${TAG} not found - building."
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Build and push
+        if: steps.check.outputs.exists != 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:latest
+          tags: |
+            ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:latest
+
+      # A revert is the awkward case: the Dockerfile returns to a hash that was
+      # built once before, so the build is skipped - but :latest still points at
+      # the image from the commit being reverted, and every build job pulls
+      # :latest. Re-point it. This is a manifest copy inside the registry;
+      # nothing is pulled, rebuilt or re-uploaded.
+      - name: Re-point :latest at the frozen image
+        if: steps.check.outputs.exists == 'true' && github.event_name != 'pull_request'
+        env:
+          IMAGE: ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: docker buildx imagetools create -t "${IMAGE}:latest" "${IMAGE}:${TAG}"
