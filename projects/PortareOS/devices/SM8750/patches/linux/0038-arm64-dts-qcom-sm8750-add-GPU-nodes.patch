@@ -6,7 +6,7 @@ Subject: [PATCH 38/54] arm64: dts: qcom: sm8750: add GPU nodes
 Add GPU nodes for the SM8750 platform.
 
 Signed-off-by: Teguh Sobirin <teguh@sobir.in>
-[Modified 8/9/2026 by Rocknix: v2 ACD + bus tables per official Odin 3/KPFE and downstream.]
+[Modified 8/9/2026 by PortareOS: v2 ACD + bus tables per official Odin 3/KPFE and downstream.]
 ---
  arch/arm64/boot/dts/qcom/sm8750.dtsi | 211
 30 +++++++++++++++++++++

@@ -1,6 +1,6 @@
 [Unit]
 Description=AC/Battery Performance Service
-Before=rocknix.target
+Before=portareos.target
 StartLimitIntervalSec=0
 
 [Service]

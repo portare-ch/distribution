@@ -41,8 +41,8 @@ tools/mkpkg/*.git
 # ignore old linux configs
 projects/**/*.old
 
-# ROCKNIX
-/.rocknix
+# PortareOS
+/.portareos
 /.cache
 /.doc_cache
 /.env

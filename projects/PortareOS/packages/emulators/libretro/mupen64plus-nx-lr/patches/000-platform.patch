@@ -8,7 +8,7 @@ index 481e8b9..2a4e365 100644
  
 -# Rockchip RK3288 e.g. Asus Tinker Board / RK3328 e.g. PINE64 Rock64 / RK3399 e.g. PINE64 RockPro64 - 32-bit userspace
 -else ifneq (,$(findstring RK,$(platform)))
-+# Rocknix DEVICE
++# PortareOS DEVICE
 +else ifneq (,$(findstring @DEVICE@,$(platform)))
     TARGET := $(TARGET_NAME)_libretro.so
     LDFLAGS += -shared -Wl,--version-script=$(LIBRETRO_DIR)/link.T -Wl,--no-undefined -ldl

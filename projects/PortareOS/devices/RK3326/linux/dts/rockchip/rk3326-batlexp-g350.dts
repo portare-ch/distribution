@@ -13,7 +13,7 @@
 };
 
 &joypad {
-	compatible = "rocknix-singleadc-joypad";
+	compatible = "portareos-singleadc-joypad";
 	pwms = <&pwm0 0 200000000 0>;
 	pwm-names = "enable";
 	rumble-boost-weak = <0x0000>;
@@ -90,7 +90,7 @@
 
 &dsi {
 	internal_display: panel@0 {
-		compatible = "rocknix,generic-dsi";
+		compatible = "portareos,generic-dsi";
 		iovcc-supply = <&vcc_lcd>;
 		vcc-supply = <&vcc_lcd>;
 		reset-gpios = <&gpio3 RK_PC0 GPIO_ACTIVE_LOW>;

@@ -7,7 +7,7 @@ PKG_SITE="https://rocknix.org"
 PKG_SECTION="virtual"
 PKG_LONGDESC="Game support software metapackage."
 
-PKG_GAMESUPPORT="sixaxis rocknix-hotkey jstest-sdl gamecontrollerdb sdljoytest sdltouchtest control-gen sdl2text"
+PKG_GAMESUPPORT="sixaxis portareos-hotkey jstest-sdl gamecontrollerdb sdljoytest sdltouchtest control-gen sdl2text"
 
 case ${DEVICE} in
   RK3326|S922X|SM6115|SM8250|SM8550|SM8650|SM8750)
@@ -15,8 +15,8 @@ case ${DEVICE} in
     ;;
 esac
 
-# rocknix-touchscreen-keyboard requires sway
-[[ "${WINDOWMANAGER}" = "swaywm-env" ]] && PKG_GAMESUPPORT+=" rocknix-touchscreen-keyboard"
+# portareos-touchscreen-keyboard requires sway
+[[ "${WINDOWMANAGER}" = "swaywm-env" ]] && PKG_GAMESUPPORT+=" portareos-touchscreen-keyboard"
 
 PKG_DEPENDS_TARGET="${PKG_GAMESUPPORT}"
 

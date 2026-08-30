@@ -63,13 +63,13 @@
     FIRMWARE="extra-firmware"
 
   # Additional packages to install
-    ADDITIONAL_PACKAGES="gamepadcalibration inputplumber rocknix-abl"
+    ADDITIONAL_PACKAGES="gamepadcalibration inputplumber portareos-abl"
 
   # Debug tty path
     DEBUG_TTY="/dev/ttyMSM0"
 
-  # Build and install ROCKNIX joypad driver (yes / no)
-    ROCKNIX_JOYPAD="no"
+  # Build and install PortareOS joypad driver (yes / no)
+    PORTAREOS_JOYPAD="no"
 
   # ZRAM Algorithm
     ZRAM_COMPRESSION_ALGO="zstd"

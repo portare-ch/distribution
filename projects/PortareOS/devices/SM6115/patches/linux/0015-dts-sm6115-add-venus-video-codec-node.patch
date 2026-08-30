@@ -4,7 +4,7 @@ Define the video en/decoding device present on the SM6115 platform. The
 core, AR50LT, is mostly compatible with the one present on the Agatti
 devices, so it uses qcom,qcm2290-venus as a fallback.
 
-Replaces the earlier ROCKNIX hand-port from agatti.dtsi.  Adds the
+Replaces the earlier PortareOS hand-port from agatti.dtsi.  Adds the
 300/384 MHz OPPs that AR50LT silicon actually validates (vendor caps
 at 384 MHz per qcom,allowed-clock-rates), uses the upstream
 sm6115-venus + qcm2290-venus dual compatible string, and ships

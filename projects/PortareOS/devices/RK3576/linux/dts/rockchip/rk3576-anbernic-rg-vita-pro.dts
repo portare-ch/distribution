@@ -480,7 +480,7 @@
 	#size-cells = <0>;
 
 	dsi_panel: panel@0 {
-		compatible = "rocknix,generic-dsi";
+		compatible = "portareos,generic-dsi";
 		reg = <0>;
 		backlight = <&backlight>;
 		enable-gpios = <&gpio0 RK_PB1 GPIO_ACTIVE_HIGH>;

@@ -20,7 +20,7 @@ get_image_variants() {
   local device="$1"
   # Check if device has subdevices with mkimage_options (these produce separate images)
   local subdevices
-  subdevices=$(xmlstarlet sel -t -m "//rocknix/${device}/*[@mkimage_options]" -v "name()" -n "${CONFIG_XML}" 2>/dev/null | tr '\n' ' ')
+  subdevices=$(xmlstarlet sel -t -m "//portareos/${device}/*[@mkimage_options]" -v "name()" -n "${CONFIG_XML}" 2>/dev/null | tr '\n' ' ')
 
   if [ -n "${subdevices}" ]; then
     for sub in ${subdevices}; do
@@ -39,15 +39,15 @@ get_device_names() {
   if [ -n "${subdevice}" ]; then
     # Get full names from files with @full attribute, or derive from dtb filename
     local names
-    names=$(xmlstarlet sel -t -m "//rocknix/${device}/${subdevice}/file[@full]" -v "@full" -n "${CONFIG_XML}" 2>/dev/null)
+    names=$(xmlstarlet sel -t -m "//portareos/${device}/${subdevice}/file[@full]" -v "@full" -n "${CONFIG_XML}" 2>/dev/null)
     if [ -z "${names}" ]; then
-      names=$(xmlstarlet sel -t -m "//rocknix/${device}/${subdevice}/file" -v "." -n "${CONFIG_XML}" 2>/dev/null)
+      names=$(xmlstarlet sel -t -m "//portareos/${device}/${subdevice}/file" -v "." -n "${CONFIG_XML}" 2>/dev/null)
     fi
   else
     local names
-    names=$(xmlstarlet sel -t -m "//rocknix/${device}/file[@full]" -v "@full" -n "${CONFIG_XML}" 2>/dev/null)
+    names=$(xmlstarlet sel -t -m "//portareos/${device}/file[@full]" -v "@full" -n "${CONFIG_XML}" 2>/dev/null)
     if [ -z "${names}" ]; then
-      names=$(xmlstarlet sel -t -m "//rocknix/${device}/file" -v "." -n "${CONFIG_XML}" 2>/dev/null)
+      names=$(xmlstarlet sel -t -m "//portareos/${device}/file" -v "." -n "${CONFIG_XML}" 2>/dev/null)
     fi
   fi
   echo "${names}"
@@ -72,12 +72,12 @@ get_image_filename() {
     suffix="-${subdevice}"
   fi
 
-  echo "ROCKNIX-${device}.aarch64-${DATE}${suffix}.img.gz"
+  echo "PortareOS-${device}.aarch64-${DATE}${suffix}.img.gz"
 }
 
 get_update_filename() {
   local device="$1"
-  echo "ROCKNIX-${device}.aarch64-${DATE}.tar"
+  echo "PortareOS-${device}.aarch64-${DATE}.tar"
 }
 
 # Build device description string
@@ -88,15 +88,15 @@ get_device_description() {
 
   # Try to get full attribute names first
   if [ -n "${subdevice}" ]; then
-    names=$(xmlstarlet sel -t -m "//rocknix/${device}/${subdevice}/file[@full]" -v "@full" -n "${CONFIG_XML}" 2>/dev/null)
+    names=$(xmlstarlet sel -t -m "//portareos/${device}/${subdevice}/file[@full]" -v "@full" -n "${CONFIG_XML}" 2>/dev/null)
     if [ -z "${names}" ]; then
-      names=$(xmlstarlet sel -t -m "//rocknix/${device}/${subdevice}/file" -v "." -n "${CONFIG_XML}" 2>/dev/null | grep -v -E "rev[0-9]|v2-panel")
+      names=$(xmlstarlet sel -t -m "//portareos/${device}/${subdevice}/file" -v "." -n "${CONFIG_XML}" 2>/dev/null | grep -v -E "rev[0-9]|v2-panel")
       names=$(echo "${names}" | while read -r line; do [ -n "$line" ] && format_dtb_name "$line"; done)
     fi
   else
-    names=$(xmlstarlet sel -t -m "//rocknix/${device}/file[@full]" -v "@full" -n "${CONFIG_XML}" 2>/dev/null)
+    names=$(xmlstarlet sel -t -m "//portareos/${device}/file[@full]" -v "@full" -n "${CONFIG_XML}" 2>/dev/null)
     if [ -z "${names}" ]; then
-      names=$(xmlstarlet sel -t -m "//rocknix/${device}/file" -v "." -n "${CONFIG_XML}" 2>/dev/null | grep -v -E "rev[0-9]|v2-panel")
+      names=$(xmlstarlet sel -t -m "//portareos/${device}/file" -v "." -n "${CONFIG_XML}" 2>/dev/null | grep -v -E "rev[0-9]|v2-panel")
       names=$(echo "${names}" | while read -r line; do [ -n "$line" ] && format_dtb_name "$line"; done)
     fi
   fi
@@ -124,13 +124,13 @@ get_doc_path() {
 cat << 'HEADER'
 &nbsp;&nbsp;<img src="https://raw.githubusercontent.com/ROCKNIX/distribution/next/distributions/ROCKNIX/logos/rocknix-logo.png" width=192>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[![Latest Version](https://img.shields.io/github/release/ROCKNIX/distribution.svg?color=5998FF&label=latest%20version&style=flat-square)](https://github.com/ROCKNIX/distribution/releases/latest) [![Activity](https://img.shields.io/github/commit-activity/m/ROCKNIX/distribution?color=5998FF&style=flat-square)](https://github.com/ROCKNIX/distribution/commits) [![Pull Requests](https://img.shields.io/github/issues-pr-closed/ROCKNIX/distribution?color=5998FF&style=flat-square)](https://github.com/ROCKNIX/distribution/pulls) [![Discord Server](https://img.shields.io/discord/948029830325235753?color=5998FF&label=chat&style=flat-square)](https://discord.gg/seTxckZjJy)
 #
-ROCKNIX is a community developed Linux distribution for handheld gaming devices.  Our goal is to produce an operating system that has the features and capabilities that we need, and to have fun as we develop it.
+PortareOS is a community developed Linux distribution for handheld gaming devices.  Our goal is to produce an operating system that has the features and capabilities that we need, and to have fun as we develop it.
 
 ## Licenses
-ROCKNIX is a Linux distribution that is made up of many open-source components.  Components are provided under their respective licenses.  This distribution includes components licensed for non-commercial use only.
+PortareOS is a Linux distribution that is made up of many open-source components.  Components are provided under their respective licenses.  This distribution includes components licensed for non-commercial use only.
 
-### ROCKNIX Branding
-ROCKNIX branding and images are licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+### PortareOS Branding
+PortareOS branding and images are licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
 #### You are free to
 * Share — copy and redistribute the material in any medium or format
@@ -141,7 +141,7 @@ ROCKNIX branding and images are licensed under a [Creative Commons Attribution-N
 * NonCommercial — You may not use the material for commercial purposes.
 * ShareAlike — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
 
-### ROCKNIX Software
+### PortareOS Software
 HEADER
 
 echo "Copyright (C) $(date +%Y) ROCKNIX (https://github.com/ROCKNIX)"
@@ -161,7 +161,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ## Installation
-* Download the latest version of ROCKNIX.
+* Download the latest version of PortareOS.
 * Decompress the image.
 * Write the image to an SDCARD using an imaging tool.  Common imaging tools include [Balena Etcher](https://www.balena.io/etcher/), [Raspberry Pi Imager](https://www.raspberrypi.com/software/), and [Win32 Disk Imager](https://sourceforge.net/projects/win32diskimager/).  If you're skilled with the command line, dd works fine too.
 
@@ -173,7 +173,7 @@ echo "| **Device/Platform** | **Download Package** | **Documentation** |"
 echo "|---------------------|----------------------|-------------------|"
 
 # Get all top-level devices
-devices=$(xmlstarlet sel -t -m "//rocknix/*" -v "name()" -n "${CONFIG_XML}" 2>/dev/null | sort -u)
+devices=$(xmlstarlet sel -t -m "//portareos/*" -v "name()" -n "${CONFIG_XML}" 2>/dev/null | sort -u)
 
 for device in ${devices}; do
   variants=$(get_image_variants "${device}")
@@ -199,7 +199,7 @@ cat << 'MIDDLE'
 ## Upgrading
 * Download and install the update online via the System Settings menu.
 * If you are unable to update online
-  * Download the latest version of ROCKNIX from Github
+  * Download the latest version of PortareOS from Github
   * Copy the update to your device over the network to your device's update share.
   * Reboot the device, and the update will begin automatically.
 

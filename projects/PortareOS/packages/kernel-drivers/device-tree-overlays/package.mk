@@ -5,7 +5,7 @@ PKG_NAME="device-tree-overlays"
 PKG_VERSION="1.0"
 PKG_LICENSE="GPL2"
 PKG_SITE="https://rocknix.org"
-PKG_LONGDESC="device-tree-overlays: ROCKNIX linux device tree overlays"
+PKG_LONGDESC="device-tree-overlays: PortareOS linux device tree overlays"
 PKG_TOOLCHAIN="manual"
 PKG_IS_KERNEL_PKG="yes"
 

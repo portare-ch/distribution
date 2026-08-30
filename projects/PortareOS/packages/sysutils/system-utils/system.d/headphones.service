@@ -1,6 +1,6 @@
 [Unit]
 Description=Headphone Sense
-Before=rocknix.target
+Before=portareos.target
 After=pipewire.service
 
 [Service]

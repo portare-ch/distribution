@@ -92,8 +92,8 @@ make_target() {
     -B "${PKG_BUILD}/.${TARGET_NAME}"
     -DCMAKE_SYSTEM_NAME=Linux
     -DCMAKE_SYSTEM_PROCESSOR=aarch64
-    -DCMAKE_C_COMPILER_TARGET=aarch64-rocknix-linux-gnu
-    -DCMAKE_CXX_COMPILER_TARGET=aarch64-rocknix-linux-gnu
+    -DCMAKE_C_COMPILER_TARGET=aarch64-portareos-linux-gnu
+    -DCMAKE_CXX_COMPILER_TARGET=aarch64-portareos-linux-gnu
     -DCMAKE_SYSROOT="${SYSROOT_PREFIX}"
     -DCMAKE_FIND_ROOT_PATH="${SYSROOT_PREFIX}"
     -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY

@@ -29,7 +29,7 @@ fi
 STOCKDTB=$(ls "${DTBDIR}"/*.dtb "${TMPDIR}/${DTBDIR}"/*.dtb | head -1)
 mkdir -p "${TMPDIR}/$(dirname ${DTBOPATH})"
 echo "Preparing dtbo. This may take about a minute"
-/usr/libexec/generic-dsi/rocknix_dtbo.py "${STOCKDTB}" -o "${TMPDIR}/${DTBOPATH}"
+/usr/libexec/generic-dsi/portareos_dtbo.py "${STOCKDTB}" -o "${TMPDIR}/${DTBOPATH}"
 
 
 # Modifications to be made on firmaware partition

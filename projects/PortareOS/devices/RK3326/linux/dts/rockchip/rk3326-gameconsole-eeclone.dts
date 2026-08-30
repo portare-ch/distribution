@@ -106,7 +106,7 @@
     };
 
     joypad: joypad {
-        compatible = "rocknix-singleadc-joypad";
+        compatible = "portareos-singleadc-joypad";
 
         joypad-name = "r36s_Gamepad";
         joypad-product = <0x1188>;
@@ -909,7 +909,7 @@
 
 
 &internal_display {
-    compatible = "rocknix,generic-dsi";
+    compatible = "portareos,generic-dsi";
     panel_description =
         "G size=153,85 delays=20,20,20,120,20 format=rgb888 lanes=4 flags=0xe03",
 

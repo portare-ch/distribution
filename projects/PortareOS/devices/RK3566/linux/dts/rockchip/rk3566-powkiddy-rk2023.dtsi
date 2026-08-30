@@ -81,8 +81,8 @@
 					<3400000 0>;
 	};
 
-	joypad: rocknix-singleadc-joypad {
-		compatible = "rocknix-singleadc-joypad";
+	joypad: portareos-singleadc-joypad {
+		compatible = "portareos-singleadc-joypad";
 
 		joypad-name = "retrogame_joypad";
 		joypad-product = <0x1101>;

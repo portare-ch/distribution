@@ -11,12 +11,12 @@
 	model = "Game Console R36S";
 	compatible = "gameconsole,r35s", "gameconsole,r36s", "rockchip,rk3326";
 
-	rocknix,device_switch {
+	portareos,device_switch {
 		this = "r36s";
 	};
 
 	joypad: odroidgo3-joypad {
-                compatible = "rocknix-singleadc-joypad";
+                compatible = "portareos-singleadc-joypad";
                 pwms = <&pwm0 0 200000000 0>;		 
                 pwm-names = "enable";
                 rumble-boost-weak = <0x0000>;

@@ -11,7 +11,7 @@ diff --git a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts 
 index 1c2637d21..ec9b7174a 100644
 --- a/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-h700-anbernic-rg35xx-2024.dts
-@@ -58,9 +58,14 @@ joypad: rocknix-singleadc-joypad {
+@@ -58,9 +58,14 @@ joypad: portareos-singleadc-joypad {
  
  		status = "okay";
  

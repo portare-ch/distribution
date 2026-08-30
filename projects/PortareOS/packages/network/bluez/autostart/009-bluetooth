@@ -6,6 +6,6 @@
 (
   if [ "$(get_setting controllers.bluetooth.enabled)" == "1" ]; then
     tocon "Starting bluetooth..."
-    nohup /usr/bin/rocknix-bluetooth enable &
+    nohup /usr/bin/portareos-bluetooth enable &
   fi
 ) &

@@ -84,5 +84,5 @@ fi
 ################################################################################
 
 logger -t Xorg "### starting Xorg with '${DISPLAY} vt01 ${XORG_ARGS}' ###"
-mkdir -p /run/rocknix
-echo "XORG_ARGS=\"${XORG_ARGS}\"" > /run/rocknix/xorg-settings.conf
+mkdir -p /run/portareos
+echo "XORG_ARGS=\"${XORG_ARGS}\"" > /run/portareos/xorg-settings.conf

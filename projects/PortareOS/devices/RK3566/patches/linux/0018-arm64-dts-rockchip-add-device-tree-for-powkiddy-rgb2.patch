@@ -51,7 +51,7 @@ index 000000000000..11c6f53beba5
 +
 +&dsi0 {
 +        panel: panel@0 {
-+		compatible = "rocknix,generic-dsi";
++		compatible = "portareos,generic-dsi";
 +		panel_description =
 +			"G size=65,49 delays=200,150,36,36,20 format=rgb888 lanes=4 flags=0xe03",
 +

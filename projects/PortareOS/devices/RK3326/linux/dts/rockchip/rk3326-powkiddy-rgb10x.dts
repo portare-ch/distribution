@@ -12,7 +12,7 @@
 	model = "Powkiddy RGB10X";
 	compatible = "powkiddy,rk3326-rgb10x", "rockchip,rk3326";
 
-	rocknix,device_switch {
+	portareos,device_switch {
 		this = "rgb10x";
 	};
 
@@ -60,7 +60,7 @@
 };
 
 &joypad {
-	compatible = "rocknix-singleadc-joypad";
+	compatible = "portareos-singleadc-joypad";
 	joypad-name = "retrogame_joypad_s1_f2"; /* distinct name to indicate there is 1 stick and 2 fn buttons */
 	joypad-product = <0x1112>;  /* 11 inherited, 1 for number of sticks, 2 for number of FN */
 	status = "okay";

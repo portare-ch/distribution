@@ -51,7 +51,7 @@ modunload()
 _rmmod()
 {
     if modprobe -r "$1"; then
-        touch "/run/rocknix/suspend/module:$1"
+        touch "/run/portareos/suspend/module:$1"
         return 0
     else
         logger -t suspend-modules "# could not unload '$1', usage count was $2"
@@ -61,7 +61,7 @@ _rmmod()
 
 resume_modules()
 {
-    for x in /run/rocknix/suspend/module:* ; do
+    for x in /run/portareos/suspend/module:* ; do
         [ -O "${x}" ] || continue
         modprobe "${x##*:}" &>/dev/null && \
             logger -t resume-modules "Reloaded module ${x##*:}." || \
@@ -73,8 +73,8 @@ suspend_modules()
 {
     [ -z "$SUSPEND_MODULES" ] && return 0
     # clean up
-    rm -rf /run/rocknix/suspend
-    mkdir -p /run/rocknix/suspend
+    rm -rf /run/portareos/suspend
+    mkdir -p /run/portareos/suspend
     for x in $SUSPEND_MODULES ; do
         modunload $x && \
             logger -t suspend-modules "Unloading kernel module $x: Done" || \

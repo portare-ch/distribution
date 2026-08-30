@@ -6,7 +6,7 @@ Subject: [PATCH] drm/msm/a8xx: add Adreno 830 (SM8750/Odin3) catalog entry
 never binds -> no Vulkan -> sway can't render -> no GUI. Carry the
 a830 reglists + catalog entry on top of 7.1's a8xx support.
 
-[Modified 8/9/2026 Rocknix: to match downstream and odin 3]
+[Modified 8/9/2026 PortareOS: to match downstream and odin 3]
 ---
 diff --git a/drivers/gpu/drm/msm/adreno/a6xx_catalog.c b/drivers/gpu/drm/msm/adreno/a6xx_catalog.c
 index 3e6f409d1..bfc6d87b6 100644

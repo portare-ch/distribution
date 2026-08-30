@@ -46,7 +46,7 @@ on:
 
 jobs:
   set-envs:
-    if: (github.event_name != 'schedule') || (github.repository == 'ROCKNIX/distribution' && github.ref_name == 'next')
+    if: (github.event_name != 'schedule') || (github.repository == 'PortareOS/distribution' && github.ref_name == 'next')
     environment:
       name: ${{ github.event_name == 'pull_request' && 'pr-approval' || 'auto' }}
     runs-on: ubuntu-24.04
@@ -109,14 +109,14 @@ jobs:
               D="${D// /}"
               [[ -z "$D" ]] && continue
               [[ -n "$SELECTED_MATRIX" ]] && SELECTED_MATRIX="$SELECTED_MATRIX,"
-              SELECTED_MATRIX="$SELECTED_MATRIX{\"device\":\"$D\",\"project\":\"ROCKNIX\"}"
+              SELECTED_MATRIX="$SELECTED_MATRIX{\"device\":\"$D\",\"project\":\"PortareOS\"}"
             done
           else
             for D in "${!DEVICE_INPUTS[@]}"; do
               VAL="${DEVICE_INPUTS[$D]}"
               if [[ "$VAL" == "true" ]]; then
                 [[ -n "$SELECTED_MATRIX" ]] && SELECTED_MATRIX="$SELECTED_MATRIX,"
-                SELECTED_MATRIX="$SELECTED_MATRIX{\"device\":\"$D\",\"project\":\"ROCKNIX\"}"
+                SELECTED_MATRIX="$SELECTED_MATRIX{\"device\":\"$D\",\"project\":\"PortareOS\"}"
               fi
             done
           fi
@@ -130,7 +130,7 @@ jobs:
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build-docker:
-    if: github.event_name != 'schedule' || (github.repository == 'ROCKNIX/distribution' && github.ref_name == 'next')
+    if: github.event_name != 'schedule' || (github.repository == 'PortareOS/distribution' && github.ref_name == 'next')
     name: Docker
     needs: set-envs
     permissions:
@@ -141,7 +141,7 @@ jobs:
       OWNER_LC: ${{ needs.set-envs.outputs.OWNER_LC }}
 
   build-devices:
-    if: (github.event_name != 'schedule') || (github.repository == 'ROCKNIX/distribution' && github.ref_name == 'next')
+    if: (github.event_name != 'schedule') || (github.repository == 'PortareOS/distribution' && github.ref_name == 'next')
     name: Build Devices
     needs:
       - set-envs
@@ -165,7 +165,7 @@ jobs:
       INCREMENTAL: ${{ needs.set-envs.outputs.INCREMENTAL }}
 
   rerun-failed-jobs:
-    if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next' && (github.event_name != 'schedule' || github.repository == 'ROCKNIX/distribution')
+    if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next' && (github.event_name != 'schedule' || github.repository == 'PortareOS/distribution')
     needs: build-devices
     runs-on: ubuntu-24.04
     steps:
@@ -180,7 +180,7 @@ jobs:
   # on the owner is the least of it: both need secrets this repository does not
   # have (NIGHTLY_APP_ID, NIGHTLY_APP_PRIVATE_KEY, SF_SSH_KEY), both push tags
   # and releases into a companion distribution-nightly repository that does not
-  # exist for this owner, and the nightly one rsyncs the images to the ROCKNIX
+  # exist for this owner, and the nightly one rsyncs the images to the PortareOS
   # SourceForge project. Dropping the owner check would just move the failure
   # to the app-token step. So this is a separate job rather than an edit to
   # theirs, which also keeps upstream merges of those two jobs clean.
@@ -188,7 +188,7 @@ jobs:
   # This publishes into this repository's own releases with the default
   # GITHUB_TOKEN. No new secrets, no second repository.
   release-fork:
-    if: ${{ always() && !cancelled() && needs.build-devices.result == 'success' && github.repository_owner != 'ROCKNIX' && github.event_name != 'pull_request' }}
+    if: ${{ always() && !cancelled() && needs.build-devices.result == 'success' && github.repository_owner != 'PortareOS' && github.event_name != 'pull_request' }}
     name: Release
     needs:
       - set-envs
@@ -237,7 +237,7 @@ jobs:
           PRERELEASE: ${{ steps.tag.outputs.prerelease }}
         run: |
           # Collect by extension rather than by name prefix, so this keeps
-          # working when the images stop being called ROCKNIX-*.
+          # working when the images stop being called PortareOS-*.
           mapfile -t FILES < <(find . -type f \
             \( -name '*.img.gz' -o -name '*.tar' -o -name '*.sha256' \) | sort)
           if [ "${#FILES[@]}" -eq 0 ]; then
@@ -249,7 +249,7 @@ jobs:
           {
             echo "Built from \`${GITHUB_SHA}\` on \`${GITHUB_REF_NAME}\`."
             echo
-            echo "A personal fork of ROCKNIX for the Retroid Pocket Nova (SM8550)."
+            echo "A personal fork of PortareOS for the Retroid Pocket Nova (SM8550)."
             echo "Write the .img.gz to a microSD card. See https://os.portare.org"
             echo "for installation steps."
           } > release-notes.md
@@ -261,7 +261,7 @@ jobs:
             ${PRERELEASE}
 
   release-nightly:
-     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'ROCKNIX' && needs.set-envs.outputs.NIGHTLY == 'yes' && github.event_name != 'pull_request' }}
+     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'PortareOS' && needs.set-envs.outputs.NIGHTLY == 'yes' && github.event_name != 'pull_request' }}
      name: Release nightly
      needs: build-devices
      runs-on: ubuntu-24.04
@@ -307,7 +307,7 @@ jobs:
            {
              printf "Changelog since last nightly:\n"
              bash .github/scripts/generate-changelog.sh "$COMMIT..$GITHUB_SHA" 100
-             printf "\n\nAlternative download site: https://sourceforge.net/projects/rocknix/files/nightly/%s/\n" "$(date +%Y%m%d)"
+             printf "\n\nAlternative download site: https://sourceforge.net/projects/portareos/files/nightly/%s/\n" "$(date +%Y%m%d)"
            } > release-notes.md
            git tag -f nightly-${{ env.DATE }}
            git push -f distribution-nightly nightly-${{ env.DATE }}
@@ -319,7 +319,7 @@ jobs:
        env:
          GH_TOKEN: ${{ steps.app-token.outputs.token }}
        run: |
-         gh release create "nightly-${{ env.DATE }}" ROCKNIX-* \
+         gh release create "nightly-${{ env.DATE }}" PortareOS-* \
            --repo "${{ github.repository_owner }}/distribution-nightly" \
            --title "nightly-${{ env.DATE }}" \
            --notes-file release-notes.md \
@@ -336,11 +336,11 @@ jobs:
        run: |
          FILES=$(find . -type f \( -name "*.tar" -o -name "*.img.gz" -o -name "*.sha256" \))
          for FILE in $FILES; do
-           rsync -e ssh "$FILE" tiopex@frs.sourceforge.net:/home/frs/project/rocknix/nightly/${{ env.DATE }}/
+           rsync -e ssh "$FILE" tiopex@frs.sourceforge.net:/home/frs/project/portareos/nightly/${{ env.DATE }}/
          done
 
   release-official:
-    if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'ROCKNIX' && needs.set-envs.outputs.OFFICIAL == 'yes' }}
+    if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'PortareOS' && needs.set-envs.outputs.OFFICIAL == 'yes' }}
     name: Release official
     needs: build-devices
     runs-on: ubuntu-24.04
@@ -384,7 +384,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh release create "${{ env.DATE }}" ROCKNIX-* \
+          gh release create "${{ env.DATE }}" PortareOS-* \
             --target "${{ github.sha }}" \
             --title "${{ env.DATE }}" \
             --notes-file release-body.md \

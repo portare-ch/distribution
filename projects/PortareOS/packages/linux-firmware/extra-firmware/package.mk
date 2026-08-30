@@ -7,7 +7,7 @@ PKG_SHA256="1c1db6a797f23a3d179904941e4a869679a514c6f43687e20954c5d96cad4f49"
 PKG_LICENSE="proprietary"
 PKG_SITE="https://github.com/ROCKNIX/extra-firmware"
 PKG_URL="https://github.com/ROCKNIX/extra-firmware/archive/${PKG_VERSION}.tar.gz"
-PKG_LONGDESC="extra-firmware: Extra kernel firmware needed for ROCKNIX devices"
+PKG_LONGDESC="extra-firmware: Extra kernel firmware needed for PortareOS devices"
 PKG_TOOLCHAIN="manual"
 
 makeinstall_target() {

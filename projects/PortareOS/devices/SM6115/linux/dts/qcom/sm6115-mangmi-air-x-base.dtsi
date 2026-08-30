@@ -1533,7 +1533,7 @@
 
 &uart0 {
 	gamepad {
-		compatible = "rocknix,mangmi-air-x-joypad";
+		compatible = "portareos,mangmi-air-x-joypad";
 		pinctrl-names = "default";
 		pinctrl-0 = <&mcu_joy_default>;
 		mcu-power-gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;

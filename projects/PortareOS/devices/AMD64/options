@@ -68,8 +68,8 @@
   # Disable 32BIT support
     ENABLE_32BIT="false"
 
-  # build and install rocknix joypad driver (yes / no)
-    ROCKNIX_JOYPAD="no"
+  # build and install portareos joypad driver (yes / no)
+    PORTAREOS_JOYPAD="no"
 
   # Kernel target
     KERNEL_TARGET="bzImage"

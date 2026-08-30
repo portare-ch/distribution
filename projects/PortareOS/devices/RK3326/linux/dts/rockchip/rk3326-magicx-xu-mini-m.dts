@@ -17,7 +17,7 @@
 
 &dsi {
 	internal_display: panel@0 {
-		compatible = "rocknix,generic-dsi";
+		compatible = "portareos,generic-dsi";
 		panel_description =
 			"G size=69,139 delays=5,20,20,120,20 format=rgb888 lanes=2 flags=0xe03",
 

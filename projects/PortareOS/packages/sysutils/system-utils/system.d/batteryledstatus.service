@@ -1,6 +1,6 @@
 [Unit]
 Description=Battery LED Status
-Before=rocknix.target
+Before=portareos.target
 ConditionPathExists=/usr/bin/battery_led_status
 
 [Service]

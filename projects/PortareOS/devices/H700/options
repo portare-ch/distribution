@@ -68,8 +68,8 @@
   # Debug tty path
     DEBUG_TTY="/dev/ttyS0"
 
-  # Build and install rocknix out-of-tree device trees and overlays (yes / no)
-    ROCKNIX_DEVICE_TREE_OVERLAYS="yes"
+  # Build and install portareos out-of-tree device trees and overlays (yes / no)
+    PORTAREOS_DEVICE_TREE_OVERLAYS="yes"
 
   # ZRAM Algorithm
     ZRAM_COMPRESSION_ALGO="lzo-rle"

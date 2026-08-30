@@ -1,7 +1,7 @@
 From a0e931952dc69378bb50fcf673ac94c4fb4fc78c Mon Sep 17 00:00:00 2001
 From: Philippe Simons <simons.philippe@gmail.com>
 Date: Tue, 17 Dec 2024 13:40:16 +0100
-Subject: [PATCH] rg35xx-2024 use rocknix joypad driver
+Subject: [PATCH] rg35xx-2024 use portareos joypad driver
 
 ---
  .../sun50i-h700-anbernic-rg35xx-2024.dts      | 228 +++++++++++-------
@@ -18,8 +18,8 @@ index a8f36c4f1..1c2637d21 100644
  
 -	gpio_keys_gamepad: gpio-keys-gamepad {
 -		compatible = "gpio-keys";
-+	joypad: rocknix-singleadc-joypad {
-+		compatible = "rocknix-singleadc-joypad";
++	joypad: portareos-singleadc-joypad {
++		compatible = "portareos-singleadc-joypad";
 +		hw_info = <0x01>;
  
 -		button-a {

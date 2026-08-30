@@ -7,7 +7,7 @@ PKG_LICENSE="GPL"
 PKG_SITE="https://rocknix.org"
 PKG_URL=""
 PKG_DEPENDS_TARGET="toolchain busybox newt parted e2fsprogs syslinux"
-PKG_LONGDESC="ROCKNIX Install manager to install the system on any disk"
+PKG_LONGDESC="PortareOS Install manager to install the system on any disk"
 PKG_TOOLCHAIN="manual"
 
 post_install() {

@@ -13,7 +13,7 @@
 	qcom,board-id = <0x1000b 0x01>;
 	qcom,msm-id = <0x258 0x20000>, <0x259 0x20000>;
 	compatible = "ayaneo,pocketace", "qcom,qcs8550", "qcom,sm8550";
-	rocknix-u-boot-dt-id = "u-boot-pocket-ace";
+	portareos-u-boot-dt-id = "u-boot-pocket-ace";
 };
 
 &tlmm {

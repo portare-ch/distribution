@@ -25,10 +25,10 @@ case $(get_setting system.loglevel) in
 esac
 
 ### Power and lid keys go to fake suspend unless the platform ships its own
-### handler. rocknix-fake-suspend exists for devices that cannot sleep and it
+### handler. portareos-fake-suspend exists for devices that cannot sleep and it
 ### assumes nothing else will suspend underneath it, so a platform with working
 ### hardware suspend needs its own policy rather than that state machine.
-POWER_HANDLER="/usr/bin/rocknix-fake-suspend"
+POWER_HANDLER="/usr/bin/portareos-fake-suspend"
 [ -x "/usr/lib/autostart/quirks/platforms/${HW_DEVICE}/bin/power-handler" ] && \
   POWER_HANDLER="/usr/lib/autostart/quirks/platforms/${HW_DEVICE}/bin/power-handler"
 
@@ -480,7 +480,7 @@ set +e
       (${FUNCTION_HOTKEY_BTN_EAST_EVENT})
         if [ "${HOTKEY_A_PRESSED}" = true ]; then
           ${DEBUG} && log $0 "${FUNCTION_HOTKEY_BTN_EAST_EVENT}: Screenshot"
-          /usr/bin/rocknix-screenshot
+          /usr/bin/portareos-screenshot
           # Display notification if 'success' exit code
           SCREENSHOT_SUCCESS=$?
           [ "$SCREENSHOT_SUCCESS" -eq 0 ] && /usr/bin/mako-notify "Screenshot Saved" -no-ra

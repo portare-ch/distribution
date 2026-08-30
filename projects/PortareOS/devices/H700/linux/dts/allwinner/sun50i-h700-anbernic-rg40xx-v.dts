@@ -8,7 +8,7 @@
 / {
 	model = "Anbernic RG40XX V";
 	compatible = "anbernic,rg40xx-V", "allwinner,sun50i-h700";
-	rocknix-dt-id = "sun50i-h700-anbernic-rg40xx-v";
+	portareos-dt-id = "sun50i-h700-anbernic-rg40xx-v";
 };
 
 &joypad {

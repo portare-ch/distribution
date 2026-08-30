@@ -209,7 +209,7 @@ dts_header = f"""/dts-v1/;
     fragment@0 {{
         target-path = "/{target}";
         __overlay__ {{
-            compatible = "rocknix,generic-dsi";
+            compatible = "portareos,generic-dsi";
             panel_description ="""
 dts_footer = """;
         };
@@ -262,7 +262,7 @@ elif args.outfmt == 'dtbo':
     overlay = fdt.FDT()
     overlay.header.version = 17
     overlay.set_property('target-path', '/'+target, path='fragment@0')
-    overlay.set_property('compatible', 'rocknix,generic-dsi', path='fragment@0/__overlay__')
+    overlay.set_property('compatible', 'portareos,generic-dsi', path='fragment@0/__overlay__')
     overlay.set_property('panel_description', acc, path='fragment@0/__overlay__')
     # send the overlay to output
     f.write(overlay.to_dtb())

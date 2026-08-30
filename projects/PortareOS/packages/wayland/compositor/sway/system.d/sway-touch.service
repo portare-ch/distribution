@@ -8,4 +8,4 @@ ExecStart=/usr/bin/sway-touch.sh
 TimeoutStartSec=0
 
 [Install]
-WantedBy=rocknix.target
+WantedBy=portareos.target

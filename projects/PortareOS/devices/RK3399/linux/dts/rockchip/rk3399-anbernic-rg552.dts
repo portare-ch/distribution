@@ -90,8 +90,8 @@
 		};
 	};
 
-	joypad: rocknix-singleadc-joypad {
-		compatible = "rocknix-singleadc-joypad";
+	joypad: portareos-singleadc-joypad {
+		compatible = "portareos-singleadc-joypad";
 
 		pwms = <&pwm3 0 200000000 0>;
 		pwm-names = "enable";

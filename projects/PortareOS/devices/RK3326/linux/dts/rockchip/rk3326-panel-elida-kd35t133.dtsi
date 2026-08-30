@@ -5,7 +5,7 @@
 
 &dsi {
     panel@0 {
-        compatible = "rocknix,generic-dsi";
+        compatible = "portareos,generic-dsi";
         panel_description =
             "G size=42,82 delays=2,1,20,120,20 format=rgb888 lanes=1 flags=0xe03",
 

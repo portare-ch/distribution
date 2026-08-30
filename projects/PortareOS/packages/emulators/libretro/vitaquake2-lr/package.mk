@@ -21,7 +21,7 @@ pre_make_target() {
 
   case ${TARGET_ARCH} in
     aarch64)
-      PKG_MAKE_OPTS_TARGET+=" platform=${DEVICE}_rocknix"
+      PKG_MAKE_OPTS_TARGET+=" platform=${DEVICE}_portareos"
     ;;
   esac
 }

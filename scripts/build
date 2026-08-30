@@ -265,18 +265,18 @@ fi
 # create wrapper scripts in build dir and use them for CC/CXX when
 # building for host and local-cc build flag is set
 if [ "${TARGET}" = "host" ] && flag_enabled "local-cc" "no"; then
-  cat >rocknix-local-cc <<EOF
+  cat >portareos-local-cc <<EOF
 #!/bin/sh
 exec ${CC} "\$@"
 EOF
-  chmod +x rocknix-local-cc
-  export CC=$(pwd)/rocknix-local-cc
-  cat >rocknix-local-cxx <<EOF
+  chmod +x portareos-local-cc
+  export CC=$(pwd)/portareos-local-cc
+  cat >portareos-local-cxx <<EOF
 #!/bin/sh
 exec ${CXX} "\$@"
 EOF
-  chmod +x rocknix-local-cxx
-  export CXX=$(pwd)/rocknix-local-cxx
+  chmod +x portareos-local-cxx
+  export CXX=$(pwd)/portareos-local-cxx
 fi
 
 # configure
@@ -602,7 +602,7 @@ if [ "${TARGET}" = "target" -o "${TARGET}" = "init" ]; then
 fi
 
 if [ -n "${INSTALL}" -a -d "${INSTALL}" ]; then
-  echo "INFO_PKG_NAME=\"${PKG_NAME}\"" >"${INSTALL}/.rocknix-package"
+  echo "INFO_PKG_NAME=\"${PKG_NAME}\"" >"${INSTALL}/.portareos-package"
 fi
 
 cd ${ROOT}

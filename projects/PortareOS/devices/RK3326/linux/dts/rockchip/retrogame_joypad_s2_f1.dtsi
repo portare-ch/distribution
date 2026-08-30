@@ -13,7 +13,7 @@
     joypad: retrogame_joypad_s2_f1 {
         /* These drivers emit the same button set which makes this skeleton ADC-agnostic */
         /* compatible = "rocknix-joypad"; */
-        /* compatible = "rocknix-singleadc-joypad"; */
+        /* compatible = "portareos-singleadc-joypad"; */
 
         /* These are constants making Joystick Guid the same */
         joypad-name = "retrogame_joypad_s2_f1";

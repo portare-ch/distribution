@@ -7,7 +7,7 @@ PKG_SHA256="9d6f25d461afced95569923a57c6a9c42df225190c043d74fe2ec0edcf40a477"
 PKG_LICENSE="MIT"
 PKG_SITE="https://github.com/PortsMaster/PortMaster-GUI"
 PKG_URL="https://github.com/PortsMaster/PortMaster-GUI/releases/download/${PKG_VERSION}/PortMaster.zip"
-PKG_DEPENDS_TARGET="toolchain rocknix-hotkey gamecontrollerdb oga_controls control-gen xmlstarlet list-guid gst-plugins-base"
+PKG_DEPENDS_TARGET="toolchain portareos-hotkey gamecontrollerdb oga_controls control-gen xmlstarlet list-guid gst-plugins-base"
 PKG_LONGDESC="Portmaster - a simple tool that allows you to download various game ports"
 PKG_TOOLCHAIN="manual"
 

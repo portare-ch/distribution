@@ -20,7 +20,7 @@ Steps to reproduce the behavior:
 3. See error
 
 ### Information
- - ROCKNIX Version: [e.g. 20240517]
+ - PortareOS Version: [e.g. 20240517]
  - Hardware Platform: [e.g. Powkiddy RGB20SX]
 
 ### Log file
