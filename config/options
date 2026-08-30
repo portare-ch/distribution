@@ -21,7 +21,7 @@ DISTRO_DIR="${ROOT}/distributions"
 PROJECT_DIR="${ROOT}/projects"
 
 # determines DISTRO, if not forced by user
-DISTRO="${DISTRO:-ROCKNIX}"
+DISTRO="${DISTRO:-PortareOS}"
 
 # determines PROJECT, if not forced by user
 export PROJECT="${PROJECT:-ROCKNIX}"

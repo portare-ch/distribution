@@ -1,12 +1,34 @@
-<img src="https://github.com/ROCKNIX/distribution/blob/next/distributions/ROCKNIX/logos/rocknix-logo.png?raw=yes" width=192>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[![Latest Version](https://img.shields.io/github/release/ROCKNIX/distribution.svg?color=FF5555&label=latest%20version&style=flat-square)](https://github.com/ROCKNIX/distribution/releases/latest) [![Activity](https://img.shields.io/github/commit-activity/m/ROCKNIX/distribution?color=FF5555&style=flat-square)](https://github.com/ROCKNIX/distribution/commits) [![Pull Requests](https://img.shields.io/github/issues-pr-closed/ROCKNIX/distribution?color=FF5555&style=flat-square)](https://github.com/ROCKNIX/distribution/pulls) [![Discord Server](https://img.shields.io/discord/948029830325235753?color=FF5555&label=chat&style=flat-square)](https://discord.gg/seTxckZjJy)
+<img src="distributions/PortareOS/logos/rocknix-logo.png" width=192>
 
----
+# PortareOS
 
-ROCKNIX is an immutable Linux distribution for handheld gaming devices developed by a small community of enthusiasts.  Our goal is to produce an operating system that has the features and capabilities that we need, and to have fun as we develop it.
+**PortareOS is a fork of [ROCKNIX](https://github.com/ROCKNIX/distribution), focused exclusively on the Retroid Pocket Nova.**
+
+ROCKNIX is an immutable Linux distribution for handheld gaming devices, developed by a community of enthusiasts, and is itself a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution). All of the work that makes this project possible is theirs; PortareOS only adds a thin layer of device-specific tuning on top.
+
+## What this fork is for
+
+The Nova has a **1280x960 (4:3) 120Hz panel** and sits alongside the Retroid Pocket 6 in ROCKNIX's SM8550 platform, sharing its device tree and its emulator configuration. That sharing is sensible upstream, but it means a number of defaults are written for the RP6's 1920x1080 16:9 display and land unexamined on the Nova.
+
+This fork exists to correct that, and to carry Nova-specific work that would not make sense upstream:
+
+* Panel and display tuning for 1280x960 — render resolutions, and integer scaling for the systems whose native height divides cleanly into 960.
+* Deep suspend enabled and gated for the Nova.
+* microSD at UHS-I SDR104 rather than legacy High Speed.
+* Input latency work across the gamepad, compositor and emulator frame queue.
+
+Only the **SM8550** platform is built. Support for the other devices is left in the tree untouched, so that changes can still be contributed back upstream where they are useful to everyone.
+
+## Relationship to upstream
+
+This is a personal fork. It tracks `ROCKNIX/distribution` and merges from it regularly; nothing here is intended to replace or compete with ROCKNIX. Device-specific changes are deliberately kept in per-device quirks rather than in shared configuration, so that the general fixes among them remain suitable for upstream contribution.
+
+For the upstream project, its community and its documentation, go to **[rocknix.org](https://rocknix.org)** and the [ROCKNIX Discord](https://discord.gg/seTxckZjJy). Please do not raise PortareOS issues with the ROCKNIX maintainers.
 
 ## Features
 
-* ROCKNIX has a very active community of developers and users.
+Inherited from ROCKNIX:
+
 * Integrated cross-device local and remote network play.
 * In-game touch support on supported devices.
 * Fine grain control for battery life or performance.
@@ -17,26 +39,17 @@ ROCKNIX is an immutable Linux distribution for handheld gaming devices developed
 * VPN support with Wireguard, Tailscale, and ZeroTier.
 * Includes built-in support for scraping and retroachievements.
 
-## Screenshots
+## Building
 
-<table>
-  <tr>
-    <td><img src="https://rocknix.org/_inc/images/screenshots/system-view.png"/></td>
-    <td><img src="https://rocknix.org/_inc/images/screenshots/menu.png"/></td>
-  </tr>
-  <tr>
-    <td><img src="https://rocknix.org/_inc/images/screenshots/gamelist-view-metadata-immersive.png"/></td>
-    <td><img src="https://rocknix.org/_inc/images/screenshots/gamelist-view-no-metadata-immersive.png"/></td>
-  </tr>
-</table>
+```
+make docker-SM8550
+```
 
-## Community
-
-The ROCKNIX community utilizes Discord for discussion, if you would like to join us please use this link: [https://discord.gg/seTxckZjJy](https://discord.gg/seTxckZjJy)
+Images are written to `target/`. See the ROCKNIX documentation for the full build environment requirements.
 
 ## Licenses
 
-**ROCKNIX** is a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution/), all licenses apply and credit to the JELOS team. 
+**PortareOS** is a fork of **ROCKNIX**, which is a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution). All licenses apply, and credit belongs to the ROCKNIX and JELOS teams.
 
 You are free to:
 
@@ -53,11 +66,12 @@ Under the following terms:
 
 Copyright (C) 2024-present [ROCKNIX](https://github.com/ROCKNIX)
 
-Original software and scripts developed by the ROCKNIX are licensed under the terms of the [GNU GPL Version 2](https://choosealicense.com/licenses/gpl-2.0/).  The full license can be found in this project's licenses folder.
+Original software and scripts developed by ROCKNIX are licensed under the terms of the [GNU GPL Version 2](https://choosealicense.com/licenses/gpl-2.0/).  The full license can be found in this project's licenses folder.
 
 ### Bundled Works
+
 All other software is provided under each component's respective license.  These licenses can be found in the software sources or in this project's licenses folder.  Modifications to bundled software and scripts by the JELOS team are licensed under the terms of the software being modified.
 
 ## Credits
 
-Like any Linux distribution, this project is not the work of one person.  It is the work of many persons all over the world who have developed the open source bits without which this project could not exist.  Special thanks to CoreELEC, LibreELEC, JELOS, and to developers and contributors across the open source community.
+Like any Linux distribution, this project is not the work of one person.  It is the work of many people all over the world who have developed the open source bits without which this project could not exist.  Special thanks to ROCKNIX, CoreELEC, LibreELEC, JELOS, and to developers and contributors across the open source community.

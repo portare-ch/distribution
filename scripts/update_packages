@@ -4,7 +4,7 @@
 
 # Based on work by ToKe79 and Shanti Gilbert
 
-OPTIONS="distributions/ROCKNIX/options"
+OPTIONS="distributions/PortareOS/options"
 PACKAGES=("projects/ROCKNIX/packages/virtual/emulators/package.mk" \
           "projects/ROCKNIX/packages/virtual/es-themes/package.mk" \
           "projects/ROCKNIX/packages/virtual/gamesupport/package.mk" )
