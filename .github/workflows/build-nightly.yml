@@ -174,6 +174,92 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run retry-workflow.yml -F run_id=${{ github.run_id }}
 
+  # Publishing a build from a fork.
+  #
+  # release-nightly and release-official below cannot run here, and the fence
+  # on the owner is the least of it: both need secrets this repository does not
+  # have (NIGHTLY_APP_ID, NIGHTLY_APP_PRIVATE_KEY, SF_SSH_KEY), both push tags
+  # and releases into a companion distribution-nightly repository that does not
+  # exist for this owner, and the nightly one rsyncs the images to the ROCKNIX
+  # SourceForge project. Dropping the owner check would just move the failure
+  # to the app-token step. So this is a separate job rather than an edit to
+  # theirs, which also keeps upstream merges of those two jobs clean.
+  #
+  # This publishes into this repository's own releases with the default
+  # GITHUB_TOKEN. No new secrets, no second repository.
+  release-fork:
+    if: ${{ always() && !cancelled() && needs.build-devices.result == 'success' && github.repository_owner != 'ROCKNIX' && github.event_name != 'pull_request' }}
+    name: Release
+    needs:
+      - set-envs
+      - build-devices
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # Matches ROCKNIX-image-SM8550-20260830 and whatever the images are
+      # called after the rebranding, without also matching the failure logs,
+      # which end in "-image)" rather than "-image-".
+      - name: Download images
+        uses: actions/download-artifact@v8
+        with:
+          pattern: "*-image-*"
+          merge-multiple: true
+
+      - name: Download update packages
+        uses: actions/download-artifact@v8
+        with:
+          pattern: "*-update-*"
+          merge-multiple: true
+
+      - name: Work out the tag
+        id: tag
+        run: |
+          DATE="$(date +'%Y%m%d')"
+          # The run number keeps a second build on the same day from colliding
+          # with the first, which gh release create treats as a hard error.
+          if [ "${{ needs.set-envs.outputs.OFFICIAL }}" = "yes" ]; then
+            echo "tag=release-${DATE}-${{ github.run_number }}" >> "${GITHUB_OUTPUT}"
+            echo "prerelease=" >> "${GITHUB_OUTPUT}"
+          else
+            echo "tag=nightly-${DATE}-${{ github.run_number }}" >> "${GITHUB_OUTPUT}"
+            echo "prerelease=--prerelease" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          PRERELEASE: ${{ steps.tag.outputs.prerelease }}
+        run: |
+          # Collect by extension rather than by name prefix, so this keeps
+          # working when the images stop being called ROCKNIX-*.
+          mapfile -t FILES < <(find . -type f \
+            \( -name '*.img.gz' -o -name '*.tar' -o -name '*.sha256' \) | sort)
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "No image or update files were downloaded - nothing to publish." >&2
+            exit 1
+          fi
+          printf 'publishing %s\n' "${FILES[@]}"
+
+          {
+            echo "Built from \`${GITHUB_SHA}\` on \`${GITHUB_REF_NAME}\`."
+            echo
+            echo "A personal fork of ROCKNIX for the Retroid Pocket Nova (SM8550)."
+            echo "Write the .img.gz to a microSD card. See https://os.portare.org"
+            echo "for installation steps."
+          } > release-notes.md
+
+          gh release create "${TAG}" "${FILES[@]}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${TAG}" \
+            --notes-file release-notes.md \
+            ${PRERELEASE}
+
   release-nightly:
      if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && github.repository_owner == 'ROCKNIX' && needs.set-envs.outputs.NIGHTLY == 'yes' && github.event_name != 'pull_request' }}
      name: Release nightly
