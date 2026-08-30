@@ -1,5 +1,24 @@
 name: Build
 
+# Two builds of the same device at once corrupt each other's caches. Every
+# ccache and build-state asset in distribution-cache is named by device only -
+# ccache-aarch64-SM8550.tar, state-aarch64-SM8550-mame-lr.part-aa - with no run
+# or branch in the name, so concurrent runs overwrite each other's uploads. The
+# retrieve side hides it: an archive downloaded midway through someone else's
+# upload fails to extract, and both the ccache retrieve and build-state restore
+# swallow that as a cache miss and build cold. The result is a green build that
+# silently threw its cache away, which is exactly what a broken cache looks
+# like from the outside.
+#
+# The group is deliberately not scoped to the ref: the shared resource is the
+# cache release, which is keyed by device, so a build on another branch
+# collides just as badly as a second build on this one. Queue rather than
+# cancel - these runs are hours long and the one already going is usually the
+# one worth keeping.
+concurrency:
+  group: build
+  cancel-in-progress: false
+
 on:
   schedule:
     - cron: "0 0 2-31 * *"
