@@ -7,7 +7,7 @@
 DATE="${1}"
 LAST_TAG="${2}"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-CONFIG_XML="${REPO_ROOT}/projects/ROCKNIX/config.xml"
+CONFIG_XML="${REPO_ROOT}/projects/PortareOS/config.xml"
 
 if [ ! -f "${CONFIG_XML}" ]; then
   echo "ERROR: config.xml not found at ${CONFIG_XML}" >&2

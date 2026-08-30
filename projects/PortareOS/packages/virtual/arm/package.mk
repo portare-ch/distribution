@@ -41,7 +41,7 @@ fi
 
 ### Emulators and Cores
 if [ "${EMULATION_DEVICE}" = "yes" ]; then
-  EMUS_32BIT=$(ENABLE_32BIT=true bash -c ". ${ROOT}/projects/ROCKNIX/packages/virtual/emulators/package.mk; echo \$EMUS_32BIT")
+  EMUS_32BIT=$(ENABLE_32BIT=true bash -c ". ${ROOT}/projects/PortareOS/packages/virtual/emulators/package.mk; echo \$EMUS_32BIT")
   PKG_DEPENDS_TARGET+=" retroarch ${EMUS_32BIT}"
 fi
 

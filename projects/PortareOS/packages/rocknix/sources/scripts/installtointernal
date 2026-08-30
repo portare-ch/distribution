@@ -60,10 +60,13 @@ get_storage_size_kb() {
   echo "$total_kb"
 }
 
-# 1) Check for existing ROCKNIX or STORAGE partitions
+# 1) Check for existing PortareOS or STORAGE partitions.
+# ROCKNIX stays in the list on purpose: this is not branding but a guard
+# against writing over an existing install, and a card carrying a ROCKNIX
+# partition is exactly that.
 mapfile -t part_names < <(parted -m -s "$DEVICE" print | tail -n +2 | cut -d: -f6)
 for name in "${part_names[@]}"; do
-  if [[ "$name" == "ROCKNIX" || "$name" == "STORAGE" ]]; then
+  if [[ "$name" == "PORTAREOS" || "$name" == "ROCKNIX" || "$name" == "STORAGE" ]]; then
     echo "An installation already exists (found partition named '$name'). Exiting."
     exit 0
   fi
