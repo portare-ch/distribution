@@ -64,7 +64,7 @@ jobs:
           command: |
             ./scripts/get_env > .env
             set -e
-            { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:latest" \
+            { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/portareos-build:latest" \
               bash -c "./scripts/build_distro "; echo $? > docker_exit_code; } | tee output.log | grep -E  --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
             exit_code=$(<docker_exit_code)
             exit $exit_code
@@ -78,17 +78,17 @@ jobs:
           name: output.logs-${{ inputs.DEVICE }}-aarch64
           path: |
             output.log
-            ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.threads/logs/
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.threads/logs/
 
       - name: Get date
         run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
       - uses: actions/upload-artifact@v7
         with:
-          name: ROCKNIX-base-image-${{ inputs.DEVICE }}-${{ env.DATE }}
+          name: PortareOS-base-image-${{ inputs.DEVICE }}-${{ env.DATE }}
           path: |
-            target/ROCKNIX-*.img.gz
-            target/ROCKNIX-*.img.gz.sha256
+            target/PortareOS-*.img.gz
+            target/PortareOS-*.img.gz.sha256
           compression-level: 0
           if-no-files-found: error
 
@@ -99,7 +99,7 @@ jobs:
           command: |
             ./scripts/get_env > .env
             set -e
-            { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:latest" \
+            { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/portareos-build:latest" \
               bash -c "./scripts/build_mt modules "; echo $? > docker_exit_code; } | tee output.log | grep -E  --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
             exit_code=$(<docker_exit_code)
             exit $exit_code
@@ -113,20 +113,20 @@ jobs:
           name: output.logs-${{ inputs.DEVICE }}-modules
           path: |
             output.log
-            ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.threads/logs/
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.threads/logs/
 
       - name: Clean ccache
         run: |
-          export CCACHE_DIR=./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.ccache
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 2G
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -c
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -z
+          export CCACHE_DIR=./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 2G
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -c
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -z
 
       - name: Tar ccache
         run: |
-          tar --remove-files -cf ccache-aarch64-${{ inputs.DEVICE }}.tar ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.ccache  
+          tar --remove-files -cf ccache-aarch64-${{ inputs.DEVICE }}.tar ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache  
 
       - name: Save ccache
         uses: softprops/action-gh-release@v3
@@ -146,9 +146,9 @@ jobs:
       - name: Compress directory
         run: |
           sudo tar --remove-files \
-          -cf build.build.aarch64.tar ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/build
+          -cf build.build.aarch64.tar ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/build
           sudo tar --remove-files \
-          -cf build.aarch64.tar ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/
+          -cf build.aarch64.tar ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/
 
       - uses: actions/upload-artifact@v7
         with:

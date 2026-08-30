@@ -73,7 +73,7 @@ jobs:
         id: upstream
         run: |
           echo "digest=$(.github/scripts/build-state.sh snapshot \
-            build.ROCKNIX-${{ inputs.DEVICE }}.aarch64)" >> "${GITHUB_OUTPUT}"
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64)" >> "${GITHUB_OUTPUT}"
 
       # Restoring .stamps and install_pkg lets scripts/build skip every package
       # whose recipe is unchanged. Skipped when the digest above differs from
@@ -85,7 +85,7 @@ jobs:
           CACHE_REPO: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
         run: |
           .github/scripts/build-state.sh restore \
-            build.ROCKNIX-${{ inputs.DEVICE }}.aarch64 \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
             state-aarch64-${{ inputs.DEVICE }}-mame-lr \
             "${{ steps.upstream.outputs.digest }}"
 
@@ -95,7 +95,7 @@ jobs:
           command: |
             ./scripts/get_env > .env
             set -e
-            { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:latest" \
+            { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/portareos-build:latest" \
               bash -c "./scripts/build_mt mame-lr"; echo $? > docker_exit_code; } | tee output.log | grep -E  --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
             exit_code=$(<docker_exit_code)
             exit $exit_code
@@ -109,20 +109,20 @@ jobs:
           name: output.logs (${{ inputs.DEVICE }}-aarch64-mame-lr)
           path: |
             output.log
-            ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.threads/logs/
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.threads/logs/
 
       - name: Clean ccache
         run: |
-          export CCACHE_DIR=./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.ccache
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 500M
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -c
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -z
+          export CCACHE_DIR=./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 500M
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -c
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -z
 
       - name: Tar ccache
         run: |
-           tar -cf ccache-aarch64-${{ inputs.DEVICE }}-mame.tar ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.ccache  
+           tar -cf ccache-aarch64-${{ inputs.DEVICE }}-mame.tar ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache  
 
       - name: Save ccache
         uses: softprops/action-gh-release@v3
@@ -143,7 +143,7 @@ jobs:
       - name: Save build state
         run: |
           .github/scripts/build-state.sh save \
-            build.ROCKNIX-${{ inputs.DEVICE }}.aarch64 \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
             state-aarch64-${{ inputs.DEVICE }}-mame-lr \
             "${{ steps.upstream.outputs.digest }}"
 
@@ -165,8 +165,8 @@ jobs:
       - name: Compress directory
         run: |
           tar --zstd -cf build.mame-lr.tar.zst \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/install_pkg/mame-lr-* \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.stamps
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/install_pkg/mame-lr-* \
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.stamps
 
       - uses: actions/upload-artifact@v7
         with:

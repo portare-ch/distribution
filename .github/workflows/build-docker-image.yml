@@ -44,7 +44,7 @@ jobs:
       - name: Has this image already been built?
         id: check
         env:
-          IMAGE: ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build
+          IMAGE: ghcr.io/${{ inputs.OWNER_LC }}/portareos-build
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
           if docker buildx imagetools inspect "${IMAGE}:${TAG}" >/dev/null 2>&1; then
@@ -63,8 +63,8 @@ jobs:
           file: Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:${{ steps.tag.outputs.tag }}
-            ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:latest
+            ghcr.io/${{ inputs.OWNER_LC }}/portareos-build:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ inputs.OWNER_LC }}/portareos-build:latest
 
       # A revert is the awkward case: the Dockerfile returns to a hash that was
       # built once before, so the build is skipped - but :latest still points at
@@ -74,6 +74,6 @@ jobs:
       - name: Re-point :latest at the frozen image
         if: steps.check.outputs.exists == 'true' && github.event_name != 'pull_request'
         env:
-          IMAGE: ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build
+          IMAGE: ghcr.io/${{ inputs.OWNER_LC }}/portareos-build
           TAG: ${{ steps.tag.outputs.tag }}
         run: docker buildx imagetools create -t "${IMAGE}:latest" "${IMAGE}:${TAG}"

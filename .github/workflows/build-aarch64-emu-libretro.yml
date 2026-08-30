@@ -125,7 +125,7 @@ jobs:
         id: upstream
         run: |
           echo "digest=$(.github/scripts/build-state.sh snapshot \
-            build.ROCKNIX-${{ inputs.DEVICE }}.aarch64)" >> "${GITHUB_OUTPUT}"
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64)" >> "${GITHUB_OUTPUT}"
 
       # Restoring .stamps and install_pkg lets scripts/build skip every package
       # whose recipe is unchanged. Skipped when the digest above differs from
@@ -137,7 +137,7 @@ jobs:
           CACHE_REPO: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
         run: |
           .github/scripts/build-state.sh restore \
-            build.ROCKNIX-${{ inputs.DEVICE }}.aarch64 \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
             state-aarch64-${{ inputs.DEVICE }}-emu-libretro \
             "${{ steps.upstream.outputs.digest }}"
 
@@ -147,7 +147,7 @@ jobs:
           command: |
             ./scripts/get_env > .env
             set -e
-            { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/rocknix-build:latest" \
+            { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/portareos-build:latest" \
               bash -c "./scripts/build_mt emulators"; echo $? > docker_exit_code; } | tee output.log | grep -E  --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
             exit_code=$(<docker_exit_code)
             exit $exit_code
@@ -161,20 +161,20 @@ jobs:
           name: output.logs (${{ inputs.DEVICE }}-aarch64-emu-libretro)
           path: |
             output.log
-            ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.threads/logs/
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.threads/logs/
 
       - name: Clean ccache
         run: |
-          export CCACHE_DIR=./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.ccache
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 2G
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -c
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -z
+          export CCACHE_DIR=./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 2G
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -c
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -z
 
       - name: Tar ccache
         run: |
-          tar -cf ccache-aarch64-${{ inputs.DEVICE }}-emu-libretro.tar ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.ccache 
+          tar -cf ccache-aarch64-${{ inputs.DEVICE }}-emu-libretro.tar ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache 
 
       - name: Save ccache
         uses: softprops/action-gh-release@v3
@@ -198,7 +198,7 @@ jobs:
       - name: Save build state
         run: |
           .github/scripts/build-state.sh save \
-            build.ROCKNIX-${{ inputs.DEVICE }}.aarch64 \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
             state-aarch64-${{ inputs.DEVICE }}-emu-libretro \
             "${{ steps.upstream.outputs.digest }}"
 
@@ -220,8 +220,8 @@ jobs:
       - name: Compress directory
         run: | 
           sudo tar --remove-files -cf - \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/install_* \
-          ./build.ROCKNIX-${{ inputs.DEVICE }}.aarch64/.stamps | split -b 2G -  build.emu-libretro.tar.part
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/install_* \
+          ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.stamps | split -b 2G -  build.emu-libretro.tar.part
 
       - uses: actions/upload-artifact@v7
         with:
