@@ -1,9 +1,0 @@
-[Unit]
-Description=Report anonymous PortareOS install statistics
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/portareos-report-stats
-
-[Install]
-WantedBy=multi-user.target

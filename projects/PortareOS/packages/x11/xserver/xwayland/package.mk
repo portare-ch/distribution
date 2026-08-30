@@ -32,7 +32,7 @@ PKG_MESON_OPTS_TARGET+=" -Dxvfb=false \
                        -Dxkb_output_dir="/var/cache/xkb" \
                        -Dvendor_name="PortareOS" \
                        -Dvendor_name_short="PortareOS" \
-                       -Dvendor_web="https://rocknix.org" \
+                       -Dvendor_web="https://os.portare.org" \
                        -Dlisten_tcp=false \
                        -Dlisten_unix=true \
                        -Dlisten_local=false \

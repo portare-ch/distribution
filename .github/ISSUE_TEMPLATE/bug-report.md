@@ -6,8 +6,8 @@ labels: ISSUE NEEDS REVIEW
 assignees: ''
 
 ---
-### Have you first reported the issue on the rocknix discord and checked rocknix.org for a solution?
-[ROCKNIX DISCORD](https://discord.gg/NG6wGmSe)
+### Is this a PortareOS problem, or an upstream ROCKNIX one?
+PortareOS is a personal fork. Please do not take problems with it to the ROCKNIX Discord or forums; they are not theirs to fix. If it reproduces on stock ROCKNIX, report it upstream instead.
 <!-- Any issue created without first being discussed on our discord server will be closed automatically. -->
 
 ### Describe the bug
