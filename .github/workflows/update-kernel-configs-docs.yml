@@ -24,29 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - device: RK3326
-            project: ROCKNIX
-          - device: RK3399
-            project: ROCKNIX
-          - device: RK3566
-            project: ROCKNIX
-          - device: RK3576
-            project: ROCKNIX
-          - device: RK3588
-            project: ROCKNIX
-          - device: S922X
-            project: ROCKNIX
-          - device: H700
-            project: ROCKNIX
-          - device: SM6115
-            project: ROCKNIX
-          - device: SM8250
-            project: ROCKNIX
           - device: SM8550
-            project: ROCKNIX
-          - device: SM8650
-            project: ROCKNIX
-          - device: SM8750
             project: ROCKNIX
     runs-on: ubuntu-22.04
     steps:
