@@ -96,7 +96,7 @@ jobs:
           )
           
           SELECTED_MATRIX=""
-          ALL_DEVICES='[{"device":"SM8550","project":"ROCKNIX"}]'
+          ALL_DEVICES='[{"device":"SM8550","project":"PortareOS"}]'
 
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
             SCHEDULE_VAR="${{ vars.SCHEDULE_DEVICES }}"
