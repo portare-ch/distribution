@@ -9,8 +9,9 @@
 # mapped onto a 4:3 display - and 2.07M pixels for a 1.23M-pixel panel,
 # roughly 68% more GPU work than the display can show, then downscaled.
 #
-# Only geometry is corrected here. Taste settings - integer scaling,
-# aspect overrides, shaders - are deliberately left to the user.
+# Geometry only. Shaders and aspect overrides are taste and are left to
+# the user; the one scaling change below is here because 4x is exact on
+# this panel, not as a preference.
 #
 # Each emulator copies its config from /usr/config into /storage on first
 # launch, so every edit is guarded: at first boot the file does not exist
@@ -40,4 +41,13 @@ if [ -f "${MELONDS_CFG}" ]; then
   sed -i -e '/^WindowWidth=/c\WindowWidth=1280' \
          -e '/^WindowHeight=/c\WindowHeight=960' \
          "${MELONDS_CFG}"
+fi
+
+# DuckStation (PlayStation): 1280x960 is exactly 4x the PS1's 320x240 NTSC
+# active area, which CropMode = Overscan already crops to. Integer scaling
+# therefore lands pixel-perfect AND full-screen here, with no borders -
+# the case it is usually a trade-off against. AspectRatio is already 4:3.
+DUCKSTATION_CFG="/storage/.config/duckstation/settings.ini"
+if [ -f "${DUCKSTATION_CFG}" ]; then
+  sed -i '/^IntegerScaling =/c\IntegerScaling = true' "${DUCKSTATION_CFG}"
 fi
