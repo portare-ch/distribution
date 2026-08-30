@@ -16,11 +16,6 @@ on:
         required: false
         default: false
         type: boolean
-      SM8750:
-        description: 'SM8750'
-        required: false
-        default: false
-        type: boolean
   workflow_call:
   pull_request:
     types: [ assigned ]
@@ -62,11 +57,10 @@ jobs:
         run: |
           declare -A DEVICE_INPUTS=(
             ["SM8550"]="${{ inputs.SM8550 }}"
-            ["SM8750"]="${{ inputs.SM8750 }}"
           )
           
           SELECTED_MATRIX=""
-          ALL_DEVICES='[{"device":"SM8550","project":"ROCKNIX"},{"device":"SM8750","project":"ROCKNIX"}]'
+          ALL_DEVICES='[{"device":"SM8550","project":"ROCKNIX"}]'
 
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
             SCHEDULE_VAR="${{ vars.SCHEDULE_DEVICES }}"
