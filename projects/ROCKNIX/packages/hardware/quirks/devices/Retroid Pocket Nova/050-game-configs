@@ -51,3 +51,20 @@ DUCKSTATION_CFG="/storage/.config/duckstation/settings.ini"
 if [ -f "${DUCKSTATION_CFG}" ]; then
   sed -i '/^IntegerScaling =/c\IntegerScaling = true' "${DUCKSTATION_CFG}"
 fi
+
+# ---------------------------------------------------------------------
+# EmulationStation defaults (RetroArch side)
+#
+# system.cfg is the user's own settings file - EmulationStation writes
+# back to it - so unlike the emulator configs above these are seeded ONCE
+# and then left alone, or every boot would silently undo the user.
+#
+# 960 is exactly 4x 240p, so a 240p system integer-scales to full height
+# with no borders. PSX is the clean case and mirrors the DuckStation
+# standalone setting above.
+SYSTEM_CFG="/storage/.config/system/configs/system.cfg"
+NOVA_STAMP="/storage/.config/system/configs/.nova-display-defaults"
+if [ -f "${SYSTEM_CFG}" ] && [ ! -f "${NOVA_STAMP}" ]; then
+  sed -i '/^psx\.integerscale=/c\psx.integerscale=1' "${SYSTEM_CFG}"
+  touch "${NOVA_STAMP}"
+fi
