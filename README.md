@@ -1,4 +1,4 @@
-<img src="distributions/PortareOS/logos/rocknix-logo.png" width=192>
+<img src="distributions/PortareOS/logos/portareos-logo.png" width=320>
 
 # PortareOS
 
