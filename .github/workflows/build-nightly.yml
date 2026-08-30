@@ -201,7 +201,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Matches ROCKNIX-image-SM8550-20260830 and whatever the images are
+      # Matches PortareOS-image-SM8550-20260830 and whatever the images are
       # called after the rebranding, without also matching the failure logs,
       # which end in "-image)" rather than "-image-".
       - name: Download images
@@ -279,12 +279,12 @@ jobs:
      - name: Download artifacts
        uses: actions/download-artifact@v8
        with:
-         pattern: ROCKNIX-image*
+         pattern: PortareOS-image*
          merge-multiple: true
      - name: Download artifacts
        uses: actions/download-artifact@v8
        with:
-         pattern: ROCKNIX-update*
+         pattern: PortareOS-update*
          merge-multiple: true
      - name: get date
        run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
@@ -355,12 +355,12 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
-          pattern: ROCKNIX-image*
+          pattern: PortareOS-image*
           merge-multiple: true
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
-          pattern: ROCKNIX-update*
+          pattern: PortareOS-update*
           merge-multiple: true
       - name: get date
         run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
