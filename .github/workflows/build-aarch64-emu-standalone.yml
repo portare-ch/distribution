@@ -12,6 +12,11 @@ on:
       OWNER_LC:
         required: true
         type: string
+      INCREMENTAL:
+        description: "yes to restore this stage's saved state and rebuild only what changed"
+        required: false
+        default: "no"
+        type: string
 
 jobs:
   build-aarch64-emu-standalone:
@@ -141,6 +146,30 @@ jobs:
           inputs.DEVICE == 'S922X'  || inputs.DEVICE == 'SM8250' || inputs.DEVICE == 'SM8550' || inputs.DEVICE == 'SM8650' || inputs.DEVICE == 'SM8750' || inputs.DEVICE == 'SM6115' }}
         run: rm build.qt6.tar.zst
 
+      # Record what the upstream stage artifacts just delivered: a digest of
+      # their stamps (the dependency recipes this stage is about to build
+      # against) and the list of packages they installed. Both are needed
+      # whether or not we restore, because the save step below uses them.
+      - name: Snapshot the upstream build state
+        id: upstream
+        run: |
+          echo "digest=$(.github/scripts/build-state.sh snapshot \
+            build.ROCKNIX-${{ inputs.DEVICE }}.aarch64)" >> "${GITHUB_OUTPUT}"
+
+      # Restoring .stamps and install_pkg lets scripts/build skip every package
+      # whose recipe is unchanged. Skipped when the digest above differs from
+      # the one the archive was saved against, and skipped entirely unless this
+      # run explicitly asked for an incremental build.
+      - name: Restore saved build state
+        if: inputs.INCREMENTAL == 'yes'
+        env:
+          CACHE_REPO: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
+        run: |
+          .github/scripts/build-state.sh restore \
+            build.ROCKNIX-${{ inputs.DEVICE }}.aarch64 \
+            state-aarch64-${{ inputs.DEVICE }}-emu-standalone \
+            "${{ steps.upstream.outputs.digest }}"
+
       - name: Build
         uses: corrupt952/actions-retry-command@v1.0.7
         with:
@@ -192,6 +221,32 @@ jobs:
 
       - name: Print space
         run: df -h
+
+      # Save this stage's own packages and stamps for the next incremental run,
+      # tagged with the upstream digest they were built against. Saved on every
+      # run, including full ones, so a full rebuild refreshes the state rather
+      # than leaving a stale archive behind.
+      - name: Save build state
+        run: |
+          .github/scripts/build-state.sh save \
+            build.ROCKNIX-${{ inputs.DEVICE }}.aarch64 \
+            state-aarch64-${{ inputs.DEVICE }}-emu-standalone \
+            "${{ steps.upstream.outputs.digest }}"
+
+      - name: Upload build state
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ccache
+          files: "state-aarch64-${{ inputs.DEVICE }}-emu-standalone.part-*"
+          make_latest: true
+          prerelease: true
+          body: ccache
+          token: ${{ secrets.GH_PAT }}
+          repository: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
+        continue-on-error: true
+
+      - name: Drop the state archive before packing the artifact
+        run: rm -f state-aarch64-${{ inputs.DEVICE }}-emu-standalone.part-*
 
       - name: Compress directory
         run: |
