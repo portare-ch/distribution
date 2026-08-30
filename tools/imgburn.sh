@@ -40,7 +40,7 @@ removables(){
 }
 
 if [[ "${NIGHTLY}" == "1" ]]; then
-  NIGHTLY_URLS="$(curl -s --max-time 10 'https://nightly.rocknix.org/' |\
+  NIGHTLY_URLS="$(curl -s --max-time 10 'https://github.com/portare-ch/distribution/releases' |\
     sed -n 's|^.*<a href="\([^"]*\)"|\1|;s|^\(http[^ >]*nightly-[0-9]*/PortareOS[^ >]*\)[ >].*$|\1|p')"
 fi
 

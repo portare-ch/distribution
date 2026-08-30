@@ -7,13 +7,22 @@
 BRANCH="$(get_setting updates.branch)"
 FORCE="$(get_setting updates.force)"
 
-ENDPOINT_URL="https://update.rocknix.org"
+# PortareOS has no update server. This used to point at update.rocknix.org,
+# which would have answered a PortareOS device with ROCKNIX images: a
+# different distribution, and one whose boot partition label no longer
+# matches, so the update would not have booted. Leave it empty and let the
+# two query functions below report "no updates" rather than offer the wrong
+# operating system. Builds are published at
+# https://github.com/portare-ch/distribution/releases and are written to the
+# card by hand.
+ENDPOINT_URL=""
 
 MACHINEIDFILE=/storage/.cache/systemd-machine-id
 USERID=$(cat ${MACHINEIDFILE})
 
 # Function to check for an update. It returns a URL if an update is available.
 check_update() {
+    [ -z "${ENDPOINT_URL}" ] && { echo ""; return 0; }
     custom_force="${1:-$FORCE}"
 
     update_url=$(curl -s -S -X POST \
@@ -33,6 +42,7 @@ check_update() {
 
 # Function to get list of releases
 get_releases() {
+    [ -z "${ENDPOINT_URL}" ] && { echo ""; return 0; }
     releases=$(curl -s -S -X POST \
         -F "OS=${OS_NAME}" \
         -F "ARCH=${HW_ARCH}" \
