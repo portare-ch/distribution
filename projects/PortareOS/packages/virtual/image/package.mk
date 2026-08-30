@@ -69,8 +69,6 @@ fi
 # 32Bit package support
 [ "${ENABLE_32BIT}" == true ] && PKG_DEPENDS_TARGET+=" lib32"
 
-# Architecture specific tools
-[ "${ARCH}" = "x86_64" ] && PKG_DEPENDS_TARGET+=" ryzenadj lm_sensors dmidecode"
 
 # Automounter support
 [ "${UDEVIL}" = "yes" ] && PKG_DEPENDS_TARGET+=" udevil"
