@@ -11,38 +11,10 @@ PKG_DEPENDS_TARGET="toolchain ${MEDIACENTER}"
 PKG_SECTION="virtual"
 PKG_LONGDESC="Mediacenter: Metapackage"
 
-if [ "${MEDIACENTER}" = "kodi" ]; then
-  PKG_DEPENDS_TARGET+=" ${MEDIACENTER}-theme-${SKIN_DEFAULT}"
-
-  for i in ${SKINS}; do
-    PKG_DEPENDS_TARGET+=" ${MEDIACENTER}-theme-${i}"
-  done
-
-  # python-based tool for kodi management
-  PKG_DEPENDS_TARGET+=" texturecache.py"
-
-  # some python stuff needed for various addons
-  PKG_DEPENDS_TARGET="${PKG_DEPENDS_TARGET} Pillow \
-                                            pycryptodome"
-
-  # settings addon
-  if [ -n "${DISTRO_PKG_SETTINGS}" ]; then
-    PKG_DEPENDS_TARGET+=" ${DISTRO_PKG_SETTINGS}"
-  fi
-
-  # other packages
-  PKG_DEPENDS_TARGET+=" xmlstarlet"
-
-  if [ "${JOYSTICK_SUPPORT}" = "yes" ]; then
-    PKG_DEPENDS_TARGET+=" peripheral.joystick"
-  fi
-
-  get_graphicdrivers
-  if listcontains "${GRAPHIC_DRIVERS}" "(crocus|i915|iris)"; then
-    PKG_DEPENDS_TARGET+=" intel-vaapi-driver media-driver"
-  fi
-
-  if listcontains "${GRAPHIC_DRIVERS}" "(nvidia|nvidia-ng)"; then
-    PKG_DEPENDS_TARGET+=" nvidia-vaapi-driver"
-  fi
-fi
+# The "MEDIACENTER = kodi" branch that stood here is gone with the Kodi
+# packages. MEDIACENTER is not set by any distribution in this tree, so it
+# never ran, and it named packages that no longer exist.
+#
+# This metapackage stays because virtual/image adds it unconditionally -
+# [ ! "${MEDIACENTER}" = "no" ] is true when MEDIACENTER is unset - and with
+# nothing to expand it resolves to toolchain alone.
