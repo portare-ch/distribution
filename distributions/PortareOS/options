@@ -23,10 +23,10 @@
   DESCRIPTION="A ROCKNIX fork focused on the Retroid Pocket Nova."
 
 # Distribution Home URL
-  HOME_URL="https://github.com/portare-ch/distribution"
+  HOME_URL="https://os.portare.org"
 
 # Documentation URL
-  WIKI_URL="https://github.com/portare-ch/distribution"
+  WIKI_URL="https://os.portare.org"
 
 # Where to report bugs
   BUG_REPORT_URL="https://github.com/portare-ch/distribution/issues"
