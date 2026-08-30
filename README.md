@@ -17,6 +17,8 @@ This fork exists to correct that, and to carry Nova-specific work that would not
 * microSD at UHS-I SDR104 rather than legacy High Speed.
 * Input latency work across the gamepad, compositor and emulator frame queue.
 
+Several of the kernel patches behind those come from [pocknix-os](https://github.com/shuuri-labs/pocknix-os) rather than from this fork — see Credits.
+
 Only the **SM8550** platform is built. Support for the other devices is left in the tree untouched, so that changes can still be contributed back upstream where they are useful to everyone.
 
 ## Relationship to upstream
@@ -75,3 +77,18 @@ All other software is provided under each component's respective license.  These
 ## Credits
 
 Like any Linux distribution, this project is not the work of one person.  It is the work of many people all over the world who have developed the open source bits without which this project could not exist.  Special thanks to ROCKNIX, CoreELEC, LibreELEC, JELOS, and to developers and contributors across the open source community.
+
+### Patches from pocknix-os
+
+A number of the SM8550 kernel patches carried here were taken from
+[pocknix-os](https://github.com/shuuri-labs/pocknix-os) by shuuri-labs, either unchanged
+or with only the rebasing needed to fit this tree. Authorship is preserved in each patch
+header; the work is theirs, and any mistakes in adapting it are mine.
+
+| Patch | What it does |
+| --- | --- |
+| `0210`, `0211`, `0212` | microSD at UHS-I SDR104 via the downstream `sdhci-msm` driver, plus the `sdhc_2` rebind in the RP6 device tree. Originally from Armbian PR #9546 (Alex Ling). |
+| `1012` | rsinput MCU version handshake on init, so the gamepad survives an unlucky resume (jaewun). |
+| `1021` | Expose only the 120Hz mode on the RP6 panel (pocknix). `1022` is this fork's port of it to the Nova panel. |
+| `1050` | `edt,retain-power-in-suspend` option for edt-ft5x06 (jaewun). |
+| `1051` | Lowest A740 GPU operating point, 124.8 MHz (Thorch contributors). |
