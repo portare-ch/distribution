@@ -177,6 +177,10 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.set-envs.outputs.matrix) }}
+    permissions:
+     contents: read
+     actions: write
+  
     uses: ./.github/workflows/build-device.yml
     secrets: inherit
     with:
