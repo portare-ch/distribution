@@ -1,0 +1,24 @@
+[Unit]
+Description=scx_lavd latency-aware scheduler
+# sched_ext only accepts a scheduler once the kernel exposes BTF. If the kernel
+# was built without it this file is absent and the unit is skipped rather than
+# crash-looping.
+ConditionPathExists=/sys/kernel/btf/vmlinux
+After=portareos.target
+# If lavd cannot attach, stop trying and leave the kernel on EEVDF. A
+# crash-loop here would be worse than not running it. These live in [Unit];
+# systemd has ignored them in [Service] since v229.
+StartLimitBurst=3
+StartLimitIntervalSec=60
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/scx-governor start
+# --autopilot lets lavd pick its own mode from load rather than pinning one.
+ExecStart=/usr/bin/scx_lavd --autopilot
+ExecStopPost=/usr/bin/scx-governor stop
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=portareos.target

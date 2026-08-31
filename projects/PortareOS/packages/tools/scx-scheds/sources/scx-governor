@@ -1,0 +1,29 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+#
+# scx_lavd hints at CPU frequency through scx_bpf_cpuperf_set, and those hints
+# are only acted on by a governor that takes scheduler utilisation as input.
+# Under the performance governor the clocks are pinned at maximum and the hints
+# are ignored, so lavd's power and placement behaviour does nothing.
+#
+# The boot default is left as performance, so a device that is not running
+# scx_lavd behaves exactly as it did before. This switches on start and puts it
+# back on stop.
+
+set -eu
+
+want="${2:-schedutil}"
+
+apply() {
+  for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+    [ -w "${g}" ] || continue
+    grep -qw "$1" "$(dirname "${g}")/scaling_available_governors" 2>/dev/null || continue
+    echo "$1" > "${g}" 2>/dev/null || true
+  done
+}
+
+case "${1:-}" in
+  start) apply "${want}" ;;
+  stop)  apply performance ;;
+  *) echo "usage: scx-governor {start|stop} [governor]" >&2; exit 2 ;;
+esac

@@ -34,3 +34,5 @@ CONFIG_SCHED_CLUSTER=y
 # schedutil must exist for scx_lavd's frequency hints to land. It is not the
 # boot default; the scx_lavd service switches to it and restores on stop.
 CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
+CONFIG_UPROBES=y
+CONFIG_BPF_JIT_ALWAYS_ON=y

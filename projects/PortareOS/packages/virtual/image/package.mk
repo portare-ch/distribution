@@ -29,7 +29,9 @@ PKG_SOUND="espeak libao"
 
 PKG_SYNC="synctools"
 
-PKG_TOOLS="patchelf i2c-tools evtest"
+# scx_lavd, the sched_ext scheduler. Its unit is gated on
+# /sys/kernel/btf/vmlinux, so a kernel built without BTF simply skips it.
+PKG_TOOLS="patchelf i2c-tools evtest scx-scheds"
 
 PKG_DEBUG="debug"
 
