@@ -25,7 +25,7 @@ jobs:
       #
       # This is not really about the few minutes the build costs. The Dockerfile
       # runs "apt-get dist-upgrade" and installs unpinned compilers on top of a
-      # floating ubuntu:jammy, so it does not describe a fixed image - rebuilt on
+      # floating ubuntu:noble, so it does not describe a fixed image - rebuilt on
       # a different day it produces a different toolchain. When the host gcc
       # changes, every ccache hash changes with it and the entire build
       # recompiles from scratch. Freezing the image until the Dockerfile actually
