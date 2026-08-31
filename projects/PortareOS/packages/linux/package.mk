@@ -331,7 +331,12 @@ pre_make_target() {
     done < ${DISTRO_DIR}/${DISTRO}/kernel_options
 
     if [ -n "${MISSING_KERNEL_OPTIONS}" ]; then
-      print_color CLR_WARNING "LINUX: kernel options not correct: \n${MISSING_KERNEL_OPTIONS%%}\nPlease run ./tools/check_kernel_config\n"
+      # Upstream only warns here. That is the wrong severity for the options
+      # this distribution asserts: Kconfig drops a symbol with unmet
+      # dependencies silently, so the warning scrolls past in a log nobody
+      # reads and the image ships without sched_ext, or without the BTF it
+      # needs, and falls back to EEVDF at runtime with no indication why.
+      die "LINUX: required kernel options are not set after oldconfig:\n${MISSING_KERNEL_OPTIONS%%}\nThese are asserted in ${DISTRO_DIR}/${DISTRO}/kernel_options. Either a dependency is unmet (check that pahole is present for CONFIG_DEBUG_INFO_BTF) or the option moved. Run ./tools/check_kernel_config to sync the device config."
     fi
   fi
 }
