@@ -68,6 +68,27 @@ jobs:
       - name: Check package dependencies resolve
         run: python3 .github/scripts/check-package-deps.py
 
+      # A shebang file that is not executable dies with "Permission denied"
+      # and exit code 126. scripts/checkdeps is run as a program from
+      # config/options, scripts/image, scripts/build_mt and create_addon, so it
+      # takes the whole build down after the container is already up. The bit is
+      # easy to drop: any edit that rewrites the file through a temp file loses
+      # it, and git records the change without it showing in the diff.
+      - name: Check shebang scripts are executable
+        run: |
+          bad=""
+          for f in $(git ls-files scripts tools .github/scripts); do
+            head -c2 "$f" | grep -q '#!' || continue
+            [ "$(git ls-files -s "$f" | cut -d' ' -f1)" = "100755" ] || bad="${bad} ${f}"
+          done
+          if [ -n "${bad}" ]; then
+            echo "::error::not executable, but starts with a shebang:"
+            for f in ${bad}; do echo "  ${f}"; done
+            echo "Fix with: git update-index --chmod=+x <file>"
+            exit 1
+          fi
+          echo "all shebang scripts under scripts/, tools/ and .github/scripts/ are executable"
+
       - name: Set lowercase owner name
         id: set-envs
         run: |
