@@ -2,22 +2,19 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="emulationstation"
-PKG_VERSION="9d664e2ffa75d0fcfd129c6598318c61b57ff8f7"
-PKG_SHA256="e1639a1d6750c5987caa6b8a31bc560a6b9ed4692ae3f550a4db9e82dbb87daf"
+PKG_VERSION="984a93a53e11731e393c97419eaf83ccf72924b7"  # portare-ch/emulationstation-next master
 PKG_LICENSE="GPL"
-PKG_SITE="https://github.com/ROCKNIX/emulationstation-next"
-PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
+PKG_SITE="https://github.com/portare-ch/emulationstation-next"
+PKG_URL="${PKG_SITE}.git"
 PKG_DEPENDS_TARGET="boost toolchain SDL2 freetype curl freeimage bash rapidjson SDL2_mixer fping p7zip alsa vlc drm_tool pugixml ${OPENGLES}"
 PKG_NEED_UNPACK="busybox"
 PKG_LONGDESC="Emulationstation emulator frontend"
 PKG_BUILD_FLAGS="-gold"
 
-# ROCKNIX, not PortareOS: this is upstream's CMake option name. ES declares
-# option(ROCKNIX ...) and guards 54 blocks of C++ on #ifdef ROCKNIX. Renaming
-# it here does not rename it there; CMake just ignores an unknown option, the
-# option stays OFF, and every handheld-specific path silently compiles out of
-# a build that otherwise succeeds.
-PKG_CMAKE_OPTS_TARGET+=" -DROCKNIX=1 \
+# Matches option(PORTAREOS ...) in the fork. CMake ignores an option it does
+# not know, silently, so this name and the fork's must move together or every
+# handheld-specific block compiles out of a build that still succeeds.
+PKG_CMAKE_OPTS_TARGET+=" -DPORTAREOS=1 \
                          -DDISABLE_KODI=1 \
                          -DENABLE_FILEMANAGER=0 \
                          -DCEC=0 \
@@ -40,29 +37,6 @@ pre_configure_target() {
 
   export DEVICE=$(echo ${DEVICE^^} | sed "s#-#_##g")
 
-  # ES is upstream's, fetched at build time, and still calls the OS scripts and
-  # reads the settings keys under their ROCKNIX names: rocknix-bluetooth,
-  # rocknix-config, rocknix-keyboard, the rocknix-automount unit, and keys like
-  # rocknix.mangohud.enabled. We renamed all of those, so without this the
-  # frontend builds and runs while bluetooth pairing, the settings menus, the
-  # on-screen keyboard, bezels, updates and scraping quietly do nothing.
-  #
-  # Rewritten here rather than carried as a patch, so a call site added upstream
-  # is covered by the next version bump instead of failing silently. rocknix.org
-  # is protected first: it is a URL, not an interface.
-  local guard="@@ROCKNIX_DOT_ORG@@"
-  grep -rlZ 'rocknix' "${PKG_BUILD}" 2>/dev/null \
-    | xargs -0 -r sed -i \
-        -e "s|rocknix[.]org|${guard}|g" \
-        -e 's|rocknix-|portareos-|g' \
-        -e 's|rocknix[.]|portareos.|g' \
-        -e "s|${guard}|rocknix.org|g"
-
-  # rocknix.org is deliberately preserved above, so it must not count here.
-  local left
-  left="$(grep -rhoE 'rocknix-[a-z]+|rocknix[.][a-z]+' "${PKG_BUILD}" 2>/dev/null \
-          | grep -vx 'rocknix.org' | wc -l)"
-  [ "${left}" = "0" ] || die "emulationstation: ${left} ROCKNIX interface references survived the rewrite"
 }
 
 makeinstall_target() {
