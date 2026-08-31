@@ -68,9 +68,6 @@
   # Debug tty path
     DEBUG_TTY="/dev/ttyMSM0"
 
-  # Build and install portareos joypad driver (yes / no)
-    PORTAREOS_JOYPAD="no"
-
   # ZRAM Algorithm
     ZRAM_COMPRESSION_ALGO="zstd"
 

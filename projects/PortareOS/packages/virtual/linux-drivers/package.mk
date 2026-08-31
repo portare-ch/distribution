@@ -14,10 +14,6 @@ if [ "$DRIVER_ADDONS_SUPPORT" = "yes" ]; then
   PKG_DEPENDS_TARGET="${PKG_DEPENDS_TARGET} $DRIVER_ADDONS driverselect"
 fi
 
-if [ "${PORTAREOS_JOYPAD}" = "yes" ]; then
-  PKG_DEPENDS_TARGET+=" rocknix-joypad"
-fi
-
 if [ "${PORTAREOS_DEVICE_TREE_OVERLAYS}" = "yes" ]; then
   PKG_DEPENDS_TARGET+=" device-tree-overlays"
 fi

@@ -48,8 +48,6 @@
   # Sway depends on it, weston will use it if it's built but we don't want that.
   CLEAN_WESTON="libdisplay-info sway"
 
-# build and install portareos joypad driver (yes / no)
-  PORTAREOS_JOYPAD="yes"
 
 # additional drivers to install:
 # for a list of additional drivers see packages/linux-drivers
