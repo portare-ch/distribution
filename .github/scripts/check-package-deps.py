@@ -90,11 +90,42 @@ def renamed_into_foreign_urls(recipes):
     return bad
 
 
+# ${PKG_BUILD} and ${PKG_SOURCE_DIR} point into somebody else's source tree, so
+# our own name has no business appearing in a path under them. The rebrand
+# rewrote three such paths and each one built clean and failed at install:
+#
+#   ${PKG_BUILD}/portareos/gpcal-python-3.13.tgz     upstream ships rocknix/
+#   ${PKG_BUILD}/overlay_server*/portareos_dtbo.py   upstream ships rocknix_dtbo.py
+#
+# Our name is legitimate in an install path (${INSTALL}/...), which is ours, and
+# in the toolchain triplet, which is why that has to be spelled ${TARGET_NAME}
+# rather than written out.
+UPSTREAM_PATH = re.compile(r'\$\{(?:PKG_BUILD|PKG_SOURCE_DIR)\}\S*portareos', re.I)
+
+
+def our_name_in_upstream_paths(recipes):
+    bad = []
+    for path, text in recipes:
+        for n, line in enumerate(text.splitlines(), 1):
+            if UPSTREAM_PATH.search(line):
+                bad.append((path, n, line.strip()))
+    return bad
+
+
 def main():
     names, recipes = load()
     missing = dangling(names, recipes)
     foreign = renamed_into_foreign_urls(recipes)
+    upstream = our_name_in_upstream_paths(recipes)
     print(f"checked {len(names)} packages across {len(recipes)} recipes")
+    if upstream:
+        print("\nOUR NAME IN A PATH INTO UPSTREAM SOURCE:")
+        for path, n, line in upstream:
+            print(f"  {path}:{n}")
+            print(f"    {line}")
+        print("  ${PKG_BUILD} is upstream's tree, not ours. Use the name upstream")
+        print("  actually ships, or ${TARGET_NAME} if this is the build triplet.")
+        return 1
     if foreign:
         print("\nRENAMED PACKAGE WHOSE SOURCE URL STILL INTERPOLATES ${PKG_NAME}:")
         for path in foreign:

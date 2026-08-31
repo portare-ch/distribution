@@ -29,8 +29,8 @@ make_target() {
 
 makeinstall_target() {
   mkdir -p "${INSTALL}/usr/libexec/generic-dsi"
-  # portareos_dtbo.py is a better script handling not just panel, but also joypad, headphones, etc.
-  cp -v "${PKG_BUILD}/"overlay_server*"/portareos_dtbo.py" "${INSTALL}/usr/libexec/generic-dsi/"
+  # rocknix_dtbo.py is a better script handling not just panel, but also joypad, headphones, etc.
+  cp -v "${PKG_BUILD}/"overlay_server*"/rocknix_dtbo.py" "${INSTALL}/usr/libexec/generic-dsi/"
   # importpanel.py still here because it's simple, documented in wiki and performs just one task well
   cp -v "${PKG_DIR}/scripts/importpanel.py" "${INSTALL}/usr/libexec/generic-dsi/"
 }
