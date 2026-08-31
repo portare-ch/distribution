@@ -1,25 +1,75 @@
-# AGENTS.md - System Rules & Pre-Flight Checklist for AI Coding Assistants
+# AGENTS.md - Rules for AI coding assistants working in this repository
+
+PortareOS is a personal fork of ROCKNIX for one device, the Retroid Pocket
+Nova (SM8550). It has diverged from upstream deliberately and does not track
+it. Rules inherited from upstream that assume a shared multi-device tree do
+not apply here.
 
 ---
 
-## 1. Core Operating Directives
+## 1. Verify by running, not by reading
 
-### A. Code & PR Verbosity
-* **DO NOT** write verbose explanations, conversational narrative, or repetitive summaries in PR descriptions.
-* **DO NOT** add obvious, noisy, or redundant inline code comments.
-* **DO** keep all code human-readable, minimal, and clean.
+Most of what breaks here is invisible to inspection and obvious the moment
+something is executed.
 
-### B. Directory Structure & Package Policy
-* **DO NOT** modify `package.mk` files directly under the top-level `packages/` directory.
-* **DO** place or modify `package.mk` files strictly within:
-  * `projects/PORTAREOS/devices/*/packages` (for device-specific package overrides)
-  * `projects/PORTAREOS/packages` (for project-wide package definitions)
+* **DO** build, run or execute what you changed. Compile the package, run the
+  script, apply the patch, execute the checker against real input.
+* **DO** test a check by making it fail on purpose, then confirming it passes
+  after the fix. A check nobody has seen fail is not known to work.
+* **DO NOT** trust a regex to prove its own correctness. `\bROCKNIX\b` does not
+  match `-DROCKNIX` or `ROCKNIX_BACKUP`, because `D` and `_` are word
+  characters. If the same pattern does the edit and the verification, it will
+  report success on what it just missed.
+* **DO** clean up after verifying. Running `py_compile` to check a script left
+  a `__pycache__` directory that broke the install.
 
-### C. Pull Request Scope & Architecture
-* **DO NOT** split related changes into parallel PRs. Group all changes sharing a single purpose into one PR.
-* **DO NOT** write zero-shot kernel modules without prior context, upstream references, or existing examples.
-* **DO NOT** modify `mkimage` scripts to create custom images for individual devices.
-* **DO NOT** write direct in-tree patches to the Linux kernel or core libraries.
-* **DO** isolate all device-specific behaviors and modifications into quirk files.
-* **DO** reference upstream sources and pull them in dynamically at the build root.
----
+## 2. Reading a build failure
+
+* **DO** read the tail of `output.log` first. The thread log named in the
+  build summary is usually the job that was terminated as collateral, not the
+  one that failed.
+* **DO NOT** guess at a cause when the log is available. Get the log.
+
+## 3. Renaming and interfaces
+
+Several strings that look like branding are contracts with something outside
+this tree.
+
+* **DO NOT** rename: `SCREENSCRAPER_SOFTNAME`, which ScreenScraper registers
+  per distribution; the device name a driver reports, which retroarch and ES
+  match their input configs against; upstream `PKG_URL` and `PKG_SITE` values;
+  `DISTRO_MIRROR`; copyright, SPDX and patch authorship lines.
+* **DO** check what a renamed value is derived from elsewhere. A `PKG_URL`
+  interpolating `${PKG_NAME}`, a `PKG_SOURCE_NAME` defaulting from it, a
+  hardcoded `TARGET` in an upstream Makefile, and a `-D` build flag naming an
+  upstream CMake option all follow a package name silently when it changes.
+* **DO** run `.github/scripts/check-package-deps.py` after touching packages.
+
+## 4. Directory structure and package policy
+
+* **DO** put new work in `projects/PortareOS/packages` (project-wide) or
+  `projects/PortareOS/devices/SM8550/packages` (device-specific).
+* **DO** remove dead upstream packages from the top-level `packages/` tree.
+  Reducing the maintenance surface of the fork is the point; upstream's rule
+  against touching that tree does not apply to a fork that owns it.
+* **DO** isolate device-specific runtime behaviour in quirk files.
+
+## 5. Kernel
+
+* **DO** prefer quirks and config over patches.
+* **DO NOT** write kernel modules without upstream references or an existing
+  example to follow.
+* **DO** assert any kernel option the build depends on in
+  `distributions/PortareOS/kernel_options`. Kconfig drops a symbol whose
+  dependencies are unmet without printing anything, so an option can vanish
+  from a config refresh and look like a routine diff.
+
+## 6. Commits and pull requests
+
+* **DO** keep commit messages short. Say what changed and why in a few lines.
+* **DO NOT** write conversational narrative or repetitive summaries in pull
+  request descriptions.
+* **DO NOT** add obvious or redundant inline comments. Comment the surprising
+  thing, not the visible one.
+* **DO** group changes sharing one purpose into a single pull request rather
+  than splitting them.
