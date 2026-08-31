@@ -28,7 +28,6 @@ jobs:
       EMULATION_DEVICE: no
       ENABLE_32BIT: no
       TARGET_TYPE: cores_only
-      JAVA_HOME: /usr
       AUTOREMOVE: "yes"
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}

@@ -16,7 +16,6 @@ jobs:
       actions: write
       contents: read
     env:
-      JAVA_HOME: /usr
       ARCH: aarch64
       DISABLE_COLORS: yes
       CCACHE_COMPILERCHECK: content

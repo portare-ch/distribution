@@ -25,7 +25,6 @@ jobs:
   build-aarch64-image:
     runs-on: ubuntu-24.04
     env:
-      JAVA_HOME: /usr
       AUTOREMOVE: "yes"
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}

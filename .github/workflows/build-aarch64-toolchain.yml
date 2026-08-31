@@ -20,7 +20,6 @@ jobs:
       actions: write
       contents: read
     env:
-      JAVA_HOME: /usr
       AUTOREMOVE: "yes"
       AUTOREMOVE_BLOCK: "gcc glibc libtool flex"
       PROJECT: ${{ inputs.PROJECT }}
