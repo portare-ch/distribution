@@ -83,7 +83,7 @@ dep_map=(
 
 # [file]=package
 file_map=(
-  [/usr/include/ncurses.h]=libncurses5-dev
+  [/usr/include/ncurses.h]=libncurses-dev
   [/usr/include/stdio.h]=libc6-dev
 )
 
