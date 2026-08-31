@@ -7,7 +7,7 @@ on:
     branches: [next]
 jobs:
   validate-commit:
-    runs-on: self-hosted
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash
@@ -108,5 +108,13 @@ jobs:
           fi
 
   check-freeze-period:
+    # check-freeze-period.yml declares 'permissions: pull-requests: read' at
+    # workflow level, and a reusable workflow may not request more than the job
+    # calling it was granted. Without this the caller inherits the repository
+    # default of 'pull-requests: none' and the whole run fails at startup,
+    # before either job begins.
+    permissions:
+      contents: read
+      pull-requests: read
     uses: ./.github/workflows/check-freeze-period.yml
     secrets: inherit
