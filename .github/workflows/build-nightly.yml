@@ -19,10 +19,14 @@ concurrency:
   group: build
   cancel-in-progress: false
 
+# No schedule. Upstream builds nightly and monthly, and every job below was
+# fenced so those crons only fired for ROCKNIX's own repository. The rename
+# turned that fence into a comparison against 'PortareOS/distribution', which
+# is not this repository and not anything, so scheduled runs could never have
+# started. Rather than repoint the fence and quietly begin a five-hour build
+# every night, the crons are gone: builds here are dispatched. Add a cron back
+# when a nightly is actually wanted.
 on:
-  schedule:
-    - cron: "0 0 2-31 * *"
-    - cron: "0 0 1 * *"
   workflow_dispatch:
     inputs:
       release:
@@ -46,7 +50,6 @@ on:
 
 jobs:
   set-envs:
-    if: (github.event_name != 'schedule') || (github.repository == 'PortareOS/distribution' && github.ref_name == 'next')
     environment:
       name: ${{ github.event_name == 'pull_request' && 'pr-approval' || 'auto' }}
     runs-on: ubuntu-24.04
@@ -138,7 +141,6 @@ jobs:
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build-docker:
-    if: github.event_name != 'schedule' || (github.repository == 'PortareOS/distribution' && github.ref_name == 'next')
     name: Docker
     needs: set-envs
     permissions:
@@ -149,7 +151,6 @@ jobs:
       OWNER_LC: ${{ needs.set-envs.outputs.OWNER_LC }}
 
   build-devices:
-    if: (github.event_name != 'schedule') || (github.repository == 'PortareOS/distribution' && github.ref_name == 'next')
     name: Build Devices
     needs:
       - set-envs
@@ -173,7 +174,7 @@ jobs:
       INCREMENTAL: ${{ needs.set-envs.outputs.INCREMENTAL }}
 
   rerun-failed-jobs:
-    if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next' && (github.event_name != 'schedule' || github.repository == 'PortareOS/distribution')
+    if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next'
     needs: build-devices
     runs-on: ubuntu-24.04
     steps:
@@ -196,7 +197,7 @@ jobs:
   # This publishes into this repository's own releases with the default
   # GITHUB_TOKEN. No new secrets, no second repository.
   release-fork:
-    if: ${{ always() && !cancelled() && needs.build-devices.result == 'success' && github.repository_owner != 'PortareOS' && github.event_name != 'pull_request' }}
+    if: ${{ always() && !cancelled() && needs.build-devices.result == 'success' && github.event_name != 'pull_request' }}
     name: Release
     needs:
       - set-envs
