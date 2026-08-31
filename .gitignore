@@ -48,3 +48,10 @@ projects/**/*.old
 /.env
 /.es_cache
 /.config
+
+# Python bytecode. A __pycache__ directory under a package's sources/ breaks
+# the build: scripts/install copies sources/scripts/* with a plain cp, which
+# fails on a directory. This one arrived from running py_compile to check a
+# script was valid Python.
+__pycache__/
+*.pyc
