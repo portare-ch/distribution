@@ -20,7 +20,6 @@ jobs:
       EMULATION_DEVICE: no
       ENABLE_32BIT: no
       MODULES_PKG: no
-      JAVA_HOME: /usr
       AUTOREMOVE: "yes"
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}

@@ -203,15 +203,6 @@ case ${EMULATOR} in
 
     ### Configure specific emulator requirements
     case ${CORE} in
-      freej2me*)
-        ${VERBOSE} && log $0 "Setup freej2me requirements."
-        /usr/bin/freej2me.sh
-        JAVA_HOME='/storage/jdk'
-        export JAVA_HOME
-        PATH="$JAVA_HOME/bin:$PATH"
-        export PATH
-        export _JAVA_OPTIONS="-Djava.awt.headless=true"
-      ;;
       easyrpg*)
         # easyrpg needs runtime files to be downloaded on the first run
         ${VERBOSE} && log $0 "Setup easyrpg requirements."

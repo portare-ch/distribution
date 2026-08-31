@@ -18,7 +18,7 @@ RUN useradd docker -U -G sudo -m -s /bin/bash \
 RUN apt-get update \
  && apt-get install -y \
     curl bash bc gcc-16 cpp-16 sed patch patchutils tar bzip2 gzip xz-utils zstd perl gawk gperf zip \
-      unzip diffutils lzop make file g++-16 xfonts-utils xsltproc default-jre-headless python3 \
+      unzip diffutils lzop make file g++-16 xfonts-utils xsltproc python3 \
       libc6-dev libcrypt-dev libncurses5-dev libjson-perl libxml-parser-perl libparse-yapp-perl rdfind \
       golang-1.26-go git openssh-client rsync upx-ucl nodejs npm \
     --no-install-recommends \
