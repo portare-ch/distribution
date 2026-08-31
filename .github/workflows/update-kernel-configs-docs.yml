@@ -44,8 +44,41 @@ jobs:
       - name: Build toolchain
         run: PROJECT=${{ matrix.project }} DEVICE=${{ matrix.device }} ./scripts/build_mt toolchain;
 
+      # olddefconfig runs bare on the runner here, not in the build container,
+      # so the container's dwarves does not help. Without pahole, Kconfig
+      # cannot satisfy DEBUG_INFO_BTF, drops it, and takes SCHED_CLASS_EXT
+      # with it. Both vanish with no "is not set" line, which is how PR #6
+      # came to propose removing the scheduler and looked like a routine
+      # config refresh.
+      - name: Install pahole, which DEBUG_INFO_BTF needs
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends dwarves
+
       - name: Update Kernel Configs
         run: PROJECT=${{ matrix.project }} DEVICE=${{ matrix.device }} ./tools/adjust_kernel_config olddefconfig
+
+      # The regenerated config is about to be proposed as a pull request, so it
+      # gets the same assertion the build applies. A refresh that silently
+      # drops a required option now fails here instead of arriving as a diff
+      # that looks routine.
+      - name: Assert the refreshed config still holds the required options
+        run: |
+          CONF="projects/${{ matrix.project }}/devices/${{ matrix.device }}/linux/linux.aarch64.conf"
+          REQ="distributions/${{ matrix.project }}/kernel_options"
+          [ -f "${REQ}" ] || { echo "no kernel_options to check against"; exit 0; }
+          missing=""
+          while read -r opt; do
+            case "${opt}" in ''|'#'*) continue ;; esac
+            grep -qxF "${opt}" "${CONF}" || missing="${missing}  ${opt}\n"
+          done < "${REQ}"
+          if [ -n "${missing}" ]; then
+            echo "::error::olddefconfig dropped required kernel options:"
+            printf "${missing}"
+            echo "Kconfig removes a symbol whose dependencies are unmet without saying so."
+            echo "Check that this runner has everything those options need (pahole for"
+            echo "CONFIG_DEBUG_INFO_BTF), rather than accepting the refreshed config."
+            exit 1
+          fi
+          echo "all $(grep -cvE '^\s*(#|$)' "${REQ}") required options survived olddefconfig"
 
       - name: Update documentation
         run: PROJECT=${{ matrix.project }} DEVICE=${{ matrix.device }} DEVICE_SPECIFIC_EMULATORS=no EMULATION_DEVICE=no ENABLE_32BIT=no TARGET_TYPE=none ./scripts/build emulators
