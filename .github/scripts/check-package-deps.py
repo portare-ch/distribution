@@ -66,10 +66,42 @@ def dangling(names, recipes):
     return missing
 
 
+# A URL that interpolates ${PKG_NAME} silently follows the package when it is
+# renamed. rocknix-splash fetched from github.com/ROCKNIX/${PKG_NAME}, which was
+# correct until the package became portareos-splash and started pointing at a
+# repository that does not exist. Nothing in the tree catches that: the recipe
+# still parses, the dependency still resolves, and the build fails at download.
+# Interpolating ${PKG_NAME} is normal and correct for the many packages whose
+# name matches their upstream repository (zlib, openssl, meson). It is only
+# wrong once we have renamed the package, because then the name no longer
+# matches upstream and the URL quietly follows the new one.
+INTERPOLATES = re.compile(r'PKG_(?:URL|SOURCE_NAME)="[^"]*\$\{PKG_NAME\}')
+OUR_PREFIX = "portareos"
+
+
+def renamed_into_foreign_urls(recipes):
+    bad = []
+    for path, text in recipes:
+        m = re.search(r'^PKG_NAME="([^"]+)"', text, re.M)
+        if not m or not m.group(1).startswith(OUR_PREFIX):
+            continue
+        if INTERPOLATES.search(text):
+            bad.append(path)
+    return bad
+
+
 def main():
     names, recipes = load()
     missing = dangling(names, recipes)
+    foreign = renamed_into_foreign_urls(recipes)
     print(f"checked {len(names)} packages across {len(recipes)} recipes")
+    if foreign:
+        print("\nRENAMED PACKAGE WHOSE SOURCE URL STILL INTERPOLATES ${PKG_NAME}:")
+        for path in foreign:
+            print(f"  {path}")
+        print("  Spell the upstream repository name out, so renaming the package")
+        print("  here does not change where its source is fetched from.")
+        return 1
     if not missing:
         print("OK: every dependency resolves, variable-driven lists included")
         return 0
