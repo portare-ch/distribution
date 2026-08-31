@@ -1,0 +1,36 @@
+# Kernel options asserted after oldconfig has run, by the check at the end of
+# packages/linux/package.mk's pre_make_target.
+#
+# This file exists because the failure mode it guards is silent. Kconfig drops
+# a symbol whose dependencies are unmet without printing anything: no warning,
+# no "is not set" line, just an option that quietly is not there. Every entry
+# below is a symbol whose absence produces a kernel that boots fine and then
+# fails at runtime.
+#
+# sched_ext, for scx_lavd:
+CONFIG_SCHED_CLASS_EXT=y
+# BTF, which sched_ext programs need at /sys/kernel/btf/vmlinux. Requires
+# DEBUG_INFO_REDUCED off and pahole (dwarves) in the build container; if either
+# is missing this vanishes and takes SCHED_CLASS_EXT with it.
+CONFIG_DEBUG_INFO_BTF=y
+CONFIG_DEBUG_KERNEL=y
+# DATA symbols are only listed with KALLSYMS_ALL. scx_lavd's BPF resolves the
+# per-cpu 'runqueues' ksym; without it the program load fails with
+# "ldimm64 failed to find the address for kernel symbol 'runqueues'".
+CONFIG_KALLSYMS_ALL=y
+# The tracing core. scx_lavd's BPF calls bpf_trace_printk, and scx >= 1.1
+# attaches fentry programs, which need the BPF trampoline: on arm64 that means
+# dynamic-ftrace direct calls. Without them the attach fails -ENOTSUPP and the
+# scheduler exits, silently falling back to EEVDF.
+CONFIG_FTRACE=y
+CONFIG_FUNCTION_TRACER=y
+CONFIG_DYNAMIC_FTRACE=y
+CONFIG_KPROBES=y
+CONFIG_BPF_EVENTS=y
+CONFIG_BPF_SYSCALL=y
+CONFIG_BPF_JIT=y
+# Cluster-aware topology, so the scheduler can tell the X3 from the A510s.
+CONFIG_SCHED_CLUSTER=y
+# schedutil must exist for scx_lavd's frequency hints to land. It is not the
+# boot default; the scx_lavd service switches to it and restores on stop.
+CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
