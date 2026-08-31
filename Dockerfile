@@ -14,13 +14,15 @@ ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-RUN adduser --disabled-password --gecos '' docker \
- && adduser docker sudo \
+# useradd, not adduser: the noble container image ships only priority-required
+# packages, and adduser is priority-important, so it is not there. useradd comes
+# from passwd, which is required and therefore always present.
+RUN useradd docker -U -G sudo -m -s /bin/bash \
  && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 RUN apt-get update \
  && apt-get install -y \
-    curl bash bc gcc-12 cpp-12 sed patch patchutils tar bzip2 gzip xz-utils zstd perl gawk gperf zip \
+    ca-certificates curl bash bc gcc-12 cpp-12 sed patch patchutils tar bzip2 gzip xz-utils zstd perl gawk gperf zip \
       unzip diffutils lzop make file g++-12 xfonts-utils xsltproc python3 \
       libc6-dev libncurses-dev libjson-perl libxml-parser-perl libparse-yapp-perl rdfind \
       golang-1.23-go git openssh-client rsync upx-ucl \
