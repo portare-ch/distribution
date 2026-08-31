@@ -7,6 +7,12 @@ PKG_SHA256="51220f0bcfd98659a591e8fad8bd767291b2db11225d17f44718481ac228f213"
 PKG_LICENSE="GPLv3"
 PKG_SITE="https://github.com/ROCKNIX/rocknix-hotkey"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
+# PKG_SOURCE_NAME defaults to ${PKG_NAME}-${PKG_VERSION}, which is what the
+# distribution-sources mirror is asked for. Renaming the package pointed that
+# at a name the mirror does not have, so every build fell through to fetching
+# from GitHub directly. Pinned to the upstream name to keep the mirror, which
+# is the copy that stays available when a tag moves or a repository goes.
+PKG_SOURCE_NAME="rocknix-hotkey-${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain libevdev SDL2 control-gen"
 PKG_TOOLCHAIN="make"
 
