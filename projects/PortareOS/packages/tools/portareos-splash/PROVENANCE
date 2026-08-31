@@ -1,0 +1,24 @@
+portareos-splash is vendored, not fetched.
+
+Origin:   https://github.com/ROCKNIX/rocknix-splash
+Commit:   9d295bcb74be2282e32c6b614efbea6036974ba8
+License:  GPL-2.0-or-later (see ../../../../../licenses/GPL-2.0.txt)
+Authors:  ROCKNIX (https://github.com/ROCKNIX). The C sources here are theirs.
+
+Why it is vendored rather than downloaded:
+
+The recipe used to fetch it from ROCKNIX's repository and, in practice, from
+their distribution-sources mirror. Neither can serve a package named
+portareos-splash, and asking them to would be wrong in any case: this is our
+splash screen now, on our boot path, and it should not depend on another
+project continuing to host a tarball for us.
+
+Changed from upstream:
+
+  Makefile  TARGET=rocknix-splash -> TARGET=portareos-splash, so the binary
+            matches the name busybox/scripts/init calls. Upstream's Makefile
+            hardcodes the old name, which is why renaming the package alone
+            would have produced a build that succeeded and a splash that
+            never appeared.
+
+Nothing else is modified. Fixes worth having should go upstream to ROCKNIX.
