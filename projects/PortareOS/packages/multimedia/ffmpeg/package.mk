@@ -81,13 +81,10 @@ if [ "${DISPLAYSERVER}" != "wl" ]; then
   PKG_FFMPEG_VAAPI=" --enable-libdrm"
 fi
 
-if [ "${VDPAU_SUPPORT}" = "yes" -a "${DISPLAYSERVER}" = "wl" ]; then
-  PKG_DEPENDS_TARGET+=" libvdpau"
-  PKG_NEED_UNPACK+=" $(get_pkg_directory libvdpau)"
-  PKG_FFMPEG_VDPAU="--enable-vdpau"
-else
-  PKG_FFMPEG_VDPAU="--disable-vdpau"
-fi
+# VDPAU_SUPPORT is not set by any distribution, project or device in this
+# tree, and the libvdpau package it wanted was removed upstream, so this could
+# only ever take the disable branch.
+PKG_FFMPEG_VDPAU="--disable-vdpau"
 
 if build_with_debug; then
   PKG_FFMPEG_DEBUG="--enable-debug --disable-stripping"

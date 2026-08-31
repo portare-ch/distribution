@@ -57,6 +57,14 @@ jobs:
       OWNER_LC: ${{ steps.set-envs.outputs.OWNER_OUTPUT }}
       matrix: ${{ steps.generate.outputs.matrix }}
     steps:
+      - uses: actions/checkout@v6
+
+      # Costs a couple of seconds and catches a dependency naming a package
+      # that is not in the tree. Without it that failure surfaces in
+      # genbuildplan.py, after the container pull and well into the build.
+      - name: Check package dependencies resolve
+        run: python3 .github/scripts/check-package-deps.py
+
       - name: Set lowercase owner name
         id: set-envs
         run: |

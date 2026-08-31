@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Check that every package named in a PKG_DEPENDS_* line exists in the tree.
+#
+# This expands variables rather than reading the dependency strings literally,
+# because recipes routinely build the list up in a local variable first:
+#
+#   PKG_TOOLS="patchelf i2c-tools evtest"
+#   PKG_DEPENDS_TARGET+=" ${PKG_TOOLS} ${PKG_FONTS} misc-packages"
+#
+# and virtual/emulators names every libretro core and standalone emulator
+# through PKG_EMUS and LIBRETRO_CORES rather than through dependencies at all.
+#
+# A checker that only matches literal names inside PKG_DEPENDS_* sees none of
+# that. It reports a clean tree while a deleted package sits waiting to fail
+# the build in genbuildplan.py, after the container pull and the toolchain
+# stage. That is exactly how evtest was removed along with the Kodi-era addons
+# and not noticed until build-aarch64 failed.
+#
+# Run from the repository root. Exits non-zero if anything dangles.
+
+import collections
+import os
+import re
+import sys
+
+ASSIGN = re.compile(r'^([A-Z_][A-Z0-9_]*)\s*\+?=\s*"([^"]*)"', re.M | re.S)
+DEPEND = re.compile(r'PKG_DEPENDS_[A-Z]+\s*\+?=\s*"([^"]*)"', re.S)
+VARREF = re.compile(r'\$\{([A-Z_][A-Z0-9_]*)\}')
+
+
+def load():
+    names, recipes = set(), []
+    for root, dirs, files in os.walk("."):
+        if ".git" in root.split(os.sep) or "package.mk" not in files:
+            continue
+        path = os.path.join(root, "package.mk")
+        text = open(path, encoding="utf-8", errors="replace").read()
+        m = re.search(r'^PKG_NAME="([^"]+)"', text, re.M)
+        names.add(m.group(1) if m else os.path.basename(root))
+        recipes.append((path, text))
+    return names, recipes
+
+
+def dangling(names, recipes):
+    missing = collections.defaultdict(set)
+    for path, text in recipes:
+        env = collections.defaultdict(str)
+        for key, value in ASSIGN.findall(text):
+            env[key] += " " + value
+        for block in DEPEND.findall(text):
+            # Two passes, so a list that references another list resolves.
+            for _ in range(2):
+                block = VARREF.sub(lambda m: env.get(m.group(1), ""), block)
+            for token in block.split():
+                token = token.split(":")[0]
+                # Leftovers of a variable this cannot resolve (gcc-${VER},
+                # jdk-${X}-zulu) and line continuations are not real packages.
+                if not token or "$" in token or token in ("\\", "-"):
+                    continue
+                if token.endswith("-") or "--" in token:
+                    continue
+                if token not in names:
+                    missing[token].add(path)
+    return missing
+
+
+def main():
+    names, recipes = load()
+    missing = dangling(names, recipes)
+    print(f"checked {len(names)} packages across {len(recipes)} recipes")
+    if not missing:
+        print("OK: every dependency resolves, variable-driven lists included")
+        return 0
+    print("\nDANGLING DEPENDENCIES:")
+    for name in sorted(missing):
+        for path in sorted(missing[name])[:3]:
+            print(f"  {name:<28} <- {path}")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
