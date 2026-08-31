@@ -2,46 +2,51 @@
 
 # PortareOS
 
-**PortareOS is a fork of [ROCKNIX](https://github.com/ROCKNIX/distribution), focused exclusively on the Retroid Pocket Nova.**
+**PortareOS is a personal fork of [ROCKNIX](https://github.com/ROCKNIX/distribution), for the Retroid Pocket Nova and nothing else.**
 
-Home: **os.portare.org** *(not up yet — this repository is the canonical source until it is)*
+Home: **[os.portare.org](https://os.portare.org)**
 
-PortareOS is an immutable Linux distribution for handheld gaming devices, developed by a community of enthusiasts, and is itself a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution). All of the work that makes this project possible is theirs; PortareOS only adds a thin layer of device-specific tuning on top.
+ROCKNIX is an immutable Linux distribution for handheld gaming devices, developed by a community of enthusiasts, and is itself a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution). Nearly all of the work that makes this project possible is theirs. PortareOS adds a layer of device-specific tuning on top and removes everything that is not the Nova.
 
 ## What this fork is for
 
-The Nova has a **1280x960 (4:3) 120Hz panel** and sits alongside the Retroid Pocket 6 in PortareOS's SM8550 platform, sharing its device tree and its emulator configuration. That sharing is sensible upstream, but it means a number of defaults are written for the RP6's 1920x1080 16:9 display and land unexamined on the Nova.
+The Nova has a **1280x960 (4:3) 120Hz panel** and sits alongside the Retroid Pocket 6 in ROCKNIX's SM8550 platform, sharing its device tree and its emulator configuration. That sharing is sensible upstream, since they are the same SoC, but it means a number of defaults written for the RP6's 1920x1080 16:9 display land unexamined on the Nova.
 
 This fork exists to correct that, and to carry Nova-specific work that would not make sense upstream:
 
-* Panel and display tuning for 1280x960 — render resolutions, and integer scaling for the systems whose native height divides cleanly into 960.
-* Deep suspend enabled and gated for the Nova.
+* Panel and display tuning for 1280x960, covering render resolutions and integer scaling for the systems whose native height divides cleanly into 960.
+* Deep suspend enabled for the Nova.
 * microSD at UHS-I SDR104 rather than legacy High Speed.
 * Input latency work across the gamepad, compositor and emulator frame queue.
+* `sched_ext` with `scx_lavd`, the latency-aware scheduler, for frame pacing across the Nova's big.LITTLE layout.
 
-Several of the kernel patches behind those come from [pocknix-os](https://github.com/shuuri-labs/pocknix-os) rather than from this fork — see Credits.
-
-Only the **SM8550** platform is built. Support for the other devices is left in the tree untouched, so that changes can still be contributed back upstream where they are useful to everyone.
+Several of the kernel patches behind those come from [pocknix-os](https://github.com/shuuri-labs/pocknix-os) rather than from this fork. See Credits.
 
 ## Relationship to upstream
 
-This is a personal fork. It tracks `PortareOS/distribution` and merges from it regularly; nothing here is intended to replace or compete with PortareOS. Device-specific changes are deliberately kept in per-device quirks rather than in shared configuration, so that the general fixes among them remain suitable for upstream contribution.
+This fork has diverged deliberately and does not track upstream closely.
 
-For the upstream project, its community and its documentation, go to **[rocknix.org](https://rocknix.org)** and the [ROCKNIX Discord](https://discord.gg/seTxckZjJy). Please do not raise PortareOS issues with the ROCKNIX maintainers.
+Everything that is not SM8550 has been removed from the tree: the other twelve device trees, the nine non-ROCKNIX hardware projects inherited from the LibreELEC lineage, the LEIoT and LibreELEC distributions, Kodi, and the unbuilt addon set. The in-tree identifiers are renamed to PortareOS, and [emulationstation-next](https://github.com/portare-ch/emulationstation-next) is built from a fork rather than from ROCKNIX's copy.
+
+The practical consequence is that merging from upstream now takes real work, and that is an accepted trade. Individual fixes here may still be worth offering upstream on their own; the tree as a whole is not.
+
+Sources are still fetched from ROCKNIX's `distribution-sources` mirror, and several components are still built from ROCKNIX's repositories. Those are dependencies, not branding, and they keep their names.
+
+**Please do not raise PortareOS problems with the ROCKNIX maintainers.** For the upstream project, its community and its documentation, go to **[rocknix.org](https://rocknix.org)** and the [ROCKNIX Discord](https://discord.gg/seTxckZjJy).
 
 ## Features
 
-Inherited from PortareOS:
+Inherited from ROCKNIX:
 
 * Integrated cross-device local and remote network play.
-* In-game touch support on supported devices.
+* In-game touch support.
 * Fine grain control for battery life or performance.
-* Includes support for playing Music and Video.
+* Support for playing music and video.
 * Bluetooth audio and controller support.
 * Support for HDMI audio and video out, and USB audio.
 * Device to device and device to cloud sync with Syncthing and rclone.
 * VPN support with Wireguard, Tailscale, and ZeroTier.
-* Includes built-in support for scraping and retroachievements.
+* Built-in support for scraping and retroachievements.
 
 ## Building
 
@@ -49,11 +54,26 @@ Inherited from PortareOS:
 make docker-SM8550
 ```
 
-Images are written to `target/`. See the PortareOS documentation for the full build environment requirements.
+Images are written to `target/`. The build wants a container runtime, roughly 100 GB of disk and several hours the first time through.
+
+Two options worth knowing about:
+
+* The **Build** workflow takes an `incremental` input. Off, it builds everything, which is what scheduled and release builds always do. On, it restores per-stage state and skips packages whose recipes have not changed.
+* `.github/scripts/check-package-deps.py` checks that every package named in a `PKG_DEPENDS_*` line exists, resolving variable-driven lists such as `PKG_EMUS` and `LIBRETRO_CORES`. It runs early in CI so a missing package fails in seconds rather than part-way through a build.
+
+## Installing
+
+PortareOS uses its own boot partition label, so the first image must be written to the card as a fresh install. An in-place update over an existing ROCKNIX installation will not find its boot partition. Updates between PortareOS builds work normally.
+
+Installation steps are at [os.portare.org](https://os.portare.org).
 
 ## Licenses
 
-**PortareOS** is a fork of **PortareOS**, which is a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution). All licenses apply, and credit belongs to the PortareOS and JELOS teams.
+**PortareOS** is a fork of **ROCKNIX**, which is a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution). All licenses apply, and credit belongs to the ROCKNIX and JELOS teams.
+
+### ROCKNIX Branding
+
+ROCKNIX branding and images are licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
 You are free to:
 
@@ -66,19 +86,19 @@ Under the following terms:
 - NonCommercial: You may not use the material for commercial purposes.
 - ShareAlike: If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
 
-### PortareOS Software
+### ROCKNIX Software
 
 Copyright (C) 2024-present [ROCKNIX](https://github.com/ROCKNIX)
 
-Original software and scripts developed by PortareOS are licensed under the terms of the [GNU GPL Version 2](https://choosealicense.com/licenses/gpl-2.0/).  The full license can be found in this project's licenses folder.
+Original software and scripts developed by the ROCKNIX team are licensed under the terms of the [GNU GPL Version 2](https://choosealicense.com/licenses/gpl-2.0/). The full license can be found in this project's licenses folder.
 
 ### Bundled Works
 
-All other software is provided under each component's respective license.  These licenses can be found in the software sources or in this project's licenses folder.  Modifications to bundled software and scripts by the JELOS team are licensed under the terms of the software being modified.
+All other software is provided under each component's respective license. These licenses can be found in the software sources or in this project's licenses folder. Modifications to bundled software and scripts by the ROCKNIX and JELOS teams are licensed under the terms of the software being modified.
 
 ## Credits
 
-Like any Linux distribution, this project is not the work of one person.  It is the work of many people all over the world who have developed the open source bits without which this project could not exist.  Special thanks to PortareOS, CoreELEC, LibreELEC, JELOS, and to developers and contributors across the open source community.
+Like any Linux distribution, this project is not the work of one person. It is the work of many people all over the world who have developed the open source bits without which this project could not exist. Special thanks to ROCKNIX, JELOS, CoreELEC, LibreELEC, and to developers and contributors across the open source community.
 
 ### Patches from pocknix-os
 
