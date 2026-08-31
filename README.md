@@ -22,6 +22,8 @@ This fork exists to correct that, and to carry Nova-specific work that would not
 
 Several of the kernel patches behind those come from [pocknix-os](https://github.com/shuuri-labs/pocknix-os) rather than from this fork. See Credits.
 
+Where this is going next is in [ROADMAP.md](ROADMAP.md).
+
 ## Relationship to upstream
 
 This fork has diverged deliberately and does not track upstream closely.
