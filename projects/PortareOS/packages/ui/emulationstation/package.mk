@@ -12,7 +12,12 @@ PKG_NEED_UNPACK="busybox"
 PKG_LONGDESC="Emulationstation emulator frontend"
 PKG_BUILD_FLAGS="-gold"
 
-PKG_CMAKE_OPTS_TARGET+=" -DPortareOS=1 \
+# ROCKNIX, not PortareOS: this is upstream's CMake option name. ES declares
+# option(ROCKNIX ...) and guards 54 blocks of C++ on #ifdef ROCKNIX. Renaming
+# it here does not rename it there; CMake just ignores an unknown option, the
+# option stays OFF, and every handheld-specific path silently compiles out of
+# a build that otherwise succeeds.
+PKG_CMAKE_OPTS_TARGET+=" -DROCKNIX=1 \
                          -DDISABLE_KODI=1 \
                          -DENABLE_FILEMANAGER=0 \
                          -DCEC=0 \
@@ -34,6 +39,30 @@ pre_configure_target() {
   done
 
   export DEVICE=$(echo ${DEVICE^^} | sed "s#-#_##g")
+
+  # ES is upstream's, fetched at build time, and still calls the OS scripts and
+  # reads the settings keys under their ROCKNIX names: rocknix-bluetooth,
+  # rocknix-config, rocknix-keyboard, the rocknix-automount unit, and keys like
+  # rocknix.mangohud.enabled. We renamed all of those, so without this the
+  # frontend builds and runs while bluetooth pairing, the settings menus, the
+  # on-screen keyboard, bezels, updates and scraping quietly do nothing.
+  #
+  # Rewritten here rather than carried as a patch, so a call site added upstream
+  # is covered by the next version bump instead of failing silently. rocknix.org
+  # is protected first: it is a URL, not an interface.
+  local guard="@@ROCKNIX_DOT_ORG@@"
+  grep -rlZ 'rocknix' "${PKG_BUILD}" 2>/dev/null \
+    | xargs -0 -r sed -i \
+        -e "s|rocknix[.]org|${guard}|g" \
+        -e 's|rocknix-|portareos-|g' \
+        -e 's|rocknix[.]|portareos.|g' \
+        -e "s|${guard}|rocknix.org|g"
+
+  # rocknix.org is deliberately preserved above, so it must not count here.
+  local left
+  left="$(grep -rhoE 'rocknix-[a-z]+|rocknix[.][a-z]+' "${PKG_BUILD}" 2>/dev/null \
+          | grep -vx 'rocknix.org' | wc -l)"
+  [ "${left}" = "0" ] || die "emulationstation: ${left} ROCKNIX interface references survived the rewrite"
 }
 
 makeinstall_target() {

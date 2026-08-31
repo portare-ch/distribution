@@ -7,6 +7,12 @@ PKG_SHA256="b217fd8a07acb0346b4704df3805298b2d7025e27fd59a7c11417a6803bab8af"
 PKG_ARCH="aarch64"
 PKG_SITE="https://github.com/ROCKNIX/abl"
 PKG_URL="https://github.com/ROCKNIX/abl/releases/download/v${PKG_VERSION}/rocknix-abl-v${PKG_VERSION}.tar.gz"
+# PKG_SOURCE_NAME defaults to ${PKG_NAME}-${PKG_VERSION}, which is what the
+# distribution-sources mirror is asked for. Renaming the package pointed that
+# at a name the mirror does not have, so every build fell through to fetching
+# from GitHub directly. Pinned to the upstream name to keep the mirror, which
+# is the copy that stays available when a tag moves or a repository goes.
+PKG_SOURCE_NAME="rocknix-abl-${PKG_VERSION}.tar.gz"
 PKG_LONGDESC="PortareOS ABL."
 PKG_TOOLCHAIN="manual"
 

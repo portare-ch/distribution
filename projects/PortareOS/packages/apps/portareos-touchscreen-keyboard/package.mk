@@ -7,6 +7,12 @@ PKG_SHA256="e3f82302367cdacf7a0c59d6d1bb4f5140083da1b3083da7c835dab0c250034c"
 PKG_LICENSE="GPLv3"
 PKG_SITE="https://github.com/jjsullivan5196/wvkbd"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
+# PKG_SOURCE_NAME defaults to ${PKG_NAME}-${PKG_VERSION}, which is what the
+# distribution-sources mirror is asked for. Renaming the package pointed that
+# at a name the mirror does not have, so every build fell through to fetching
+# from GitHub directly. Pinned to the upstream name to keep the mirror, which
+# is the copy that stays available when a tag moves or a repository goes.
+PKG_SOURCE_NAME="rocknix-touchscreen-keyboard-${PKG_VERSION}.tar.gz"
 PKG_LONGDESC="wvkbd - On-screen keyboard for wlroots that sucks less"
 PKG_DEPENDS_TARGET="toolchain wayland sway pango libxkbcommon cairo"
 PKG_TOOLCHAIN="make"
