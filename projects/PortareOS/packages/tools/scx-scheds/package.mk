@@ -40,6 +40,21 @@ make_target() {
   export CXXFLAGS_${TARGET_NAME//-/_}="${CXXFLAGS}"
   unset CFLAGS CXXFLAGS
 
+  # Same problem one layer down. libbpf's Makefile takes its include flags from
+  # pkg-config:
+  #     ALL_CFLAGS += $(shell $(PKG_CONFIG) --cflags libelf zlib)
+  # and the buildsystem points pkg-config at the aarch64 sysroot for the whole
+  # target build. libbpf-sys is a *build* dependency here: it compiles libbpf
+  # with the host compiler so libbpf-cargo can generate the BPF skeletons. So
+  # an x86_64 compile was handed -I<target sysroot>/usr/include, which shadows
+  # /usr/include and gave it the aarch64 linux/ptrace.h - hence "invalid use of
+  # undefined type 'struct pt_regs'" on the x86_64 register table.
+  #
+  # Nothing in this cargo build resolves C for the target through pkg-config;
+  # no aarch64 lookups appear anywhere in the build log. So pkg-config goes
+  # back to host defaults for this invocation.
+  unset PKG_CONFIG_LIBDIR PKG_CONFIG_PATH PKG_CONFIG_SYSROOT_DIR PKG_CONFIG_SYSROOT_BASE
+
   cargo build --release --target ${TARGET_NAME} -p scx_lavd
 }
 
