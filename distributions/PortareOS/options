@@ -196,9 +196,18 @@
 # Default supported get handlers (archive, git, file etc.)
   GET_HANDLER_SUPPORT="${GET_HANDLER_SUPPORT:-archive git file}"
 
-# Partition labels for USB/SD installation media
+# Partition labels for USB/SD installation media.
+#
+# Both have to be ours alone. The initramfs resolves boot= and disk= by label
+# and takes the first blkid match, so a label shared with another distribution
+# already on the device resolves to whichever disk enumerates first, which is
+# normally internal storage rather than the card we booted from. "STORAGE" is
+# what ROCKNIX and LibreELEC use, and it silently handed /storage to an
+# existing internal install.
+#
+# ext4 labels are capped at 16 characters, FAT at 11.
   DISTRO_BOOTLABEL="PORTAREOS"
-  DISTRO_DISKLABEL="STORAGE"
+  DISTRO_DISKLABEL="PORTAREOS_STOR"
 
 # Settings package name - blank if not required
   DISTRO_PKG_SETTINGS=""
