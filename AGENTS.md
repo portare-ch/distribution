@@ -1,9 +1,10 @@
 # AGENTS.md - Rules for AI coding assistants working in this repository
 
 PortareOS is a personal fork of ROCKNIX for one device, the Retroid Pocket
-Nova (SM8550). It has diverged from upstream deliberately and does not track
-it. Rules inherited from upstream that assume a shared multi-device tree do
-not apply here.
+Nova (SM8550). It has diverged from upstream deliberately and does not merge
+from it; upstream package updates come in selectively, through
+`tools/import-upstream-packages`. Rules inherited from upstream that assume a
+shared multi-device tree do not apply here.
 
 ---
 
@@ -53,6 +54,11 @@ this tree.
   Reducing the maintenance surface of the fork is the point; upstream's rule
   against touching that tree does not apply to a fork that owns it.
 * **DO** isolate device-specific runtime behaviour in quirk files.
+* **DO** take upstream package updates with `tools/import-upstream-packages`,
+  not by rebasing or cherry-picking. It maps their paths onto ours, skips
+  packages we have removed, and imports content verbatim so the ROCKNIX
+  copyright headers and `PKG_URL`/`PKG_SITE` lines survive. Conflicts are
+  where we renamed something they also changed, and want a human.
 
 ## 5. Kernel
 
