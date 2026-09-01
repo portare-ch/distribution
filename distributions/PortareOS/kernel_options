@@ -36,3 +36,28 @@ CONFIG_SCHED_CLUSTER=y
 CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
 CONFIG_UPROBES=y
 CONFIG_BPF_JIT_ALWAYS_ON=y
+
+# Latency tuning (issue #13). Asserted for the same reason as everything above:
+# a preemption or idle symbol that Kconfig drops leaves a kernel that boots and
+# behaves like the old one, which is indistinguishable from the change not
+# having helped.
+#
+# 1000 Hz. At 250 the scheduler ticked every 4 ms against an 8.3 ms frame on a
+# 120 Hz panel; sched_ext's tick rides on the same timer, so this is lavd's
+# decision granularity too.
+CONFIG_HZ_1000=y
+# Numeric values are asserted here but NOT written by
+# tools/check_kernel_config, which only knows y/m/n and strings. This one
+# is safe because Kconfig derives it from CONFIG_HZ_1000 above; a numeric
+# option with no such parent would need setting by hand.
+CONFIG_HZ=1000
+# Preemption model selectable at boot, so "preempt=none|voluntary|full" can be
+# measured against each other on one image instead of three. The built-in
+# default stays full, which is what CONFIG_PREEMPT gave us before.
+CONFIG_PREEMPT_DYNAMIC=y
+# The timer-events-oriented idle governor, which predicts better than menu on
+# hardware like this and pairs with the schedutil that scx-governor switches
+# to. Both governors are built in: menu outranks teo (rating 20 against 19), so
+# teo only runs because the cmdline names it. Check which one actually won with
+#   cat /sys/devices/system/cpu/cpuidle/current_governor
+CONFIG_CPU_IDLE_GOV_TEO=y
