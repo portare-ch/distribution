@@ -80,8 +80,20 @@ while [ $# -gt 0 ]; do
 done
 
 git rev-parse --git-dir >/dev/null 2>&1 || die "not a git repository"
-git rev-parse --verify --quiet "${TO_REF}^{commit}" >/dev/null \
-  || die "cannot resolve ${TO_REF} - try: git fetch upstream"
+UPSTREAM_URL="https://github.com/ROCKNIX/distribution.git"
+
+# A fresh clone has no upstream remote at all, and telling someone in that
+# position to fetch it just fails differently. Separate the two cases.
+if ! git rev-parse --verify --quiet "${TO_REF}^{commit}" >/dev/null; then
+  remote="${TO_REF%%/*}"
+  if [ "${remote}" != "${TO_REF}" ] && ! git remote get-url "${remote}" >/dev/null 2>&1; then
+    printf 'no "%s" remote in this clone. Add it with:\n\n' "${remote}" >&2
+    printf '  git remote add %s %s\n  git fetch %s\n\n' \
+      "${remote}" "${UPSTREAM_URL}" "${remote}" >&2
+    die "no ${remote} remote"
+  fi
+  die "cannot resolve ${TO_REF} - try: git fetch ${TO_REF%%/*}"
+fi
 
 # Where the recipes live on each side. Read, not assumed, so a later rename on
 # either side does not silently stop matching.
