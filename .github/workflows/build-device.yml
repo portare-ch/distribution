@@ -37,6 +37,7 @@ jobs:
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
+      INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
   build-aarch64-toolchain:
     uses: ./.github/workflows/build-aarch64-toolchain.yml
@@ -45,6 +46,7 @@ jobs:
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
+      INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
   build-aarch64-rust:
     needs: build-aarch64-toolchain
@@ -54,6 +56,7 @@ jobs:
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
+      INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
   build-aarch64:
     needs: build-aarch64-toolchain
@@ -63,6 +66,7 @@ jobs:
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
+      INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
   build-aarch64-mame-lr:
     needs: build-aarch64-toolchain
@@ -82,6 +86,7 @@ jobs:
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
+      INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
   build-aarch64-emu-libretro:
     needs:
@@ -123,6 +128,7 @@ jobs:
       PROJECT: ${{ inputs.PROJECT }}
       DEVICE: ${{ inputs.DEVICE }}
       OWNER_LC: ${{ inputs.OWNER_LC }}
+      INCREMENTAL: ${{ inputs.INCREMENTAL }}
       NIGHTLY: ${{ inputs.NIGHTLY }}
       OFFICIAL: ${{ inputs.OFFICIAL }}
 

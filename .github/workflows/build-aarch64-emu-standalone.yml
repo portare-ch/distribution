@@ -20,6 +20,7 @@ on:
 
 jobs:
   build-aarch64-emu-standalone:
+    timeout-minutes: 360
     runs-on: ubuntu-24.04
     env:
       EMULATION_DEVICE: no
@@ -157,8 +158,8 @@ jobs:
 
       # Restoring .stamps and install_pkg lets scripts/build skip every package
       # whose recipe is unchanged. Skipped when the digest above differs from
-      # the one the archive was saved against, and skipped entirely unless this
-      # run explicitly asked for an incremental build.
+      # the one the archive was saved against, and skipped entirely on a run
+      # that asked for a full rebuild.
       - name: Restore saved build state
         if: inputs.INCREMENTAL == 'yes'
         env:
@@ -194,6 +195,8 @@ jobs:
       - name: Clean ccache
         run: |
           export CCACHE_DIR=./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache
+          ./.github/scripts/ccache-summary.sh \
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache emu-standalone || true
           ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
           ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 4.5G
           ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -c
