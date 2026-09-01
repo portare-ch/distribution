@@ -27,12 +27,18 @@ make_target() {
   export PKG_CONFIG_ALLOW_CROSS=1
 
   # vsprintf and libbpf-sys have build.rs scripts, which run on the build
-  # machine and so must be compiled for it. cc-rs resolves the host compiler
-  # from HOST_CC, which is already right, but falls back to CFLAGS for the
-  # flags when HOST_CFLAGS is unset - and CFLAGS here is aarch64, so x86_64
-  # gcc was handed -mabi=lp64 and -mtune=cortex-x3. config/optimize already
-  # holds the correct host flags; they just were never exported.
-  export HOST_CFLAGS HOST_CXXFLAGS
+  # machine and so must be compiled for it. cc-rs picks the host compiler up
+  # from HOST_CC correctly, but it *appends* the triple-scoped and HOST_
+  # variables to plain CFLAGS rather than replacing it, so anything left in
+  # CFLAGS reaches every compile it does. With the buildsystem's aarch64
+  # CFLAGS in scope, x86_64 gcc was handed -mabi=lp64 and -mtune=cortex-x3.
+  # Setting HOST_CFLAGS does not help; it only adds host flags after the
+  # target ones. CFLAGS has to be empty, with the target flags reaching the
+  # target compile through its own triple-scoped variable. Build scripts then
+  # compile with cc-rs defaults, which is what they want anyway.
+  export CFLAGS_${TARGET_NAME//-/_}="${CFLAGS}"
+  export CXXFLAGS_${TARGET_NAME//-/_}="${CXXFLAGS}"
+  unset CFLAGS CXXFLAGS
 
   cargo build --release --target ${TARGET_NAME} -p scx_lavd
 }
