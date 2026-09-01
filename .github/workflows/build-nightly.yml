@@ -39,8 +39,8 @@ on:
         required: false
         default: false
         type: boolean
-      incremental:
-        description: 'Only rebuild what changed (skips mame/libretro/standalone when their recipes are untouched)'
+      full:
+        description: 'Full rebuild: ignore all saved build state and build every package from cold'
         required: false
         default: false
         type: boolean
@@ -57,10 +57,15 @@ jobs:
       NIGHTLY: ${{ steps.set-release-type.outputs.NIGHTLY }}
       OFFICIAL: ${{ steps.set-release-type.outputs.OFFICIAL }}
       INCREMENTAL: ${{ steps.set-release-type.outputs.INCREMENTAL }}
+      BUILD_NEEDED: ${{ steps.build-needed.outputs.NEEDED }}
       OWNER_LC: ${{ steps.set-envs.outputs.OWNER_OUTPUT }}
       matrix: ${{ steps.generate.outputs.matrix }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          # build-needed.sh diffs against the head of the last green build,
+          # which a shallow clone would not contain.
+          fetch-depth: 0
 
       # Costs a couple of seconds and catches a dependency naming a package
       # that is not in the tree. Without it that failure surfaces in
@@ -110,16 +115,38 @@ jobs:
             echo "NIGHTLY=yes" >> $GITHUB_OUTPUT
           fi
 
-          # Incremental is opt-in, and only ever on a manual run. A scheduled
-          # nightly and anything marked as a release always build cold, so
-          # stale state can never accumulate into something we publish.
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" \
-             && "${{ inputs.incremental }}" == "true" \
-             && "${{ inputs.release }}" != "true" ]]; then
-            echo "INCREMENTAL=yes" >> $GITHUB_OUTPUT
-          else
+          # Incremental is the default now that every stage can restore its own
+          # state: a cold build is the deliberate act, not the other way round.
+          # Each stage still refuses its saved state whenever the recipes it
+          # was built against have moved, so "incremental" never means "stale".
+          #
+          # A release always builds cold regardless, so nothing we publish can
+          # rest on restored state, and ticking "full" forces the same for an
+          # ordinary run when you want to rule the cache out of an investigation.
+          if [[ "${{ inputs.release }}" == "true" || "${{ inputs.full }}" == "true" ]]; then
             echo "INCREMENTAL=no" >> $GITHUB_OUTPUT
+          else
+            echo "INCREMENTAL=yes" >> $GITHUB_OUTPUT
           fi
+      # Whether anything since the last green build can affect what gets built.
+      # Only consulted for automatic triggers: a workflow_dispatch means a
+      # person asked for an image and gets one either way.
+      - name: Is a build needed
+        id: build-needed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "NEEDED=yes" >> $GITHUB_OUTPUT
+            echo "dispatched by hand - building regardless." >> $GITHUB_STEP_SUMMARY
+          else
+            NEEDED="$(.github/scripts/build-needed.sh)"
+            echo "NEEDED=${NEEDED}" >> $GITHUB_OUTPUT
+            if [[ "${NEEDED}" == "no" ]]; then
+              echo "No build-affecting change since the last successful build - skipping." >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
       - id: generate
         shell: bash
         run: |
@@ -176,6 +203,7 @@ jobs:
     needs:
       - set-envs
       - build-docker
+    if: needs.set-envs.outputs.BUILD_NEEDED != 'no'
     strategy:
       fail-fast: false
       matrix:
