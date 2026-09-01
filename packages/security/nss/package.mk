@@ -24,10 +24,17 @@ make_host() {
   make clean || true
   rm -rf ${PKG_BUILD}/dist
 
+  # NSPR_LIB_DIR has to be spelled out. nss/lib/util/config.mk links with
+  # "-L$(NSPR_LIB_DIR) -lplc4 -lplds4 -lnspr4", and NSPR_LIB_DIR defaults to
+  # $(DIST)/lib, which the rm above just deleted. LDFLAGS does not help: it
+  # never reaches EXTRA_SHARED_LIBS. Without this the link fell through to
+  # whatever NSPR the build container happened to have installed, which until
+  # recently was Ubuntu's, pulled in as a dependency of the system JRE.
   INCLUDES="-I${TOOLCHAIN}/include" \
     make BUILD_OPT=1 USE_64=1 \
     PREFIX=${TOOLCHAIN} \
     NSPR_INCLUDE_DIR=${TOOLCHAIN}/include/nspr \
+    NSPR_LIB_DIR=${TOOLCHAIN}/lib \
     USE_SYSTEM_ZLIB=1 ZLIB_LIBS="-lz -L${TOOLCHAIN}/lib" \
     SKIP_SHLIBSIGN=1 \
     NSS_TESTS="dummy" \
