@@ -645,14 +645,57 @@ class Builder:
             self.progress_dirty = False
             self.eprint("\033[0J", end="")
 
+    # The log named for a failing job is the one assigned to that job's
+    # submission counter before it ran, which is not reliably the log that
+    # recorded the error. A build failing inside an install task, or a job
+    # whose log was never written, sends you to an empty or missing file.
+    # Rather than guess at the offset, look for the logs that actually contain
+    # a failure marker for this package. Only runs on the failure path, and is
+    # wrapped so a problem here can never take down a build.
+    def findFailureLogs(self, job):
+        hits = []
+        try:
+            logdir = os.path.join(THREAD_CONTROL, "logs")
+            pkg = job["name"]
+            for entry in sorted(os.listdir(logdir)):
+                if not entry.endswith(".log"):
+                    continue
+                path = os.path.join(logdir, entry)
+                try:
+                    size = os.path.getsize(path)
+                    with open(path, "rb") as fh:
+                        # The marker is written at the end of a failing log.
+                        fh.seek(max(0, size - 16384))
+                        tail = fh.read().decode("utf-8", errors="replace")
+                except OSError:
+                    continue
+                if "FAILURE:" in tail and pkg in tail:
+                    hits.append(path)
+        except Exception:
+            return []
+        return hits
+
     # Output completion info, and links to any relevant logs
     def displayJobStatus(self, job):
         self.cseq += 1
         self.show_status(job["status"], job["task"], job["name"], p1=self.cseq, p2=self.jobtotal)
 
         if job["failed"]:
-            if job["logfile"]:
-                self.eprint(f"\nThe following log for this failure is available:\n  {job['logfile']}\n")
+            named = job["logfile"]
+            if named:
+                self.eprint(f"\nThe following log for this failure is available:\n  {named}\n")
+
+            recorded = [path for path in self.findFailureLogs(job) if path != named]
+            if recorded:
+                if named and not os.path.exists(named):
+                    self.eprint(f"That log does not exist. The failure was recorded in:")
+                elif named and os.path.getsize(named) == 0:
+                    self.eprint(f"That log is empty. The failure was recorded in:")
+                else:
+                    self.eprint("The failure was also recorded in:")
+                for path in recorded:
+                    self.eprint(f"  {path}")
+                self.eprint("")
 
             if job["failedjobs"] and job["failedjobs"][0]["logfile"]:
                 if len(job["failedjobs"]) == 1:
