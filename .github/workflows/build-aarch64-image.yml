@@ -12,6 +12,11 @@ on:
       OWNER_LC:
         required: true
         type: string
+      INCREMENTAL:
+        description: "yes to restore this stage's saved state and rebuild only what changed"
+        required: false
+        default: "no"
+        type: string
       NIGHTLY:
         description: "build nightly version"
         type: string
@@ -23,6 +28,7 @@ on:
 
 jobs:
   build-aarch64-image:
+    timeout-minutes: 240
     runs-on: ubuntu-24.04
     env:
       AUTOREMOVE: "yes"
@@ -90,6 +96,27 @@ jobs:
       - name: Clean up compressed emu-standalone file
         run: rm build.emu-standalone.tar*
 
+      # Everything the earlier stages installed is now unpacked, so this is the
+      # dependency surface the image stage builds against.
+      - name: Snapshot the upstream build state
+        id: upstream
+        run: |
+          echo "digest=$(.github/scripts/build-state.sh snapshot \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64)" >> "${GITHUB_OUTPUT}"
+
+      # Before the two deliberate cleans below, so that retroarch and
+      # emulationstation are still forced to rebuild afterwards: the clean
+      # removes their stamps whether the restore just put them back or not.
+      - name: Restore saved build state
+        if: inputs.INCREMENTAL == 'yes'
+        env:
+          CACHE_REPO: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
+        run: |
+          .github/scripts/build-state.sh restore \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
+            state-aarch64-${{ inputs.DEVICE }}-image \
+            "${{ steps.upstream.outputs.digest }}"
+
       # clean to rebuild retroarch with 32bit enabled
       - name: Clean retroarch
         run: |
@@ -120,6 +147,28 @@ jobs:
           path: |
             output.log
             ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.threads/logs/
+
+      - name: Save build state
+        run: |
+          .github/scripts/build-state.sh save \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
+            state-aarch64-${{ inputs.DEVICE }}-image \
+            "${{ steps.upstream.outputs.digest }}"
+
+      - name: Upload build state
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ccache
+          files: "state-aarch64-${{ inputs.DEVICE }}-image.part-*"
+          make_latest: true
+          prerelease: true
+          body: ccache
+          token: ${{ secrets.GH_PAT }}
+          repository: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
+        continue-on-error: true
+
+      - name: Drop the state archive
+        run: rm -f state-aarch64-${{ inputs.DEVICE }}-image.part-*
 
       - name: Get date
         run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV

@@ -12,9 +12,15 @@ on:
       OWNER_LC:
         required: true
         type: string
+      INCREMENTAL:
+        description: "yes to restore this stage's saved state and rebuild only what changed"
+        required: false
+        default: "no"
+        type: string
 
 jobs:
   build-arm:
+    timeout-minutes: 240
     if: ${{ inputs.DEVICE != 'SM8650' && inputs.DEVICE != 'SM8750' }}
     runs-on: ubuntu-24.04
     env:
@@ -44,6 +50,17 @@ jobs:
           URL="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache/ccache-arm-${{ inputs.DEVICE }}.tar"
           curl -L --fail --silent --show-error "$URL" | tar -xvf - || echo "Cache archive not found, skipping."       
 
+      # A root stage like the toolchain: nothing upstream to gate on, so the
+      # gate is the recipes this stage built last time.
+      - name: Restore saved arm state
+        if: inputs.INCREMENTAL == 'yes'
+        env:
+          CACHE_REPO: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
+        run: |
+          .github/scripts/build-state.sh restore-root \
+            build.PortareOS-${{ inputs.DEVICE }}.arm \
+            state-arm-${{ inputs.DEVICE }}
+
       - name: build
         uses: corrupt952/actions-retry-command@v1.0.7
         with:
@@ -69,6 +86,8 @@ jobs:
       - name: Clean ccache
         run: |
           export CCACHE_DIR=./build.PortareOS-${{ inputs.DEVICE }}.arm/.ccache
+          ./.github/scripts/ccache-summary.sh \
+            ./build.PortareOS-${{ inputs.DEVICE }}.arm/toolchain/bin/ccache arm || true
           ./build.PortareOS-${{ inputs.DEVICE }}.arm/toolchain/bin/ccache -s -v
           ./build.PortareOS-${{ inputs.DEVICE }}.arm/toolchain/bin/ccache -M 1.5G
           ./build.PortareOS-${{ inputs.DEVICE }}.arm/toolchain/bin/ccache -c
@@ -90,6 +109,43 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           repository: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
         continue-on-error: true
+
+      # What the artifact below carries - the whole build dir bar build/, plus
+      # box86's build dir - using the same find the Compress step uses, so the
+      # two cannot drift apart. .ccache is the one exclusion: it is already
+      # saved to its own release asset above, and archiving it here would
+      # double the storage and the transfer for no gain.
+      - name: Save arm state
+        run: |
+          find build.PortareOS-${{ inputs.DEVICE }}.arm \
+          -path build.PortareOS-${{ inputs.DEVICE }}.arm/build -prune -o \
+          -path build.PortareOS-${{ inputs.DEVICE }}.arm/.ccache -prune -o \
+          -print > statelist.txt
+
+          find build.PortareOS-${{ inputs.DEVICE }}.arm/build -maxdepth 1 -type d -name 'box86-*' | head -n 1 | while read boxdir; do
+            find "$boxdir" -print >> statelist.txt
+          done
+
+          .github/scripts/build-state.sh save-root \
+            build.PortareOS-${{ inputs.DEVICE }}.arm \
+            state-arm-${{ inputs.DEVICE }} \
+            -T statelist.txt
+          rm -f statelist.txt
+
+      - name: Upload arm state
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ccache
+          files: "state-arm-${{ inputs.DEVICE }}.part-*"
+          make_latest: true
+          prerelease: true
+          body: ccache
+          token: ${{ secrets.GH_PAT }}
+          repository: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
+        continue-on-error: true
+
+      - name: Drop the state archive before packing the artifact
+        run: rm -f state-arm-${{ inputs.DEVICE }}.part-*
 
       - name: Compress directory
         run: |
