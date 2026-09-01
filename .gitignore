@@ -55,3 +55,9 @@ projects/**/*.old
 # script was valid Python.
 __pycache__/
 *.pyc
+
+# cross-run build state (.github/scripts/build-state.sh)
+/state-*.part-*
+/state.tar
+/.build-state-*
+/statelist.txt
