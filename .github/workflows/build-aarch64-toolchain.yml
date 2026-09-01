@@ -12,9 +12,15 @@ on:
       OWNER_LC:
         required: true
         type: string
+      INCREMENTAL:
+        description: "yes to restore this stage's saved state and rebuild only what changed"
+        required: false
+        default: "no"
+        type: string
 
 jobs:
   build-aarch64-toolchain:
+    timeout-minutes: 300
     runs-on: ubuntu-24.04
     permissions:
       actions: write
@@ -45,6 +51,20 @@ jobs:
         run: |
           URL="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache/ccache-aarch64-${{ inputs.DEVICE }}-toolchain.tar"
           curl -L --fail --silent --show-error "$URL" | tar -xvf - || echo "Cache archive not found, skipping."            
+
+      # This stage has no upstream artifact to gate on, so it gates on the
+      # recipes instead: the archive records which packages it built and a
+      # digest over exactly the files calculate_stamp hashes for them, and is
+      # refused unless that digest still matches the checkout. A gcc bump
+      # rebuilds the toolchain; an emulator recipe does not touch it.
+      - name: Restore saved toolchain state
+        if: inputs.INCREMENTAL == 'yes'
+        env:
+          CACHE_REPO: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
+        run: |
+          .github/scripts/build-state.sh restore-root \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
+            state-aarch64-${{ inputs.DEVICE }}-toolchain
 
       - name: Build
         uses: corrupt952/actions-retry-command@v1.0.7
@@ -94,6 +114,8 @@ jobs:
       - name: Clean ccache
         run: |
           export CCACHE_DIR=./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache
+          ./.github/scripts/ccache-summary.sh \
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache toolchain || true
           ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -s -v
           ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -M 500M
           ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -c
@@ -115,6 +137,33 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           repository: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
         continue-on-error: true
+
+      # The same path set the artifact below carries, so a restored tree is
+      # indistinguishable from one this stage just built.
+      - name: Save toolchain state
+        run: |
+          .github/scripts/build-state.sh save-root \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
+            state-aarch64-${{ inputs.DEVICE }}-toolchain \
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain \
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/build \
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/install_* \
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.stamps
+
+      - name: Upload toolchain state
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ccache
+          files: "state-aarch64-${{ inputs.DEVICE }}-toolchain.part-*"
+          make_latest: true
+          prerelease: true
+          body: ccache
+          token: ${{ secrets.GH_PAT }}
+          repository: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
+        continue-on-error: true
+
+      - name: Drop the state archive before packing the artifact
+        run: rm -f state-aarch64-${{ inputs.DEVICE }}-toolchain.part-*
 
       - name: Compress directory
         run: |
