@@ -1,3 +1,19 @@
 seat * hide_cursor 1000
 default_border none
 exec_always mako
+
+# Every top-level window opens fullscreen on the one output.
+#
+# Without this a window opens at whatever size the toolkit picked, and on this
+# device there is no way to do anything about it: kiosk mode binds no keys, and
+# the desktop config binds everything to Mod4 plus a keyboard key that a
+# handheld does not have. ARMSX2's settings dialog is the case that found it -
+# a Qt window sized for a desktop, landing on a 1280x960 panel, with no way to
+# resize or close it.
+#
+# Launchers calling sway_fullscreen only fullscreen the window an app opens
+# first; this catches the ones it opens later, which is the half that was
+# missing. Layer-shell surfaces - mako, the wvkbd touch keyboard - are not
+# windows and are not affected.
+for_window [app_id=".*"] fullscreen enable
+for_window [class=".*"] fullscreen enable
