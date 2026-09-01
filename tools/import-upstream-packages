@@ -47,6 +47,8 @@
 #     --new          also import packages that do not exist here yet
 #                    (off by default: adding a package is a decision, not an
 #                    update, and it may pull in dependencies we do not carry)
+#     --literal      do not re-apply this fork's renames to upstream's side;
+#                    merge their text exactly as written
 #     --dry-run      report what would happen and change nothing
 #     --finish       record the import after resolving conflicts by hand.
 #                    Needed because a re-run works from the same base and so
@@ -63,6 +65,7 @@ WANT_NEW=0
 DRY_RUN=0
 THEIRS_PROJECT_OVERRIDE=""
 FINISH=0
+LITERAL=0
 
 die() { printf 'error: %s\n' "$1" >&2; exit 1; }
 
@@ -74,14 +77,27 @@ while [ $# -gt 0 ]; do
     --upstream-project) THEIRS_PROJECT_OVERRIDE="${2:-}"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     --finish) FINISH=1; shift ;;
+    --literal) LITERAL=1; shift ;;
     -h|--help) sed -n '3,/^set -euo/p' "$0" | sed 's/^# \{0,1\}//; $d'; exit 0 ;;
     *) die "unknown option: $1" ;;
   esac
 done
 
 git rev-parse --git-dir >/dev/null 2>&1 || die "not a git repository"
-git rev-parse --verify --quiet "${TO_REF}^{commit}" >/dev/null \
-  || die "cannot resolve ${TO_REF} - try: git fetch upstream"
+UPSTREAM_URL="https://github.com/ROCKNIX/distribution.git"
+
+# A fresh clone has no upstream remote at all, and telling someone in that
+# position to fetch it just fails differently. Separate the two cases.
+if ! git rev-parse --verify --quiet "${TO_REF}^{commit}" >/dev/null; then
+  remote="${TO_REF%%/*}"
+  if [ "${remote}" != "${TO_REF}" ] && ! git remote get-url "${remote}" >/dev/null 2>&1; then
+    printf 'no "%s" remote in this clone. Add it with:\n\n' "${remote}" >&2
+    printf '  git remote add %s %s\n  git fetch %s\n\n' \
+      "${remote}" "${UPSTREAM_URL}" "${remote}" >&2
+    die "no ${remote} remote"
+  fi
+  die "cannot resolve ${TO_REF} - try: git fetch ${TO_REF%%/*}"
+fi
 
 # Where the recipes live on each side. Read, not assumed, so a later rename on
 # either side does not silently stop matching.
@@ -152,6 +168,7 @@ package_root() {
 }
 
 blob_exists() { git cat-file -e "$1:$2" 2>/dev/null; }
+has_markers() { grep -q '^<<<<<<< ' "$1" 2>/dev/null; }
 # A NUL in the first few KB. Written with tr rather than grep because bash
 # cannot hold a NUL in a string, so the obvious grep pattern silently becomes
 # the empty pattern and calls every file binary. pipefail is off inside: head
@@ -162,7 +179,45 @@ is_binary() {
   [ "${n:-0}" -gt 0 ]
 }
 
-clean=() conflicted=() skipped_gone=() skipped_new=() removed=() manual=() modes=()
+clean=() conflicted=() skipped_gone=() skipped_new=() removed=() manual=() modes=() renamed=()
+
+# Rewrites base and theirs in place; prints "old -> new" per learned rename.
+apply_learned_renames() {
+  python3 - "$1" "$2" "$3" <<'PYEOF'
+import re, sys
+
+base_p, theirs_p, ours_p = sys.argv[1:4]
+read = lambda p: open(p, encoding="utf-8", errors="surrogateescape").read()
+
+# Wide enough to keep ${DEVICE}_rocknix and @DEVICE@_rocknix in one piece.
+TOKEN = re.compile(r"[A-Za-z0-9_.${}/@-]*[Rr][Oo][Cc][Kk][Nn][Ii][Xx][A-Za-z0-9_.${}/@-]*")
+
+base, ours = read(base_p), read(ours_p)
+mapping = {}
+
+# Longest first, so ${DEVICE}_rocknix is settled before any shorter token
+# inside it could be considered.
+for tok in sorted(set(TOKEN.findall(base)), key=len, reverse=True):
+    if tok in ours:
+        continue                      # still here, so this fork did not rename it
+    m = re.search("rocknix", tok, re.I)
+    pre, suf = tok[:m.start()], tok[m.end():]
+    if not pre and not suf:
+        continue                      # a bare ROCKNIX matches anything; refuse to guess
+    cand = set(re.findall(re.escape(pre) + r"([A-Za-z0-9]+)" + re.escape(suf), ours))
+    if len(cand) != 1:
+        continue                      # ambiguous or absent: cannot prove a rename
+    mapping[tok] = pre + cand.pop() + suf
+
+for src, dst in mapping.items():
+    for path in (base_p, theirs_p):
+        t = read(path)
+        if src in t:
+            open(path, "w", encoding="utf-8", errors="surrogateescape").write(
+                t.replace(src, dst))
+    print("%s -> %s" % (src, dst), file=sys.stderr)
+PYEOF
+}
 
 # Carry upstream's executable bit across. This repo already has a CI check for
 # shebang scripts that lost it, because a script running at 100644 dies with
@@ -225,6 +280,15 @@ merge_one() {
     return 0
   fi
 
+  # Merging into a file that still carries markers nests them, which is worse
+  # than useless: the second pass wraps the first pass's output. A re-run works
+  # from the same base and reproduces the same conflicts, so this is the normal
+  # path when someone re-runs before resolving.
+  if has_markers "${our_path}"; then
+    manual+=("${our_path} (unresolved markers from an earlier run)")
+    return 0
+  fi
+
   git show "${TO_SHA}:${their_path}" > "${tmp}/theirs"
   if blob_exists "${FROM_SHA}" "${their_path}"; then
     git show "${FROM_SHA}:${their_path}" > "${tmp}/base"
@@ -232,6 +296,26 @@ merge_one() {
     : > "${tmp}/base"
   fi
   cp "${our_path}" "${tmp}/ours"
+
+  # Where this fork renamed an identifier that upstream then edited on the same
+  # line, a raw merge conflicts every time upstream touches it - vitaquake2's
+  # platform=${DEVICE}_rocknix against our _portareos being the standing case.
+  #
+  # Rather than hardcode a rename table, learn it from the file in front of us:
+  # a ROCKNIX-bearing token absent from our copy, whose shape matches exactly
+  # one token in ours, is a rename this fork demonstrably already made.
+  # Applying it to BOTH sides of the base leaves upstream's real change as the
+  # only difference, and that merges.
+  #
+  # It cannot invent a rename, and it cannot touch what #9 protects: a
+  # copyright header or a PKG_URL still says ROCKNIX in our copy too, so no
+  # substitution is ever learned for it.
+  if [ "${LITERAL}" = 0 ]; then
+    learned="$(apply_learned_renames "${tmp}/base" "${tmp}/theirs" "${tmp}/ours" 2>&1 >/dev/null || true)"
+    while IFS= read -r r; do
+      [ -n "${r}" ] && renamed+=("${our_path}: ${r}")
+    done <<< "${learned}"
+  fi
 
   git merge-file -L "ours" -L "upstream ${FROM_SHA:0:10}" -L "upstream ${TO_SHA:0:10}" \
     "${tmp}/ours" "${tmp}/base" "${tmp}/theirs" >/dev/null 2>&1 || rc=$?
@@ -334,6 +418,7 @@ report "skipped, package removed from this fork" \
 report "skipped, new upstream package (use --new to take it)" ${skipped_new[@]+"${skipped_new[@]}"}
 report "removed, following upstream" ${removed[@]+"${removed[@]}"}
 report "file mode changed to match upstream" ${modes[@]+"${modes[@]}"}
+report "fork rename re-applied to upstream's side" ${renamed[@]+"${renamed[@]}"}
 
 if [ "${DRY_RUN}" = 1 ]; then
   printf '\ndry run: nothing changed.\n'
