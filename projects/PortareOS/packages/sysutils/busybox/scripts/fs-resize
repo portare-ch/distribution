@@ -48,7 +48,31 @@ if [ -e /storage/.please_resize_me ] ; then
   rm -f /storage/.please_resize_me
   sync
 
-  echo "DISK: $DISK  PART: $PART" >>$LOG
+  # Never repartition a disk we did not boot from. /storage is located by
+  # label, and a label that also exists on another disk resolves to whichever
+  # one blkid returns first, normally internal storage rather than the card.
+  # parted resizepart to 100% destroys every partition after the one it grows,
+  # so aiming it at the wrong disk wrecks that device's boot chain.
+  FLASH_PART=$(grep " /flash " /proc/mounts | cut -d" " -f1)
+  case ${FLASH_PART} in
+    "/dev/mmcblk"*|"/dev/nvme"*)
+      FLASH_DISK=$(echo ${FLASH_PART} | sed s/p[0-9]$//g)
+      ;;
+    *)
+      FLASH_DISK=$(echo ${FLASH_PART} | sed s/[0-9]$//g)
+      ;;
+  esac
+
+  echo "DISK: $DISK  PART: $PART  FLASH_DISK: $FLASH_DISK" >>$LOG
+
+  if [ -z "$FLASH_DISK" -o "$FLASH_DISK" != "$DISK" ]; then
+    echo "Storage ($DISK) is not on the boot disk ($FLASH_DISK) - resizing aborted." | tee -a $LOG
+    echo "Two installations are sharing a partition label." | tee -a $LOG
+    sync
+    mount -o remount,ro /flash
+    StartProgress countdown "Rebooting in 5s... " 5 "NOW"
+    reboot -f
+  fi
 
   # just in case
   if [ ! -z "$DISK" -a ! -z "$PART" ] ; then
