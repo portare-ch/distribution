@@ -26,6 +26,14 @@ make_target() {
   export CXX=${TARGET_NAME}-g++
   export PKG_CONFIG_ALLOW_CROSS=1
 
+  # vsprintf and libbpf-sys have build.rs scripts, which run on the build
+  # machine and so must be compiled for it. cc-rs resolves the host compiler
+  # from HOST_CC, which is already right, but falls back to CFLAGS for the
+  # flags when HOST_CFLAGS is unset - and CFLAGS here is aarch64, so x86_64
+  # gcc was handed -mabi=lp64 and -mtune=cortex-x3. config/optimize already
+  # holds the correct host flags; they just were never exported.
+  export HOST_CFLAGS HOST_CXXFLAGS
+
   cargo build --release --target ${TARGET_NAME} -p scx_lavd
 }
 
