@@ -34,18 +34,37 @@
 # Nothing here may fail a build: a missing, truncated or mismatched archive is
 # a cold build, never an error.
 #
+# Root stages (build-arm, build-aarch64-toolchain) have no upstream stage to
+# gate on: they start from a bare checkout, so there are no upstream stamps and
+# the digest above is always "no-stamps". They use the -root variants instead,
+# which gate on the recipes themselves. "save-root" records the package names
+# that were built and a digest over exactly the files calculate_stamp would
+# hash for them; "restore-root" recomputes that digest from the current
+# checkout and refuses the archive unless it matches. Change gcc's recipe and
+# the toolchain rebuilds; change an emulator's and it does not.
+#
+# The one hole in that gate is a package newly pulled into the stage's
+# dependency closure, since it cannot be in a list saved before it existed.
+# It closes in practice: the dependency has to be declared in some recipe that
+# *is* in the list, so that recipe's files change and the digest moves anyway.
+#
 # Usage:
-#   build-state.sh snapshot <build-dir>                     # prints the digest
-#   build-state.sh restore  <build-dir> <asset-base> <digest>
-#   build-state.sh save     <build-dir> <asset-base> <digest>
+#   build-state.sh snapshot     <build-dir>                     # prints the digest
+#   build-state.sh restore      <build-dir> <asset-base> <digest>
+#   build-state.sh save         <build-dir> <asset-base> <digest>
+#   build-state.sh restore-root <build-dir> <asset-base>
+#   build-state.sh save-root    <build-dir> <asset-base> {<path>... | -T <file>}
 #
 # Environment:
 #   CACHE_REPO  owner/repo holding the "ccache" release  (restore only)
+#   PROJECT     project name, for resolving recipe paths  (-root only)
+#   DEVICE      device name, for resolving recipe paths   (-root only)
 
 set -euo pipefail
 
 DIGEST_FILE=".build-state-digest"
 UPSTREAM_LIST=".build-state-upstream-list"
+RECIPE_LIST=".build-state-recipes"
 # Enough parts for any archive we produce; each is capped below GitHub's 2 GB
 # per-asset limit.
 SUFFIXES="aa ab ac ad ae af ag ah ai aj ak al"
@@ -86,10 +105,12 @@ cmd_snapshot() {
   stamp_digest "${build_dir}"
 }
 
-cmd_restore() {
-  local build_dir="$1" asset="$2" want="$3"
+# Pull every part of an asset and concatenate them into state.tar. Returns
+# non-zero when nothing was there, which every caller treats as a cold build.
+fetch_parts() {
+  local asset="$1"
   local base="https://github.com/${CACHE_REPO}/releases/download/ccache"
-  local n=0 s have
+  local n=0 s
 
   for s in ${SUFFIXES}; do
     curl -L --fail --silent --show-error -o "${asset}.part-${s}" \
@@ -99,12 +120,22 @@ cmd_restore() {
 
   if [ "${n}" -eq 0 ]; then
     rm -f "${asset}".part-* 2>/dev/null || true
-    echo "build-state: no saved state for ${asset} - building cold."
-    return 0
+    return 1
   fi
 
   cat "${asset}".part-* > state.tar
   rm -f "${asset}".part-*
+  return 0
+}
+
+cmd_restore() {
+  local build_dir="$1" asset="$2" want="$3"
+  local have
+
+  if ! fetch_parts "${asset}"; then
+    echo "build-state: no saved state for ${asset} - building cold."
+    return 0
+  fi
 
   if ! tar -xf state.tar "./${DIGEST_FILE}" 2>/dev/null; then
     rm -f state.tar
@@ -155,9 +186,144 @@ cmd_save() {
   ls -la "${asset}".part-*
 }
 
+# The files calculate_stamp (config/functions) would hash for one package: its
+# recipe directory - local and global, since a project recipe routinely sources
+# the global one - plus the project and device patch directories. Resolving
+# both copies rather than just the one that wins makes this a superset of what
+# the buildsystem hashes, which errs towards rebuilding and never away from it.
+recipe_paths() {
+  local name="$1" d
+  find "projects/${PROJECT}/packages" packages -type d -name "${name}" 2>/dev/null || true
+  for d in "projects/${PROJECT}/patches/${name}" \
+           "projects/${PROJECT}/packages/${name}" \
+           "projects/${PROJECT}/devices/${DEVICE}/patches/${name}"; do
+    [ -d "${d}" ] && printf '%s\n' "${d}"
+  done
+  return 0
+}
+
+# Always folded in, whichever packages a stage built. config/ and scripts/ are
+# the buildsystem itself, and the options files carry the variables the seven
+# packages that set PKG_STAMP interpolate into their stamps (KERNEL_TARGET,
+# UBOOT_SYSTEM), which recipe_paths alone would not see.
+global_surface() {
+  local d
+  for d in config scripts distributions \
+           "projects/${PROJECT}/options" \
+           "projects/${PROJECT}/devices/${DEVICE}/options"; do
+    [ -e "${d}" ] && printf '%s\n' "${d}"
+  done
+  return 0
+}
+
+# A digest over the recipes behind a list of package names, computed from the
+# working tree. Same shape as calculate_stamp: hash each file, sorted by path.
+recipe_digest() {
+  local list="$1" name d
+  local -a paths=()
+
+  while IFS= read -r d; do
+    [ -n "${d}" ] && paths+=("${d}")
+  done < <(global_surface)
+
+  while IFS= read -r name; do
+    [ -n "${name}" ] || continue
+    while IFS= read -r d; do
+      [ -n "${d}" ] && paths+=("${d}")
+    done < <(recipe_paths "${name}")
+  done < "${list}"
+
+  # Nothing to hash cannot be allowed to look like a match: emit a value no
+  # saved digest can equal, so the caller builds cold.
+  if [ ${#paths[@]} -eq 0 ]; then
+    echo "no-recipes"
+    return 0
+  fi
+
+  # sort -zu collapses the duplicates that fall out of resolving both the local
+  # and the global copy of a recipe.
+  find -L "${paths[@]}" -type f -not -name '.*' -print0 2>/dev/null \
+    | LC_ALL=C sort -zu \
+    | xargs -0 -r sha256sum \
+    | sha256sum \
+    | cut -d' ' -f1
+}
+
+cmd_restore_root() {
+  local build_dir="$1" asset="$2"
+  local have want
+
+  if ! fetch_parts "${asset}"; then
+    echo "build-state: no saved state for ${asset} - building cold."
+    return 0
+  fi
+
+  if ! tar --zstd -xf state.tar "./${DIGEST_FILE}" "./${RECIPE_LIST}" 2>/dev/null; then
+    rm -f state.tar "${DIGEST_FILE}" "${RECIPE_LIST}"
+    echo "build-state: archive carries no recipe manifest - building cold."
+    return 0
+  fi
+
+  have="$(cat "${DIGEST_FILE}")"
+  want="$(recipe_digest "${RECIPE_LIST}")"
+  rm -f "${DIGEST_FILE}" "${RECIPE_LIST}"
+
+  if [ "${have}" != "${want}" ]; then
+    rm -f state.tar
+    echo "build-state: recipes changed since this state was saved - building cold."
+    echo "  saved against ${have}"
+    echo "  now           ${want}"
+    return 0
+  fi
+
+  echo "build-state: recipes unchanged - restoring ${asset}."
+  tar --zstd -xf state.tar || echo "build-state: extract failed - building cold."
+  # The full extract puts the two metadata files back into the checkout; they
+  # have served their purpose and save-root writes them fresh.
+  rm -f state.tar "${DIGEST_FILE}" "${RECIPE_LIST}"
+  echo "build-state: $(find "${build_dir}/.stamps" -type f -name 'build_*' 2>/dev/null | wc -l) stamps now present."
+}
+
+cmd_save_root() {
+  local build_dir="$1" asset="$2"; shift 2
+  local digest
+
+  if [ ! -d "${build_dir}/.stamps" ]; then
+    echo "build-state: no stamps to describe - not saving."
+    return 0
+  fi
+
+  # The package names this stage ended up with are the closure it actually
+  # built, which is a better list than anything we could enumerate by hand.
+  find "${build_dir}/.stamps" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+    | LC_ALL=C sort > "${RECIPE_LIST}"
+
+  digest="$(recipe_digest "${RECIPE_LIST}")"
+  printf '%s\n' "${digest}" > "${DIGEST_FILE}"
+  echo "build-state: $(wc -l < "${RECIPE_LIST}") packages, recipe digest ${digest}."
+
+  # "-T <file>" for a stage whose archive set is easier to compute than to
+  # spell out; build-arm already builds such a list to pack its artifact, and
+  # archiving exactly the artifact's contents is what makes a restored tree
+  # indistinguishable from one this stage just built.
+  if [ "${1:-}" = "-T" ]; then
+    cat "$2" >> "${RECIPE_LIST}.paths"
+    printf '%s\n' "./${DIGEST_FILE}" "./${RECIPE_LIST}" >> "${RECIPE_LIST}.paths"
+    tar --zstd -cf - -T "${RECIPE_LIST}.paths" | split -b 1900m - "${asset}.part-"
+    rm -f "${RECIPE_LIST}.paths"
+  else
+    tar --zstd -cf - "./${DIGEST_FILE}" "./${RECIPE_LIST}" "$@" \
+      | split -b 1900m - "${asset}.part-"
+  fi
+  rm -f "${DIGEST_FILE}" "${RECIPE_LIST}"
+  ls -la "${asset}".part-*
+}
+
 case "${1:-}" in
   snapshot) shift; cmd_snapshot "$@" ;;
   restore)  shift; cmd_restore  "$@" ;;
   save)     shift; cmd_save     "$@" ;;
-  *) echo "usage: build-state.sh {snapshot|restore|save} ..." >&2; exit 2 ;;
+  restore-root) shift; cmd_restore_root "$@" ;;
+  save-root)    shift; cmd_save_root    "$@" ;;
+  *) echo "usage: build-state.sh {snapshot|restore|save|restore-root|save-root} ..." >&2; exit 2 ;;
 esac
