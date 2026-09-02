@@ -20,7 +20,11 @@ on:
 
 jobs:
   build-aarch64-mame-lr:
-    timeout-minutes: 240
+    # GitHub's ceiling for a hosted job is 360. MAME is the one package in
+    # the tree that cannot be compiled from a cold cache inside that window,
+    # so this stage needs every minute it can get and a way to keep what it
+    # compiled when it still does not make it (see the ccache steps below).
+    timeout-minutes: 360
     runs-on: ubuntu-24.04
     env:
       AUTOREMOVE: "yes"
@@ -111,7 +115,16 @@ jobs:
             output.log
             ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.threads/logs/
 
+      # These three also run when the job is cancelled by its timeout, and only
+      # then - a build that fails on its own merits still saves nothing. MAME
+      # from a cold cache does not fit in one job, so without this a timed-out
+      # run threw away everything it compiled and the next run started cold
+      # again, forever. A timed-out run's cache is the restored one plus what
+      # was added, so there is no good cache for it to overwrite. After
+      # cancellation GitHub allows five minutes for the remaining steps; the
+      # 500 MB cap below is what makes clean + tar + upload fit in that.
       - name: Clean ccache
+        if: success() || cancelled()
         run: |
           export CCACHE_DIR=./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache
           ./.github/scripts/ccache-summary.sh \
@@ -123,10 +136,12 @@ jobs:
           ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/toolchain/bin/ccache -z
 
       - name: Tar ccache
+        if: success() || cancelled()
         run: |
            tar -cf ccache-aarch64-${{ inputs.DEVICE }}-mame.tar ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.ccache  
 
       - name: Save ccache
+        if: success() || cancelled()
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ccache
