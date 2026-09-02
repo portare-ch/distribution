@@ -29,9 +29,14 @@ PKG_SOUND="espeak libao"
 
 PKG_SYNC="synctools"
 
-# scx_lavd, the sched_ext scheduler. Its unit is gated on
-# /sys/kernel/btf/vmlinux, so a kernel built without BTF simply skips it.
-PKG_TOOLS="patchelf i2c-tools evtest scx-scheds"
+# scx-scheds (scx_lavd, the sched_ext scheduler) is out of the image until
+# the fork has completed a full build once. Its cargo build scripts run inside
+# a cross-compile environment that was never designed for them, and each fix
+# has only revealed the next layer, three hours a run. Everything after it in
+# the build order has never been exercised, so it is pulled out to let the
+# rest of the tree prove itself. Re-add "scx-scheds" here to bring it back;
+# its unit is gated on /sys/kernel/btf/vmlinux either way.
+PKG_TOOLS="patchelf i2c-tools evtest"
 
 PKG_DEBUG="debug"
 
