@@ -192,6 +192,23 @@ execute_kill() {
   fi
 }
 
+### Close the focused window, leaving the application running.
+#
+# The only gamepad escape from a stuck window was A+B+C, which killalls the
+# whole process named in .process-kill-data. That is right for a wedged
+# emulator and wrong for a dialog the emulator itself opened, because it takes
+# the game down with it. This closes just what is focused.
+#
+# swaymsg works from here because the sway package patches in a static IPC
+# socket path, which is the same reason sway_fullscreen can be called from a
+# launcher script.
+close_window() {
+  if echo "${UI_SERVICE}" | grep -q "sway"; then
+    ${DEBUG} && log $0 "Closing the focused window"
+    swaymsg kill
+  fi
+}
+
 execute_action() {
   ${DEBUG} && log $0 "${1}|${FN_A_PRESSED}|${FN_B_PRESSED}|${DPAD_UP_PRESSED}|${DPAD_DOWN_PRESSED}|${DPAD_RIGHT_PRESSED}|${DPAD_LEFT_PRESSED}"
   if [ "${FN_A_PRESSED}" = true ] && [ "${FN_B_PRESSED}" = true ]; then
@@ -484,6 +501,9 @@ set +e
           # Display notification if 'success' exit code
           SCREENSHOT_SUCCESS=$?
           [ "$SCREENSHOT_SUCCESS" -eq 0 ] && /usr/bin/mako-notify "Screenshot Saved" -no-ra
+        elif [ "${FN_A_PRESSED}" = true ]; then
+          ${DEBUG} && log $0 "${FUNCTION_HOTKEY_BTN_EAST_EVENT}: Close window"
+          close_window
         fi
       ;;
      (${FUNCTION_HOTKEY_BTN_WEST_EVENT})
