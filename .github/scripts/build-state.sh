@@ -158,8 +158,35 @@ cmd_restore() {
   # one the upstream artifacts just delivered; extracting over them is a no-op,
   # and this stage's own stamps and packages come back.
   echo "build-state: upstream unchanged - restoring ${asset}."
+
+  # Host and bootstrap stamps present right now came from the upstream
+  # artifacts, and their toolchain/ output came with them, so they are real.
+  # Any that only appear after extracting the archive are phantoms: archives
+  # saved before cmd_save learned to leave host stamps out carry them, but
+  # never the toolchain/ output behind them. A restored build_host stamp with
+  # nothing behind it is a package scripts/build will skip and nothing will
+  # provide, which is how the image stage came to call a depmod that did not
+  # exist. Dropping only the newcomers rebuilds those, and leaves llvm:host
+  # and the rest of the toolchain stage's work alone.
+  local before after dropped
+  before=$(mktemp); after=$(mktemp)
+  find "${build_dir}/.stamps" -type f \( -name 'build_host' -o -name 'build_bootstrap' \) 2>/dev/null \
+    | LC_ALL=C sort > "${before}"
+
   tar -xf state.tar || echo "build-state: extract failed - building cold."
   rm -f state.tar
+
+  find "${build_dir}/.stamps" -type f \( -name 'build_host' -o -name 'build_bootstrap' \) 2>/dev/null \
+    | LC_ALL=C sort > "${after}"
+  LC_ALL=C comm -13 "${before}" "${after}" > "${after}.new"
+  dropped=$(wc -l < "${after}.new")
+  if [ "${dropped}" -gt 0 ]; then
+    xargs -r rm -f -- < "${after}.new"
+    echo "build-state: dropped ${dropped} host stamps the archive brought without their toolchain/ output:"
+    sed 's/^/  /' "${after}.new"
+  fi
+  rm -f "${before}" "${after}" "${after}.new"
+
   echo "build-state: $(find "${build_dir}/.stamps" -type f -name 'build_*' 2>/dev/null | wc -l) stamps now present."
 }
 
@@ -178,7 +205,18 @@ cmd_save() {
 
   printf '%s\n' "${digest}" > "${DIGEST_FILE}"
   printf '%s\n' "./${DIGEST_FILE}" >> "${list}"
-  printf '%s\n' "${build_dir}/.stamps" >> "${list}"
+
+  # Only stamps whose output this archive actually carries. target and init
+  # packages install under install_*, which is archived above. host and
+  # bootstrap packages install into toolchain/, which is not: a restored
+  # build_host stamp told scripts/build that kmod:host was already built while
+  # toolchain/bin/kmod did not exist, and every stage downstream inherited a
+  # toolchain with a phantom kmod until scripts/image called depmod. Leaving
+  # those stamps out means host packages rebuild on an incremental run, which
+  # ccache makes cheap, and which is the only correct answer without a
+  # manifest of what each host package put into toolchain/.
+  find "${build_dir}/.stamps" -type f \
+    \( -name 'build_target' -o -name 'build_init' \) >> "${list}"
 
   echo "build-state: archiving $(wc -l < "${list}") paths."
   tar -cf - -T "${list}" | split -b 1900m - "${asset}.part-"
