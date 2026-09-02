@@ -6,7 +6,7 @@ PKG_VERSION="b2cd800ecc621eb556148a1b1c6b740e71091128"   # v1.1.3
 PKG_LICENSE="GPL-2.0"
 PKG_SITE="https://github.com/sched-ext/scx"
 PKG_URL="${PKG_SITE}.git"
-PKG_DEPENDS_TARGET="toolchain cargo:host cargo rust llvm:host elfutils zlib"
+PKG_DEPENDS_TARGET="toolchain cargo:host cargo rust llvm:host elfutils:host zlib:host elfutils zlib"
 PKG_LONGDESC="scx_lavd, the latency-aware sched_ext scheduler, for the Nova's big.LITTLE layout."
 PKG_TOOLCHAIN="manual"
 
@@ -54,6 +54,27 @@ make_target() {
   # no aarch64 lookups appear anywhere in the build log. So pkg-config goes
   # back to host defaults for this invocation.
   unset PKG_CONFIG_LIBDIR PKG_CONFIG_PATH PKG_CONFIG_SYSROOT_DIR PKG_CONFIG_SYSROOT_BASE
+
+  # scx_utils and scx_arena have build scripts that link libbpf-sys, which
+  # always emits "-lelf -lz" for that host link and searches only its own out
+  # dir. The container has neither development library, only the runtime
+  # libelf.so.1 that dwarves drags in, so the link failed with "cannot find
+  # -lelf". The toolchain has both, from elfutils:host and zlib:host, and
+  # libbpf-sys takes extra search paths from LIBBPF_SYS_LIBRARY_PATH.
+  #
+  # Only the static archives are exposed, deliberately. The toolchain's
+  # elfutils (0.195) is newer than the container's (0.190), and cargo does not
+  # put this path on LD_LIBRARY_PATH when it runs the build script, so one
+  # linked against the newer libelf.so would load the older one at runtime and
+  # trip over versioned symbols. Linking libelf.a and libz.a leaves nothing to
+  # resolve at runtime at all.
+  local hostlibs="${PKG_BUILD}/.host-static-libs"
+  mkdir -p "${hostlibs}"
+  for lib in libelf.a libz.a; do
+    [ -f "${TOOLCHAIN}/lib/${lib}" ] || die "scx-scheds: ${TOOLCHAIN}/lib/${lib} is missing - elfutils:host or zlib:host did not install a static library"
+    ln -sf "${TOOLCHAIN}/lib/${lib}" "${hostlibs}/${lib}"
+  done
+  export LIBBPF_SYS_LIBRARY_PATH="${hostlibs}"
 
   cargo build --release --target ${TARGET_NAME} -p scx_lavd
 }
