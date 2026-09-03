@@ -64,6 +64,8 @@ set -euo pipefail
 
 DIGEST_FILE=".build-state-digest"
 UPSTREAM_LIST=".build-state-upstream-list"
+UPSTREAM_TC_LIST=".build-state-upstream-toolchain-list"
+TOOLCHAIN_MARKER=".build-state-has-toolchain"
 RECIPE_LIST=".build-state-recipes"
 # Enough parts for any archive we produce; each is capped below GitHub's 2 GB
 # per-asset limit.
@@ -98,10 +100,22 @@ install_entries() {
     -exec find {} -mindepth 1 -maxdepth 1 \; 2>/dev/null | LC_ALL=C sort
 }
 
+# Every file and symlink under toolchain/, as they stand right now. A package's
+# build output has three homes: install_* for the image, toolchain/ for host
+# packages, and toolchain/<triple>/sysroot for the headers and libraries other
+# packages build against. Saving only install_* produced restored trees where
+# SDL2's stamp said built, its image files were there, and there was no SDL.h
+# for amiberry to compile against.
+toolchain_entries() {
+  local build_dir="$1"
+  find "${build_dir}/toolchain" -mindepth 1 \( -type f -o -type l \) 2>/dev/null | LC_ALL=C sort
+}
+
 cmd_snapshot() {
   local build_dir="$1"
   install_entries "${build_dir}" > "${UPSTREAM_LIST}"
-  echo "build-state: $(wc -l < "${UPSTREAM_LIST}") install entries came from upstream." >&2
+  toolchain_entries "${build_dir}" > "${UPSTREAM_TC_LIST}"
+  echo "build-state: $(wc -l < "${UPSTREAM_LIST}") install entries and $(wc -l < "${UPSTREAM_TC_LIST}") toolchain files came from upstream." >&2
   stamp_digest "${build_dir}"
 }
 
@@ -154,38 +168,27 @@ cmd_restore() {
     return 0
   fi
 
+  # A package's build output has three homes: install_* for the image,
+  # toolchain/ for host packages, and toolchain/<triple>/sysroot for what
+  # other packages build against. Archives saved before cmd_save learned to
+  # carry the toolchain/ part hold stamps for packages whose output is only
+  # partly present: kmod:host with no toolchain/bin/kmod, SDL2 with its image
+  # files but no SDL.h. scripts/build trusts the stamp and skips the package,
+  # nothing provides the rest, and the failure lands packages later, in
+  # amiberry or in scripts/image calling depmod. Such an archive cannot be
+  # used at all. Building cold once is what produces a complete one.
+  if ! tar -tf state.tar "./${TOOLCHAIN_MARKER}" >/dev/null 2>&1; then
+    rm -f state.tar
+    echo "build-state: archive predates toolchain/ output and is incomplete - building cold."
+    return 0
+  fi
+
   # The digests match, so every stamp in the archive is byte-identical to the
   # one the upstream artifacts just delivered; extracting over them is a no-op,
-  # and this stage's own stamps and packages come back.
+  # and this stage's own stamps, packages and toolchain additions come back.
   echo "build-state: upstream unchanged - restoring ${asset}."
-
-  # Host and bootstrap stamps present right now came from the upstream
-  # artifacts, and their toolchain/ output came with them, so they are real.
-  # Any that only appear after extracting the archive are phantoms: archives
-  # saved before cmd_save learned to leave host stamps out carry them, but
-  # never the toolchain/ output behind them. A restored build_host stamp with
-  # nothing behind it is a package scripts/build will skip and nothing will
-  # provide, which is how the image stage came to call a depmod that did not
-  # exist. Dropping only the newcomers rebuilds those, and leaves llvm:host
-  # and the rest of the toolchain stage's work alone.
-  local before after dropped
-  before=$(mktemp); after=$(mktemp)
-  find "${build_dir}/.stamps" -type f \( -name 'build_host' -o -name 'build_bootstrap' \) 2>/dev/null \
-    | LC_ALL=C sort > "${before}"
-
   tar -xf state.tar || echo "build-state: extract failed - building cold."
-  rm -f state.tar
-
-  find "${build_dir}/.stamps" -type f \( -name 'build_host' -o -name 'build_bootstrap' \) 2>/dev/null \
-    | LC_ALL=C sort > "${after}"
-  LC_ALL=C comm -13 "${before}" "${after}" > "${after}.new"
-  dropped=$(wc -l < "${after}.new")
-  if [ "${dropped}" -gt 0 ]; then
-    xargs -r rm -f -- < "${after}.new"
-    echo "build-state: dropped ${dropped} host stamps the archive brought without their toolchain/ output:"
-    sed 's/^/  /' "${after}.new"
-  fi
-  rm -f "${before}" "${after}" "${after}.new"
+  rm -f state.tar "${TOOLCHAIN_MARKER}"
 
   echo "build-state: $(find "${build_dir}/.stamps" -type f -name 'build_*' 2>/dev/null | wc -l) stamps now present."
 }
@@ -203,24 +206,30 @@ cmd_save() {
     install_entries "${build_dir}" > "${list}"
   fi
 
+  # Whatever this stage added under toolchain/: host package binaries and the
+  # sysroot headers and libraries its target packages installed. Files the
+  # upstream artifacts already had are left out, since they arrive with those
+  # artifacts on the next run. A file upstream had and this stage rewrote in
+  # place is not caught; nothing in the tree does that today.
+  if [ -f "${UPSTREAM_TC_LIST}" ]; then
+    toolchain_entries "${build_dir}" | LC_ALL=C comm -23 - "${UPSTREAM_TC_LIST}" >> "${list}"
+  else
+    echo "build-state: no upstream toolchain snapshot - saving every toolchain file." >&2
+    toolchain_entries "${build_dir}" >> "${list}"
+  fi
+
   printf '%s\n' "${digest}" > "${DIGEST_FILE}"
   printf '%s\n' "./${DIGEST_FILE}" >> "${list}"
 
-  # Only stamps whose output this archive actually carries. target and init
-  # packages install under install_*, which is archived above. host and
-  # bootstrap packages install into toolchain/, which is not: a restored
-  # build_host stamp told scripts/build that kmod:host was already built while
-  # toolchain/bin/kmod did not exist, and every stage downstream inherited a
-  # toolchain with a phantom kmod until scripts/image called depmod. Leaving
-  # those stamps out means host packages rebuild on an incremental run, which
-  # ccache makes cheap, and which is the only correct answer without a
-  # manifest of what each host package put into toolchain/.
-  find "${build_dir}/.stamps" -type f \
-    \( -name 'build_target' -o -name 'build_init' \) >> "${list}"
+  # Tells restore that this archive carries toolchain output, so the stamps
+  # for host packages in it can be trusted.
+  : > "${TOOLCHAIN_MARKER}"
+  printf '%s\n' "./${TOOLCHAIN_MARKER}" >> "${list}"
+  printf '%s\n' "${build_dir}/.stamps" >> "${list}"
 
   echo "build-state: archiving $(wc -l < "${list}") paths."
   tar -cf - -T "${list}" | split -b 1900m - "${asset}.part-"
-  rm -f "${DIGEST_FILE}" "${list}"
+  rm -f "${DIGEST_FILE}" "${TOOLCHAIN_MARKER}" "${list}"
   ls -la "${asset}".part-*
 }
 
