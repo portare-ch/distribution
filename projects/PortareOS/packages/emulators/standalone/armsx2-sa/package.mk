@@ -102,6 +102,13 @@ makeinstall_target() {
   mkdir -p ${INSTALL}/usr/config
   cp -rf ${PKG_DIR}/config/common/ARMSX2 ${INSTALL}/usr/config
 
+  # The generic config is right for the Nova as it stands (#15): nothing in
+  # PCSX2.ini names a resolution, AspectRatio "Auto 4:3/3:2" fills the 4:3
+  # panel, the launcher passes -fullscreen so StartFullscreen=false is moot,
+  # and IntegerScaling stays off: PCSX2 scales the internal framebuffer in
+  # whole multiples, which on a 1280x960 window means 1024x896 for a 512x448
+  # game and no gain in a 3D title. The window-management side of
+  # StartFullscreen belongs to the sway issue (#11).
   case ${DEVICE} in
     S922X)
       cp -rf ${PKG_DIR}/config/S922X/ARMSX2 ${INSTALL}/usr/config
