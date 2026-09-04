@@ -51,6 +51,20 @@
 #                    merge their text exactly as written
 #     --dry-run      report what would happen and change nothing
 #     --finish       record the import after resolving conflicts by hand.
+#
+# Two things are never imported, and are reported rather than merged:
+#
+#   * Packages listed in .upstream-ignore. Ours are not merely renamed
+#     copies of theirs; some are rewritten far enough that upstream's version
+#     would be a regression. The kernel is the standing example.
+#
+#   * Files under a directory named after a board or architecture this fork
+#     does not build: patches/RK3588, config/H700, scripts/AMD64 and so on.
+#     The buildsystem only ever reads the directory matching the device and
+#     architecture being built, so for a single-device fork these are dead
+#     weight that would otherwise come back with every import. The board list
+#     is read from upstream's devices/ at the imported commit and ours from
+#     our own, so it follows both trees.
 #                    Needed because a re-run works from the same base and so
 #                    reproduces the same conflicts; this is how you say you
 #                    have dealt with them. Refuses while markers remain.
@@ -59,6 +73,11 @@
 set -euo pipefail
 
 SYNC_FILE=".upstream-sync"
+# Packages never imported, one name per line. For recipes this fork has
+# rewritten so far that upstream's version is not an update but a regression:
+# the kernel above all, whose config, options assertion and scheduler work
+# would be undone by every import.
+IGNORE_FILE=".upstream-ignore"
 TO_REF="upstream/next"
 FROM_REF=""
 WANT_NEW=0
@@ -152,6 +171,35 @@ map_path() {
   esac
 }
 
+# Packages pinned in this fork: never imported.
+declare -A PINNED=()
+if [ -f "${IGNORE_FILE}" ]; then
+  while read -r name; do
+    name="${name%%#*}"; name="${name// /}"
+    [ -n "${name}" ] && PINNED["${name}"]=1
+  done < "${IGNORE_FILE}"
+fi
+
+# Directory names that mean "some other board or architecture": every device
+# upstream has at the imported commit that we do not, plus the architectures
+# we do not build. Ours come from projects/<us>/devices; theirs from theirs.
+# arm stays out of the list: build-arm still produces the 32-bit sysroot.
+declare -A FOREIGN=()
+for d in $(git ls-tree -d --name-only "${TO_SHA}" "${THEIRS_PROJECT}/devices/" 2>/dev/null | xargs -rn1 basename); do
+  [ -d "${OURS_PROJECT}/devices/${d}" ] || FOREIGN["${d}"]=1
+done
+for a in x86 x86_64 riscv64; do FOREIGN["${a}"]=1; done
+
+# Does any directory component of a path within a package name a foreign
+# board or arch? Prints the component.
+foreign_component() {
+  local IFS=/ seg
+  for seg in $1; do
+    [ -n "${FOREIGN[${seg}]:-}" ] && { printf '%s\n' "${seg}"; return 0; }
+  done
+  return 1
+}
+
 # The nearest ancestor holding a package.mk is the package. Depth varies -
 # emulators/libretro/dolphin-lr sits a level deeper than sysutils/btop - so
 # this walks rather than counting slashes.
@@ -179,7 +227,7 @@ is_binary() {
   [ "${n:-0}" -gt 0 ]
 }
 
-clean=() conflicted=() skipped_gone=() skipped_new=() removed=() manual=() modes=() renamed=()
+clean=() conflicted=() skipped_gone=() skipped_new=() skipped_pinned=() skipped_board=() removed=() manual=() modes=() renamed=()
 
 # Rewrites base and theirs in place; prints "old -> new" per learned rename.
 apply_learned_renames() {
@@ -372,6 +420,16 @@ while IFS=$'\t' read -r status a b; do
       skipped_gone+=("${our_root#${OURS_PROJECT}/packages/}")
       continue
     fi
+    # A package pinned in this fork is never touched.
+    if [ -n "${PINNED[$(basename "${their_root}")]:-}" ]; then
+      skipped_pinned+=("${our_root#${OURS_PROJECT}/packages/}")
+      continue
+    fi
+    # A file under a directory named for a board or arch we do not build.
+    if seg="$(foreign_component "${their_path#${their_root}/}")"; then
+      skipped_board+=("${our_path} (${seg})")
+      continue
+    fi
   elif [ ! -e "${our_path}" ] && [ "${WANT_NEW}" = 0 ]; then
     skipped_new+=("${our_path}")
     continue
@@ -408,13 +466,19 @@ printf 'removed:         %d\n' "${#removed[@]}"
 gone_pkgs=0
 [ ${#skipped_gone[@]} -gt 0 ] && \
   gone_pkgs="$(printf '%s\n' "${skipped_gone[@]}" | LC_ALL=C sort -u | grep -c .)"
-printf 'skipped:         %d\n' "$(( gone_pkgs + ${#skipped_new[@]} ))"
+pinned_pkgs=0
+[ ${#skipped_pinned[@]} -gt 0 ] && \
+  pinned_pkgs="$(printf '%s\n' "${skipped_pinned[@]}" | LC_ALL=C sort -u | grep -c .)"
+printf 'skipped:         %d\n' "$(( gone_pkgs + pinned_pkgs + ${#skipped_new[@]} + ${#skipped_board[@]} ))"
 printf 'needs a human:   %d\n' "${#manual[@]}"
 
 report "conflicted - resolve the markers" ${conflicted[@]+"${conflicted[@]}"}
 report "needs a human" ${manual[@]+"${manual[@]}"}
 report "skipped, package removed from this fork" \
   $( [ ${#skipped_gone[@]} -gt 0 ] && printf '%s\n' "${skipped_gone[@]}" | sort -u )
+report "skipped, pinned in ${IGNORE_FILE}" \
+  $( [ ${#skipped_pinned[@]} -gt 0 ] && printf '%s\n' "${skipped_pinned[@]}" | sort -u )
+report "skipped, for a board or arch this fork does not build" ${skipped_board[@]+"${skipped_board[@]}"}
 report "skipped, new upstream package (use --new to take it)" ${skipped_new[@]+"${skipped_new[@]}"}
 report "removed, following upstream" ${removed[@]+"${removed[@]}"}
 report "file mode changed to match upstream" ${modes[@]+"${modes[@]}"}
