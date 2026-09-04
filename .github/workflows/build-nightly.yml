@@ -262,10 +262,17 @@ jobs:
       # Matches PortareOS-image-SM8550-20260830 and whatever the images are
       # called after the rebranding, without also matching the failure logs,
       # which end in "-image)" rather than "-image-".
+      # Must not be "*-image-*". That also matches PortareOS-base-image-*, the
+      # intermediate image build-aarch64 uploads before any emulator exists.
+      # Both artifacts contain a file called PortareOS-<device>.<arch>-<date>.img.gz,
+      # and merge-multiple flattens them onto the same path, so one lands on top
+      # of the other and the .sha256 published alongside belongs to whichever
+      # lost. That is how nightly-20260904-31 shipped an .img.gz that gunzip
+      # refuses within the first megabyte.
       - name: Download images
         uses: actions/download-artifact@v8
         with:
-          pattern: "*-image-*"
+          pattern: "PortareOS-image-*"
           merge-multiple: true
 
       - name: Download update packages
@@ -304,10 +311,31 @@ jobs:
           fi
           printf 'publishing %s\n' "${FILES[@]}"
 
+          # Two files with one name means an artifact pattern collided and the
+          # winner is whichever was written last. Refuse rather than publish it.
+          if [ "$(printf '%s\n' "${FILES[@]}" | xargs -n1 basename | sort | uniq -d)" ]; then
+            echo "Duplicate basenames among the downloaded files:" >&2
+            printf '%s\n' "${FILES[@]}" | xargs -n1 basename | sort | uniq -d >&2
+            exit 1
+          fi
+
+          # Check every image against the checksum published beside it. The
+          # build wrote both, so a mismatch here means they stopped being the
+          # same file somewhere between the build and this runner. Cheap, and
+          # it is the check that would have caught nightly-20260904-31 before
+          # anyone downloaded 1.5 GB of it.
+          for sum in *.sha256; do
+            [ -e "${sum}" ] || continue
+            if ! sha256sum -c "${sum}"; then
+              echo "${sum} does not match the file beside it - refusing to publish." >&2
+              exit 1
+            fi
+          done
+
           {
             echo "Built from \`${GITHUB_SHA}\` on \`${GITHUB_REF_NAME}\`."
             echo
-            echo "A personal fork of PortareOS for the Retroid Pocket Nova (SM8550)."
+            echo "A personal fork for the Retroid Pocket Nova (SM8550)."
             echo "Write the .img.gz to a microSD card. See https://os.portare.org"
             echo "for installation steps."
           } > release-notes.md
