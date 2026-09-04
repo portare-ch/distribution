@@ -171,7 +171,8 @@ map_path() {
   esac
 }
 
-# Packages pinned in this fork: never imported.
+# Pinned in this fork, never imported: package names, or single files by
+# their upstream path below packages/ (entries with a slash).
 declare -A PINNED=()
 if [ -f "${IGNORE_FILE}" ]; then
   while read -r name; do
@@ -412,6 +413,14 @@ while IFS=$'\t' read -r status a b; do
 
   our_path="$(map_path "${their_path}" || true)"
   [ -n "${our_path}" ] || continue
+
+  # A file pinned by its upstream path is never touched, whether or not the
+  # package around it is imported.
+  their_rel="${their_path#${THEIRS_PROJECT}/}"; their_rel="${their_rel#packages/}"
+  if [ -n "${PINNED[${their_rel}]:-}" ]; then
+    skipped_pinned+=("${their_rel}")
+    continue
+  fi
 
   # A package we removed stays removed, whatever upstream does to it.
   if their_root="$(package_root "${TO_SHA}" "${their_path}" 2>/dev/null)"; then

@@ -1,7 +1,12 @@
-# Packages tools/import-upstream-packages never imports, one per line.
-# For recipes this fork has rewritten far enough that upstream's version
-# would be a regression rather than an update.
+# What tools/import-upstream-packages never imports, one per line: a package
+# name, or a single file by its upstream path below packages/. For recipes
+# this fork has rewritten far enough that upstream's version would be a
+# regression rather than an update, and for files this fork has removed.
 
 # Kernel: our config, the kernel_options assertion and the sched_ext work
 # live here. Version bumps are taken by hand.
 linux
+
+# The state machine for devices without working suspend. Removed; the Nova
+# suspends for real and its power key is owned by the SM8550 power-handler.
+rocknix/sources/scripts/rocknix-fake-suspend
