@@ -25,7 +25,9 @@ import os
 import re
 import sys
 
-ASSIGN = re.compile(r'^([A-Z_][A-Z0-9_]*)\s*\+?=\s*"([^"]*)"', re.M | re.S)
+# Leading whitespace is allowed: virtual/emulators builds LIBRETRO_CORES up
+# inside case branches, indented, and a column-0 match saw none of those.
+ASSIGN = re.compile(r'^\s*([A-Z_][A-Z0-9_]*)\s*\+?=\s*"([^"]*)"', re.M | re.S)
 DEPEND = re.compile(r'PKG_DEPENDS_[A-Z]+\s*\+?=\s*"([^"]*)"', re.S)
 VARREF = re.compile(r'\$\{([A-Z_][A-Z0-9_]*)\}')
 

@@ -10,3 +10,6 @@ linux
 # The state machine for devices without working suspend. Removed; the Nova
 # suspends for real and its power key is owned by the SM8550 power-handler.
 rocknix/sources/scripts/rocknix-fake-suspend
+
+# Amiga core we do not use; puae covers it. Removed.
+uae4arm-lr
