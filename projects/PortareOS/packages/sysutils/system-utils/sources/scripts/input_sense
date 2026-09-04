@@ -24,13 +24,11 @@ case $(get_setting system.loglevel) in
   ;;
 esac
 
-### Power and lid keys go to fake suspend unless the platform ships its own
-### handler. portareos-fake-suspend exists for devices that cannot sleep and it
-### assumes nothing else will suspend underneath it, so a platform with working
-### hardware suspend needs its own policy rather than that state machine.
-POWER_HANDLER="/usr/bin/portareos-fake-suspend"
-[ -x "/usr/lib/autostart/quirks/platforms/${HW_DEVICE}/bin/power-handler" ] && \
-  POWER_HANDLER="/usr/lib/autostart/quirks/platforms/${HW_DEVICE}/bin/power-handler"
+### Power and lid keys go to the platform's handler. There is no generic
+### fallback: the fake-suspend state machine for devices that cannot sleep is
+### gone, the Nova suspends for real.
+POWER_HANDLER="/usr/lib/autostart/quirks/platforms/${HW_DEVICE}/bin/power-handler"
+[ -x "${POWER_HANDLER}" ] || POWER_HANDLER=true
 
 ### Define matching values from evtest, but allow them to be overridden in system.cfg.
 KEY_VOLUME_UP=$(get_setting key.volume.up)

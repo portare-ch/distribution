@@ -156,7 +156,10 @@ fi
 rm -f "${DOLPHIN_CFG}/GamecubeControllerProfiles/GCPadNew.ini.east" \
       "${DOLPHIN_CFG}/GamecubeControllerProfiles/GCPadNew.ini.south"
 
-# Turning off the display via DPMS in portareos-fake-suspend is problematic on
-# some platforms, so delete the setting. It is disabled by default, but can
-# be used on an opt-in basis
-sed -i "/system.suspend.dpms/d" /storage/.config/system/configs/system.cfg
+# portareos-fake-suspend is gone (the Nova suspends for real), and with it
+# its settings.
+for KEY in system.suspend.enable system.suspend.enable_timed_shutdown \
+           system.suspend.park_cores system.suspend.dpms \
+           system.shutdown_delay system.shutdown_delay_running_game; do
+  sed -i "/^${KEY}=/d" /storage/.config/system/configs/system.cfg
+done
