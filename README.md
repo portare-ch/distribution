@@ -28,7 +28,7 @@ Where this is going next is in [ROADMAP.md](ROADMAP.md).
 
 This fork has diverged deliberately and does not track upstream closely.
 
-Everything that is not SM8550 has been removed from the tree: the other twelve device trees, the nine non-ROCKNIX hardware projects inherited from the LibreELEC lineage, the LEIoT and LibreELEC distributions, Kodi, and the unbuilt addon set. The in-tree identifiers are renamed to PortareOS, and [emulationstation-next](https://github.com/portare-ch/emulationstation-next) is built from a fork rather than from ROCKNIX's copy.
+Everything that is not SM8550 has been removed from the tree: the other twelve device projects, the per-device configuration, patches and hardware quirks that packages carried for every other handheld, the weston compositor path, the nine non-ROCKNIX hardware projects inherited from the LibreELEC lineage, the LEIoT and LibreELEC distributions, Kodi, and the unbuilt addon set. Two things are deliberately still there: `case ${DEVICE}` branches inside recipes shared with upstream, because they are inert with only one device and editing them would conflict on every import, and the other SM8550 device trees, which are tracked in [#9](https://github.com/portare-ch/distribution/issues/9). The in-tree identifiers are renamed to PortareOS, and [emulationstation-next](https://github.com/portare-ch/emulationstation-next) is built from a fork rather than from ROCKNIX's copy.
 
 The practical consequence is that merging from upstream now takes real work, and that is an accepted trade. Individual fixes here may still be worth offering upstream on their own; the tree as a whole is not.
 
