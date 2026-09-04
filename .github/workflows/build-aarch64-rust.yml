@@ -74,14 +74,16 @@ jobs:
             state-aarch64-${{ inputs.DEVICE }}-rust \
             "${{ steps.upstream.outputs.digest }}"
 
-      - name: Build cargo:host
+      # scx-scheds is built here, next to the rust toolchain it needs, rather
+      # than in the image stage; see PKG_SCHED in the image package.
+      - name: Build cargo:host and scx-scheds
         uses: corrupt952/actions-retry-command@v1.0.7
         with:
           command: |
             ./scripts/get_env > .env
             set -e
             { docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/portareos-build:latest" \
-              bash -c "./scripts/build_mt cargo:host"; echo $? > docker_exit_code; } | tee output.log | grep -E  --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
+              bash -c "./scripts/build_mt cargo:host scx-scheds"; echo $? > docker_exit_code; } | tee output.log | grep -E  --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
             exit_code=$(<docker_exit_code)
             exit $exit_code
           max_attempts: 6

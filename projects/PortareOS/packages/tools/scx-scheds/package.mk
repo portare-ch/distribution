@@ -6,7 +6,7 @@ PKG_VERSION="b2cd800ecc621eb556148a1b1c6b740e71091128"   # v1.1.3
 PKG_LICENSE="GPL-2.0"
 PKG_SITE="https://github.com/sched-ext/scx"
 PKG_URL="${PKG_SITE}.git"
-PKG_DEPENDS_TARGET="toolchain cargo:host cargo rust llvm:host elfutils:host zlib:host elfutils zlib"
+PKG_DEPENDS_TARGET="toolchain cargo:host cargo rust llvm:host elfutils:host zlib:host zstd:host elfutils zlib"
 PKG_LONGDESC="scx_lavd, the latency-aware sched_ext scheduler, for the Nova's big.LITTLE layout."
 PKG_TOOLCHAIN="manual"
 
@@ -68,13 +68,37 @@ make_target() {
   # linked against the newer libelf.so would load the older one at runtime and
   # trip over versioned symbols. Linking libelf.a and libz.a leaves nothing to
   # resolve at runtime at all.
+  #
+  # elfutils:host finds zstd:host (built earlier, for the toolchain) and
+  # compiles libelf with zstd section compression, so libelf.a references
+  # ZSTD_* that "-lelf -lz" does not resolve. A static archive carries no
+  # dependency list, so the libzstd.a objects are folded into the libelf.a
+  # exposed here instead.
   local hostlibs="${PKG_BUILD}/.host-static-libs"
   mkdir -p "${hostlibs}"
-  for lib in libelf.a libz.a; do
-    [ -f "${TOOLCHAIN}/lib/${lib}" ] || die "scx-scheds: ${TOOLCHAIN}/lib/${lib} is missing - elfutils:host or zlib:host did not install a static library"
-    ln -sf "${TOOLCHAIN}/lib/${lib}" "${hostlibs}/${lib}"
+  for lib in libelf.a libz.a libzstd.a; do
+    [ -f "${TOOLCHAIN}/lib/${lib}" ] || die "scx-scheds: ${TOOLCHAIN}/lib/${lib} is missing - elfutils:host, zlib:host or zstd:host did not install a static library"
   done
+  ln -sf "${TOOLCHAIN}/lib/libz.a" "${hostlibs}/libz.a"
+  rm -f "${hostlibs}/libelf.a"
+  ar -M <<EOF
+CREATE ${hostlibs}/libelf.a
+ADDLIB ${TOOLCHAIN}/lib/libelf.a
+ADDLIB ${TOOLCHAIN}/lib/libzstd.a
+SAVE
+END
+EOF
   export LIBBPF_SYS_LIBRARY_PATH="${hostlibs}"
+
+  # scx_utils generates bindings for <linux/perf_event.h> with bindgen at
+  # build time. bindgen tells libclang the cargo target (--target=aarch64-...)
+  # but nothing about where that target's headers live, so clang parsed the
+  # x86_64 /usr/include with an aarch64 target and failed on <asm/types.h>.
+  # The triple-scoped variable reaches only the target-side parse; the host
+  # side keeps its defaults. libclang itself is the toolchain's, from
+  # llvm:host - the container has none, and clang-sys does not look there.
+  export BINDGEN_EXTRA_CLANG_ARGS_${TARGET_NAME//-/_}="--sysroot=${SYSROOT_PREFIX}"
+  export LIBCLANG_PATH="${TOOLCHAIN}/lib"
 
   cargo build --release --target ${TARGET_NAME} -p scx_lavd
 }

@@ -88,6 +88,11 @@ pre_configure_host() {
       ;;
   esac
 
+  # scx-scheds compiles its schedulers to BPF bytecode with this clang
+  # (BPF_CLANG). Without the backend, clang fails with "No available targets
+  # are compatible with triple bpf".
+  LLVM_BUILD_TARGETS+="\;BPF"
+
   mkdir -p ${PKG_BUILD}/.${HOST_NAME}
   cd ${PKG_BUILD}/.${HOST_NAME}
   PKG_CMAKE_OPTS_HOST="${PKG_CMAKE_OPTS_COMMON} \
