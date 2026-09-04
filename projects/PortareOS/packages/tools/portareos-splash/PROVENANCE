@@ -21,4 +21,23 @@ Changed from upstream:
             would have produced a build that succeeded and a splash that
             never appeared.
 
-Nothing else is modified. Fixes worth having should go upstream to ROCKNIX.
+  main.c    svg_paths[] and svg_colors[] now draw the PortareOS wordmark in
+            VT323 rather than the ROCKNIX logo. See the comment above the
+            array for how it was generated and why it contains no Q commands.
+
+  integrity.c
+            Deleted, along with the z9() call in main.c. It was an
+            obfuscated check for whether the running system is genuine
+            ROCKNIX: absence of /sysroot/usr/bin/updatecheck and
+            system-upgrade, an MD5 of /sysroot/etc/motd against a hardcoded
+            hash, and OS_NAME plus GIT_ORGANIZATION both reading ROCKNIX in
+            /sysroot/etc/os-release. When all four passed it touched
+            /run/rocknix-splash.
+
+            On this fork OS_NAME is PortareOS, so it never passed and never
+            wrote the file, and nothing in the tree ever read it. What it did
+            do was stat two paths, read os-release and MD5 a file on every
+            boot, from obfuscated code sitting in the boot path. Removed as
+            dead weight rather than as any kind of statement.
+
+Otherwise unmodified. Fixes worth having should go upstream to ROCKNIX.
