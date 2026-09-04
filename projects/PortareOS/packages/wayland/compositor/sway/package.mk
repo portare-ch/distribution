@@ -9,17 +9,9 @@ PKG_LONGDESC="i3-compatible Wayland compositor"
 PKG_TOOLCHAIN="meson"
 PKG_PATCH_DIRS+="${DEVICE}"
 
-case ${DEVICE} in
-  RK3588)
-    PKG_VERSION="1.9"
-    PKG_URL="https://github.com/swaywm/sway/archive/${PKG_VERSION}.zip"
-    ;;
-  *)
-    PKG_VERSION="1.11"
-    PKG_SHA256="0e37a55b7c3379230e97e1ad982542b75016a0c7d6676198604e557f9b373dae"
-    PKG_URL="https://github.com/swaywm/sway/releases/download/${PKG_VERSION}/sway-${PKG_VERSION}.tar.gz"
-    ;;
-esac
+PKG_VERSION="1.11"
+PKG_SHA256="0e37a55b7c3379230e97e1ad982542b75016a0c7d6676198604e557f9b373dae"
+PKG_URL="https://github.com/swaywm/sway/releases/download/${PKG_VERSION}/sway-${PKG_VERSION}.tar.gz"
 
 # to enable xwayland package: https://gitlab.freedesktop.org/xorg/lib/libxcb-wm/-/tree/master/icccm?ref_type=heads
 
@@ -57,12 +49,6 @@ post_makeinstall_target() {
   # clean up
   safe_remove ${INSTALL}/etc
   safe_remove ${INSTALL}/usr/share/wayland-sessions
-
-  case ${DEVICE} in
-    RK3588)
-      sed -i '/allow_tearing/d' ${INSTALL}/usr/lib/autostart/common/111-sway-init
-      ;;
-  esac
 }
 
 post_install() {
