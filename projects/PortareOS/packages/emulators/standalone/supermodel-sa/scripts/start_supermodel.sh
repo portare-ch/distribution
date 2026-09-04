@@ -71,7 +71,7 @@ fi
 #RESOLUTION
 if [ "$RESOLUTION" = "0" ]
 then
-  OPTIONS+=" -res=1920,1080"
+  OPTIONS+=" -res=1280,960"
 elif [ "$RESOLUTION" = "1" ]
 then
   OPTIONS+=" -res=496,384"

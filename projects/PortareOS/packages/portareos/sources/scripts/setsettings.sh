@@ -683,6 +683,30 @@ function set_filtering() {
     add_setting "smooth" "video_smooth"
 }
 
+# RetroArch paces frames and resamples audio against video_refresh_rate, so
+# it has to be the rate of the mode the panel is actually in, not a number
+# inherited from another device's config. The Nova panel exposes only
+# 120 Hz, a per-game display_mode may pick another, and a dock brings a
+# 60 Hz output. video_swap_interval 0 lets RetroArch pick the interval from
+# the core's own rate, so 60 fps content at 120 Hz swaps every second
+# refresh instead of running against the audio clock.
+function set_ra_refresh_rate() {
+    local MODE="$(game_setting display_mode)"
+    local RATE
+    case "${MODE}" in
+        ""|default)
+            RATE=$(/usr/bin/wlr-randr 2>/dev/null | awk '/current/ { for (i = 1; i <= NF; i++) if ($i == "Hz") { print $(i - 1); exit } }')
+        ;;
+        *)
+            RATE=$(echo "${MODE}" | tr -cd '[[:digit:]].')
+        ;;
+    esac
+    if [ -n "${RATE}" ]; then
+        add_setting "none" "video_refresh_rate" "${RATE}"
+        add_setting "none" "video_swap_interval" "0"
+    fi
+}
+
 function set_integerscale() {
     add_setting "integerscale" "video_scale_integer"
     add_setting "integerscaleoverscale" "video_scale_integer_overscale"
@@ -1275,6 +1299,7 @@ set_translation &
 set_aspectratio &
 set_filtering &
 set_integerscale &
+set_ra_refresh_rate &
 set_rgascale &
 set_shader &
 set_filter &
