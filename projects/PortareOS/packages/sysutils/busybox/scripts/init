@@ -115,6 +115,38 @@ break_after() {
 # Mount handlers
 # All handlers take the following parameters:
 # $1:target, $2:mountpoint, $3:mount options, [$4:fs type]
+# The disk (mmcblk0, sda) a partition (mmcblk0p1, sda18) belongs to.
+disk_of() {
+  local d
+  for d in /sys/block/*; do
+    [ -d "${d}/${1#/dev/}" ] && echo "${d##*/}" && return 0
+  done
+  return 1
+}
+
+# A card written from the image and an install made by installtointernal
+# carry the same labels, and the bootloader gives no hint which one it loaded
+# the kernel from (the ABL adds nothing to the cmdline), so mount's own
+# first-match resolution picks whichever enumerated first. Resolve LABEL=
+# here instead: the boot partition prefers the SD slot, so an inserted card
+# wins over the internal UFS and removing it boots the internal install; the
+# storage partition follows the disk the boot partition came from, so the two
+# halves of an install never come from different disks. With a single match
+# this is exactly what mount would have done.
+#   $1 label, $2 disk to prefer (may be empty)
+resolve_label() {
+  local dev disk first= same= card=
+  for dev in $(blkid | grep " LABEL=\"$1\"" | cut -d: -f1); do
+    disk="$(disk_of "${dev}")"
+    [ -z "${first}" ] && first="${dev}"
+    [ -n "$2" ] && [ "${disk}" = "$2" ] && [ -z "${same}" ] && same="${dev}"
+    case "${disk}" in
+      mmcblk*) [ -z "${card}" ] && card="${dev}" ;;
+    esac
+  done
+  echo "${same:-${card:-${first}}}"
+}
+
 mount_common() {
   # Common mount handler, handles block devices and filesystem images
   MOUNT_OPTIONS="-o $3"
@@ -123,7 +155,20 @@ mount_common() {
   for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
     ERR_ENV=1
 
-    mount ${MOUNT_OPTIONS} $1 $2 >&${SILENT_OUT} 2>&1
+    # Resolved on every attempt: the card can enumerate after the UFS.
+    MOUNT_DEV="$1"
+    case "$1" in
+      LABEL=*)
+        MOUNT_PREFER=""
+        if [ "$2" = "/storage" ]; then
+          MOUNT_PREFER="$(disk_of "$(awk '$2 == "/flash" { print $1 }' /proc/mounts)")"
+        fi
+        MOUNT_RESOLVED="$(resolve_label "${1#LABEL=}" "${MOUNT_PREFER}")"
+        [ -n "${MOUNT_RESOLVED}" ] && MOUNT_DEV="${MOUNT_RESOLVED}"
+        ;;
+    esac
+
+    mount ${MOUNT_OPTIONS} ${MOUNT_DEV} $2 >&${SILENT_OUT} 2>&1
     [ "$?" -eq "0" ] && ERR_ENV=0 && break
 
     usleep 1000000

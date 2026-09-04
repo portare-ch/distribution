@@ -3,7 +3,7 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 #
 # This script will resize the Android userdata partition and install
-# PortareOS to the internal UFS.
+# PortareOS to the internal UFS, or replace an install already there.
 
 set -euo pipefail
 
@@ -40,6 +40,29 @@ get_gb() {
   fi
 }
 
+# The labels the initramfs will look for. They come from the running kernel's
+# cmdline, which is the same KERNEL file this script copies to the internal
+# partition, so the install can never disagree with the kernel that boots it.
+BOOT_LABEL=PORTAREOS
+DISK_LABEL=PORTAREOS_STOR
+for arg in $(cat /proc/cmdline); do
+  case "$arg" in
+    boot=LABEL=*) BOOT_LABEL="${arg#boot=LABEL=}" ;;
+    disk=LABEL=*) DISK_LABEL="${arg#disk=LABEL=}" ;;
+  esac
+done
+
+# Helper: unmount every mount of a device, deepest first. The internal
+# storage of an earlier install is mounted more than once by automount
+# (/storage/roms and /storage/games-external) when booted from a card.
+unmount_all() {
+  local dev=$1 mp
+  for mp in $(awk -v d="$dev" '$1 == d { print $2 }' /proc/mounts | sort -r); do
+    echo "Unmounting $mp..."
+    umount "$mp"
+  done
+}
+
 # Helper: calculate storage size excluding specific folders
 get_storage_size_kb() {
   local storage_path="$1"
@@ -60,17 +83,92 @@ get_storage_size_kb() {
   echo "$total_kb"
 }
 
-# 1) Check for existing PortareOS or STORAGE partitions.
-# PortareOS stays in the list on purpose: this is not branding but a guard
-# against writing over an existing install, and a card carrying a PortareOS
-# partition is exactly that.
-mapfile -t part_names < <(parted -m -s "$DEVICE" print | tail -n +2 | cut -d: -f6)
-for name in "${part_names[@]}"; do
-  if [[ "$name" == "PORTAREOS" || "$name" == "PortareOS" || "$name" == "STORAGE" ]]; then
-    echo "An installation already exists (found partition named '$name'). Exiting."
+# 1) An earlier install, PortareOS or ROCKNIX, sits in the two partitions
+# after Android userdata: a 2 GiB FAT boot partition and an ext4 storage
+# partition. Offer to replace it in place rather than refusing: the boot
+# partition is rewritten, and storage is either kept (relabelled, data
+# untouched) or wiped.
+mapfile -t ud_line < <(parted -m -s "$DEVICE" unit B print | grep ':userdata:')
+if [[ ${#ud_line[@]} -ne 1 ]]; then
+  echo "ERROR: Could not uniquely find a Android userdata partition labeled 'userdata'."
+  exit 1
+fi
+IFS=':' read -r UD_NUM _ <<< "${ud_line[0]}"
+RK_NUM=$(( UD_NUM + 1 ))
+ST_NUM=$(( UD_NUM + 2 ))
+if [[ "$HW_DEVICE" == "SM6115" ]]; then
+  RK_PART_DEV="${DEVICE}p${RK_NUM}"
+  ST_PART_DEV="${DEVICE}p${ST_NUM}"
+else
+  RK_PART_DEV="${DEVICE}${RK_NUM}"
+  ST_PART_DEV="${DEVICE}${ST_NUM}"
+fi
+
+part_name() {
+  parted -m -s "$DEVICE" print | awk -F: -v n="$1" '$1 == n { print $6 }'
+}
+RK_NAME=$(part_name "$RK_NUM")
+ST_NAME=$(part_name "$ST_NUM")
+
+case "$RK_NAME" in
+  PORTAREOS|PortareOS|ROCKNIX)
+    case "$ST_NAME" in
+      PORTAREOS_STOR|STORAGE) ;;
+      *)
+        echo "Found a '$RK_NAME' partition but no storage partition after it. Exiting."
+        exit 1
+        ;;
+    esac
+
+    echo "An installation already exists:"
+    echo "  $RK_PART_DEV  $RK_NAME  ($(get_gb "$RK_PART_DEV") GB)"
+    echo "  $ST_PART_DEV  $ST_NAME  ($(get_gb "$ST_PART_DEV") GB)"
+    echo
+    read -rp "Replace it with this PortareOS? The boot partition is rewritten. [y/N]: " confirm
+    if [[ ! $confirm =~ ^[Yy]$ ]]; then
+      echo "Aborted by user."
+      exit 0
+    fi
+    read -rp "Keep the existing storage (ROMs, saves, settings)? [Y/n]: " keep_ans
+    if [[ $keep_ans =~ ^[Nn]$ ]]; then
+      WIPE_STORAGE=yes
+    else
+      WIPE_STORAGE=no
+    fi
+
+    unmount_all "$RK_PART_DEV"
+    unmount_all "$ST_PART_DEV"
+
+    echo "Formatting ${RK_PART_DEV} as ${BOOT_LABEL}..."
+    mkfs.vfat -F 32 -n "${BOOT_LABEL}" "${RK_PART_DEV}" &>/dev/null
+    parted -s "$DEVICE" name "$RK_NUM" "${BOOT_LABEL}"
+
+    if [[ "$WIPE_STORAGE" == "yes" ]]; then
+      echo "Formatting ${ST_PART_DEV} as ${DISK_LABEL}..."
+      mkfs.ext4 -F -q -L "${DISK_LABEL}" -T ext4 -O ^orphan_file -m 0 "${ST_PART_DEV}" &>/dev/null
+    else
+      echo "Relabelling ${ST_PART_DEV} as ${DISK_LABEL}, data kept..."
+      e2label "${ST_PART_DEV}" "${DISK_LABEL}"
+    fi
+    parted -s "$DEVICE" name "$ST_NUM" "${DISK_LABEL}"
+
+    mkdir -p "$TMP_PortareOS"
+    mount "${RK_PART_DEV}" "$TMP_PortareOS"
+    echo "Copying flash files to ${BOOT_LABEL}..."
+    cp -a "$FLASH_DIR"/. "$TMP_PortareOS"/
+    sync
+    umount "$TMP_PortareOS"
+    rmdir "$TMP_PortareOS"
+
+    echo "Done. Replaced:"
+    echo "  ${BOOT_LABEL} : ${RK_PART_DEV} ($(get_gb "${RK_PART_DEV}") GB)"
+    echo "  ${DISK_LABEL} : ${ST_PART_DEV} ($(get_gb "${ST_PART_DEV}") GB)"
+    echo
+    echo "PortareOS now boots from the internal UFS. Remove the SD card and reboot;"
+    echo "with a PortareOS card inserted, the card is booted instead."
     exit 0
-  fi
-done
+    ;;
+esac
 
 # 2) Warn user
 read -rp "WARNING: This will wipe Android userdata on ${DEVICE}. Proceed? [y/N]: " confirm
@@ -79,30 +177,15 @@ if [[ ! $confirm =~ ^[Yy]$ ]]; then
   exit 0
 fi
 
-# 3) Find current Android userdata partition
-mapfile -t ud_line < <(parted -m -s "$DEVICE" unit B print | grep ':userdata:')
-if [[ ${#ud_line[@]} -ne 1 ]]; then
-  echo "ERROR: Could not uniquely find a Android userdata partition labeled 'userdata'."
-  exit 1
-fi
-IFS=':' read -r UD_NUM UD_STARTB UD_ENDB _ <<< "${ud_line[0]}"
+# 3) Android userdata partition bounds
+IFS=':' read -r _ UD_STARTB UD_ENDB _ <<< "${ud_line[0]}"
 UD_START=${UD_STARTB%B}
 UD_END=${UD_ENDB%B}
 
-# Derive partition numbers
-RK_NUM=$(( UD_NUM + 1 ))
-ST_NUM=$(( UD_NUM + 2 ))
-
-# Derive partition block devices
 UD_PART_DEV="${DEVICE}${UD_NUM}"
-RK_PART_DEV="${DEVICE}${RK_NUM}"
-ST_PART_DEV="${DEVICE}${ST_NUM}"
-
 if [[ "$HW_DEVICE" == "SM6115" ]]; then
   # SM6115 is eMMC - slightly different
   UD_PART_DEV="${DEVICE}p${UD_NUM}"
-  RK_PART_DEV="${DEVICE}p${RK_NUM}"
-  ST_PART_DEV="${DEVICE}p${ST_NUM}"
 fi
 
 # Compute MiB-aligned boundaries for Android userdata
@@ -150,56 +233,46 @@ dd if=/dev/zero of="${UD_PART_DEV}" bs=1M count=8 &>/dev/null
 # 6) Create PortareOS partition
 RK_START_MB=$NEW_UD_END_MB
 RK_END_MB=$(( RK_START_MB + 2048 ))  # 2 GiB
-echo "Creating PortareOS partition #$RK_NUM (${RK_START_MB}MiB–${RK_END_MB}MiB)..."
+echo "Creating ${BOOT_LABEL} partition #$RK_NUM (${RK_START_MB}MiB–${RK_END_MB}MiB)..."
 parted -a optimal -s "$DEVICE" \
   mkpart primary fat32 "${RK_START_MB}MiB" "${RK_END_MB}MiB"
-parted -s "$DEVICE" name "$RK_NUM" PortareOS
+parted -s "$DEVICE" name "$RK_NUM" "${BOOT_LABEL}"
 parted -s "$DEVICE" set "$RK_NUM" msftdata on
 parted -s "$DEVICE" set "$RK_NUM" boot on
 
-# 7) Format PortareOS partition
-if mount | grep -q "^${RK_PART_DEV} "; then
-  echo "Auto-unmounting ${RK_PART_DEV}..."
-  umount "${RK_PART_DEV}"
-fi
-mkfs.vfat -F 32 -n PortareOS "${RK_PART_DEV}" &>/dev/null
+# 7) Format boot partition
+unmount_all "${RK_PART_DEV}"
+mkfs.vfat -F 32 -n "${BOOT_LABEL}" "${RK_PART_DEV}" &>/dev/null
 
-# 8) Create STORAGE partition
-echo "Creating STORAGE partition #$ST_NUM (from ${RK_END_MB}MiB to end)..."
+# 8) Create storage partition
+echo "Creating ${DISK_LABEL} partition #$ST_NUM (from ${RK_END_MB}MiB to end)..."
 parted -a optimal -s "$DEVICE" \
   mkpart primary ext4 "${RK_END_MB}MiB" 100%
-parted -s "$DEVICE" name "$ST_NUM" STORAGE
+parted -s "$DEVICE" name "$ST_NUM" "${DISK_LABEL}"
 
-# 9) Format STORAGE
-if mount | grep -q "^${ST_PART_DEV} "; then
-  echo "Auto-unmounting ${ST_PART_DEV}..."
-  umount "${ST_PART_DEV}"
-fi
-mkfs.ext4 -F -q -L STORAGE -T ext4 -O ^orphan_file -m 0 "${ST_PART_DEV}" &>/dev/null
+# 9) Format storage
+unmount_all "${ST_PART_DEV}"
+mkfs.ext4 -F -q -L "${DISK_LABEL}" -T ext4 -O ^orphan_file -m 0 "${ST_PART_DEV}" &>/dev/null
 
 # 10) Final mounts: unmount any auto-mounted, then mount fresh
-for dev in "${RK_PART_DEV}" "${ST_PART_DEV}"; do
-  if mount | grep -q "^$dev "; then
-    echo "Auto-unmounting $dev..."
-    umount "$dev"
-  fi
-done
+unmount_all "${RK_PART_DEV}"
+unmount_all "${ST_PART_DEV}"
 mkdir -p "$TMP_PortareOS" "$TMP_STORAGE"
 mount "${RK_PART_DEV}" "$TMP_PortareOS"
 mount "${ST_PART_DEV}" "$TMP_STORAGE"
 
 # 11) Copy files to PortareOS partition, then sync
-echo "Copying flash files to PortareOS..."
+echo "Copying flash files to ${BOOT_LABEL}..."
 cp -a "$FLASH_DIR"/. "$TMP_PortareOS"/
 sync
 
 # 12) Optionally copy /storage to STORAGE partition, then sync
-read -rp "Copy existing /storage to new STORAGE? [y/N]: " copy_ans
+read -rp "Copy existing /storage to new ${DISK_LABEL}? [y/N]: " copy_ans
 if [[ $copy_ans =~ ^[Yy]$ ]]; then
   avail_kb=$(df -k "$TMP_STORAGE" | awk 'NR==2 {print $4}')
   used_kb=$(get_storage_size_kb "$OLD_STORAGE")
   if (( used_kb <= avail_kb )); then
-    echo "Copying /storage to new STORAGE (excluding roms)..."
+    echo "Copying /storage to new ${DISK_LABEL} (excluding roms)..."
 
     # Copy everything except the excluded folders
     find "$OLD_STORAGE" -mindepth 1 -maxdepth 1 \
@@ -231,7 +304,7 @@ st_sz=$(get_gb "${ST_PART_DEV}")
 
 echo "Done. New partitions:"
 echo "  Android userdata: ${UD_PART_DEV} (${ud_sz} GB)"
-echo "  PortareOS : ${RK_PART_DEV} (${rk_sz} GB)"
-echo "  STORAGE : ${ST_PART_DEV} (${st_sz} GB)"
+echo "  ${BOOT_LABEL} : ${RK_PART_DEV} (${rk_sz} GB)"
+echo "  ${DISK_LABEL} : ${ST_PART_DEV} (${st_sz} GB)"
 echo
 echo "PortareOS Installation to internal UFS was successful. You can now reboot and remove your SD card."
