@@ -1,0 +1,7 @@
+# Packages tools/import-upstream-packages never imports, one per line.
+# For recipes this fork has rewritten far enough that upstream's version
+# would be a regression rather than an update.
+
+# Kernel: our config, the kernel_options assertion and the sched_ext work
+# live here. Version bumps are taken by hand.
+linux
