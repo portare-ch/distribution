@@ -5,28 +5,26 @@
 
 . config/options ""
 
-# This function is passed a list of package.mk paths to be processed.
-# Each package.mk is sourced with relevant variables output in JSON format.
-json_worker() {
-  local packages="$@"
-  local pkgpath hierarchy exited
+# Source one package.mk and print its dependencies as JSON. Run in a
+# subshell by json_worker: source_package resets PKG_* between recipes but
+# nothing else, and a recipe that sets an ordinary variable (SDL2_glesonly
+# sets OPENGL_SUPPORT=no before inheriting SDL2's recipe) would otherwise
+# leak into every recipe sourced after it in the same worker. Which recipes
+# those are depends on how the 64-per-worker batches happen to fall, so the
+# plan changed with the directory listing: SDL2 lost its glu dependency
+# when packages/linux was removed and the batch boundaries shifted.
+json_package() {
+  local pkgpath="${1}" hierarchy exited=0
 
   exit() { exited=1; }
 
-  for pkgpath in ${packages}; do
-    pkgpath="${pkgpath%%@*}"
+  source_package "${pkgpath}/package.mk" &>/dev/null || return 1
 
-    exited=0
-    if ! source_package "${pkgpath}/package.mk" &>/dev/null; then
-      unset -f exit
-      die "$(print_color CLR_ERROR "FAILURE: sourcing package ${pkgpath}/package.mk")"
-    fi
+  [ ${exited} -eq 1 ] && return 0
 
-    [ ${exited} -eq 1 ] && continue
+  [[ ${pkgpath} =~ ^${ROOT}/${PACKAGES}/ ]] && hierarchy="global" || hierarchy="local"
 
-    [[ ${pkgpath} =~ ^${ROOT}/${PACKAGES}/ ]] && hierarchy="global" || hierarchy="local"
-
-    cat <<EOF
+  cat <<EOF
   {
     "name": "${PKG_NAME}",
     "hierarchy": "${hierarchy}",
@@ -38,13 +36,22 @@ json_worker() {
     "unpack": "${PKG_DEPENDS_UNPACK}"
   },
 EOF
+}
+
+# This function is passed a list of package.mk paths to be processed.
+json_worker() {
+  local pkgpath
+
+  for pkgpath in "$@"; do
+    pkgpath="${pkgpath%%@*}"
+    ( json_package "${pkgpath}" ) \
+      || die "$(print_color CLR_ERROR "FAILURE: sourcing package ${pkgpath}/package.mk")"
   done
-  unset -f exit
 }
 
 if [ "$1" = "--worker" ]; then
   shift
-  json_worker "$*"
+  json_worker "$@"
   exit $?
 fi
 
