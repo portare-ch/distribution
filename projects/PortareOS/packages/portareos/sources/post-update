@@ -156,7 +156,7 @@ fi
 rm -f "${DOLPHIN_CFG}/GamecubeControllerProfiles/GCPadNew.ini.east" \
       "${DOLPHIN_CFG}/GamecubeControllerProfiles/GCPadNew.ini.south"
 
-# Turning off the display via DPMS in portareos-fake-suspend is problematic on
-# some platforms, so delete the setting. It is disabled by default, but can
-# be used on an opt-in basis
+# system.suspend.dpms was read only by portareos-fake-suspend, which is gone.
+# Delete it from existing installs so it does not sit in system.cfg forever
+# looking like it does something.
 sed -i "/system.suspend.dpms/d" /storage/.config/system/configs/system.cfg

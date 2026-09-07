@@ -1,18 +1,11 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2026 ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 # Power key policy for SM8550 devices that have real suspend.
 #
-# portareos-fake-suspend exists for devices that cannot sleep: it owns a state
-# machine with timed shutdown, delay flags and lid handling, and it assumes
-# nothing else will suspend underneath it. Running a device that *can* sleep
-# through that machine leaves two owners of the display, and a real suspend
-# arriving while it holds the screen blanked resumes to a dead panel.
-#
-# So the key is taken here instead:
-#
-#   suspend not validated here -> hand straight back to fake suspend
+#   suspend not validated here -> ignore the key
 #   screen already blanked     -> unblank, whatever put it there
 #   external display attached  -> blank the internal panel, never suspend
 #   otherwise                  -> real suspend
@@ -32,16 +25,12 @@ esac
 
 BLANK_FLAG="/run/power-blank-active.flag"
 
-# Devices where deep suspend is not validated keep the old behaviour exactly:
-# 030-suspend_mode leaves system.suspendmode off for them, and fake suspend is
-# still the right owner. Delegating rather than reimplementing keeps those
-# devices byte-identical to a tree without this handler.
-#
-# "release" is ours and fake suspend knows nothing about it, so it must never
-# be forwarded.
+# 030-suspend_mode enables deep suspend on the Nova, so this never fires here.
+# It stays as a guard: on a device where suspend is not validated, ignoring the
+# key is safer than falling through to systemctl suspend below.
 if [ "$1" != "release" ] && [ "$(get_setting system.suspendmode)" = "off" ]; then
-  ${DEBUG} && log $0 "Suspend not enabled here, deferring to fake suspend."
-  exec /usr/bin/portareos-fake-suspend "$@"
+  ${DEBUG} && log $0 "Suspend not enabled here, ignoring the key."
+  exit 0
 fi
 
 # Blanking and the "is a display attached" question both come from
