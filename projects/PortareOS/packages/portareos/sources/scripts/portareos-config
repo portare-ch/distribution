@@ -155,7 +155,20 @@ fi
 if [ "$command" == "lsoutputs" ]
 then
     echo "auto"
-    portareos-resolution listOutputs
+    # Was portareos-resolution listOutputs, which does not exist, so this only
+    # ever returned "auto" and the video output menus in ES had nothing to
+    # offer. wlr-randr names outputs the way sway does, which is what the
+    # setting has to match; where the compositor is not up, the DRM connectors
+    # in sysfs carry the same names behind a cardN- prefix.
+    if wlr-randr >/dev/null 2>&1; then
+        wlr-randr | awk '/^[^[:space:]]/ {print $1}'
+    else
+        for connector in /sys/class/drm/card*-*; do
+            [ -e "${connector}/status" ] || continue
+            name="${connector##*/}"
+            echo "${name#*-}"
+        done
+    fi
 fi
 
 if [ "$command" == "lsaudio" ];then
