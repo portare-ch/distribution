@@ -5,41 +5,25 @@
 
 . /etc/profile
 
-# PortareOS has no update server, and is not getting one. Updates arrive as a
-# file: put PortareOS-<device>.<arch>-<date>.tar in a directory called UPD,
-# either on the internal filesystem or on removable media, and this finds it.
+# There is no update server. Put PortareOS-<device>.<arch>-<date>.tar in a
+# directory called UPD, internally or on removable media, and this finds it.
 #
-# The upstream version queried update.rocknix.org, which would have answered a
-# PortareOS device with ROCKNIX images: a different distribution, whose boot
-# partition label no longer matches, so the update would have installed and
-# then not booted. All of that is gone rather than left switched off.
+# EmulationStation calls this, and expects:
 #
-# EmulationStation drives this. The contract is narrow and worth stating:
+#   check         exit 0 + print a version   -> ApiSystem::canUpdate()
+#   check-media   exit 0, quietly            -> ApiSystem::canLocalUpdate()
+#   update        stage it, printing ">>>NN%" for GuiUpdate's progress bar
 #
-#   check         exit 0 and print a version if an update is available.
-#                 ApiSystem::canUpdate() runs this and shows the stdout in
-#                 its "UPDATE AVAILABLE" prompt.
-#   check-media   exit 0 if an update is available, quietly.
-#                 ApiSystem::canLocalUpdate() gates its menu entry on this.
-#   update        stage the update, printing ">>>NN%" lines that GuiUpdate
-#                 parses into a progress bar.
-#
-# It does NOT reboot. ES shows "UPDATE IS READY / REBOOT TO APPLY" when this
-# exits 0, and rebooting the device out from under it would be rude.
+# Staging only. ES prints "REBOOT TO APPLY" on exit 0.
 
-# Where a UPD directory may live. Internal first, then the boot partition
-# (which is the FAT one visible when the card is in a computer), then whatever
-# automount has mounted. Globs are deliberate: an external card can land on
-# any of several paths depending on what else is plugged in.
+# /flash is the FAT partition visible when the card is in a computer. The globs
+# catch external media, which lands on a different path depending on what else
+# is plugged in.
 UPD_ROOTS="${UPD_ROOTS:-/storage/UPD /flash/UPD /storage/games-external/UPD /storage/games-internal/UPD /var/media/*/UPD /media/*/UPD}"
 
 STAGE_DIR="${STAGE_DIR:-/storage/.update}"
 
-# Print "<path> <version>" for the newest usable update found, or nothing.
-#
-# "Usable" is doing real work here. A .tar built for another device installs
-# and leaves a handheld that does not boot, so the filename has to name this
-# device and this architecture before it is considered at all.
+# Print "<path> <version>" for the newest usable update, or nothing.
 find_update() {
     best_file=""
     best_version=""
@@ -51,6 +35,8 @@ find_update() {
         for f in "${dir}"/*.tar; do
             [ -f "${f}" ] || continue
 
+            # A .tar for another device installs and leaves a handheld that
+            # does not boot, so the name has to match before anything else.
             name="$(basename "${f}")"
             case "${name}" in
                 *"${HW_DEVICE}"*"${HW_ARCH}"*) ;;
@@ -66,9 +52,7 @@ find_update() {
                 *) continue ;;
             esac
 
-            # Offering what is already installed, or older, is how an update
-            # menu becomes noise. "Force next update" overrides it, which is
-            # what that switch is for.
+            # "Force next update" exists to override this.
             if [ "${force}" != "1" ] && [ "${version}" -le "${running}" ] 2>/dev/null; then
                 continue
             fi
@@ -83,11 +67,8 @@ find_update() {
     [ -n "${best_file}" ] && echo "${best_file} ${best_version}"
 }
 
-# Verify against the .sha256 published beside the .tar, when it is there.
-#
-# Absence is not failure: someone who copied only the .tar should still be able
-# to update. But it is said out loud, because the alternative is a silent
-# downgrade of the one check that catches a truncated copy.
+# A missing .sha256 is not failure, so copying only the .tar still works, but
+# say so rather than silently skipping the check.
 verify_checksum() {
     file="$1"
     sum="${file}.sha256"
@@ -128,9 +109,7 @@ stage_update() {
 
     size_mb=$(( $(stat -c %s "${file}") / 1048576 ))
     free_mb=$(df -m "${STAGE_DIR%/*}" | awk 'NR==2 {print $4}')
-    # The staged copy lives alongside the original until reboot, so the space
-    # needed is the file again, plus room for the unpack the bootloader does.
-    need_mb=$(( size_mb + 512 ))
+    need_mb=$(( size_mb + 512 ))   # the copy, plus room for the unpack
     if [ "${free_mb}" -lt "${need_mb}" ]; then
         echo "Not enough free space: need ${need_mb}MB, have ${free_mb}MB."
         return 1
@@ -138,8 +117,7 @@ stage_update() {
 
     mkdir -p "${STAGE_DIR}" || { echo "Cannot create ${STAGE_DIR}."; return 1; }
 
-    # Anything already staged is superseded, and leaving two tars for the
-    # bootloader to choose between is asking for the wrong one.
+    # Two staged tars means the bootloader picks one, possibly the old one.
     rm -f "${STAGE_DIR}"/*.tar "${STAGE_DIR}"/*.tar.sha256
 
     echo "Copying ${name} to ${STAGE_DIR} >>>0%"
@@ -150,9 +128,8 @@ stage_update() {
     fi
     echo "Copying ${name} to ${STAGE_DIR} >>>90%"
 
-    # Verify the copy, not just the source. A card pulled mid-copy is exactly
-    # the case this whole flow has to survive, and the bootloader applies
-    # whatever it finds here without asking.
+    # Verify the copy, not just the source: a card pulled mid-copy is the case
+    # this has to survive, and the bootloader applies what it finds without asking.
     if [ -f "${file}.sha256" ]; then
         cp "${file}.sha256" "${STAGE_DIR}/${name}.sha256"
         if ! verify_checksum "${STAGE_DIR}/${name}.part"; then
@@ -167,8 +144,7 @@ stage_update() {
         return 1
     fi
 
-    # Named last, so a copy interrupted at any point leaves a .part the
-    # bootloader ignores rather than a half-written .tar it would try to apply.
+    # Named last: an interrupted copy leaves a .part the bootloader ignores.
     mv "${STAGE_DIR}/${name}.part" "${STAGE_DIR}/${name}"
     sync
 
