@@ -17,3 +17,7 @@ uae4arm-lr
 # EOL PS2 appimage. armsx2 is the only PS2 emulator this fork ships.
 # Removed.
 aethersx2-sa
+
+# Wii U emulator with no usable 4:3 mode on a 4:3 panel. Removed, and
+# the wiiu system with it.
+cemu-sa

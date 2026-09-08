@@ -66,18 +66,18 @@ case "${DEVICE}" in
     ;;
   SM8250)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 daedalusx64-sa desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" azahar-sa bigpemu-sa cemu-sa dolphin-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
+    PKG_EMUS+=" azahar-sa bigpemu-sa dolphin-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
                 xemu-sa skyemu-sa steam vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr kronos-lr"
     ;;
   SM8550)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 daedalusx64-sa desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" ares-sa azahar-sa bigpemu-sa cemu-sa dolphin-sa drastic-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
+    PKG_EMUS+=" ares-sa azahar-sa bigpemu-sa dolphin-sa drastic-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
                 xemu-sa skyemu-sa steam vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr kronos-lr"
     ;;
   SM8650|SM8750)
-    PKG_EMUS+=" ares-sa azahar-sa bigpemu-sa cemu-sa dolphin-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
+    PKG_EMUS+=" ares-sa azahar-sa bigpemu-sa dolphin-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
                 xemu-sa skyemu-sa steam vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr kronos-lr"
     ;;
@@ -87,7 +87,7 @@ case "${DEVICE}" in
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   AMD64)
-    PKG_EMUS+=" ares-sa azahar-sa cemu-sa dolphin-sa gopher64-sa mednafen melonds-sa nanoboyadvance-sa \
+    PKG_EMUS+=" ares-sa azahar-sa dolphin-sa gopher64-sa mednafen melonds-sa nanoboyadvance-sa \
                 xemu-sa skyemu-sa vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
 esac
@@ -665,15 +665,6 @@ makeinstall_target() {
       add_emu_core wiiware retroarch dolphin false
       add_es_system wii
       add_es_system wiiware
-      ;;
-  esac
-
-  ### Nintendo Wii U
-  case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core wiiu cemu cemu-sa true
-      add_es_system wiiu
-      install_script "Start CEMU.sh"
       ;;
   esac
 
