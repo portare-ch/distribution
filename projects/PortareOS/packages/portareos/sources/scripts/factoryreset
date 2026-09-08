@@ -23,9 +23,6 @@ case "${1}" in
     rm -rf /storage/.config/dolphin-emu
     cp -rf /usr/config/dolphin-emu /storage/.config/
 
-    rm -rf /storage/.config/drastic
-    cp -rf /usr/config/drastic /storage/.config/
-
     rm -rf /storage/.config/duckstation
     cp -rf /usr/config/duckstation /storage/.config/
 
