@@ -32,5 +32,15 @@ bigpemu-sa
 touchhle-sa
 sndio
 
+# Alternatives nobody defaulted to, all still covered by the retroarch core
+# that was already the default. skyemu also remains as skyemu-lr.
+skyemu-sa
+nanoboyadvance-sa
+hatarisa
+
+# PS Vita is 960x544, exactly 16:9, so it letterboxes on this panel the way
+# psp does. Removed with its system.
+vita3k-sa
+
 # Only emulationstation ever linked it, and that is libmpv now. Removed.
 vlc
