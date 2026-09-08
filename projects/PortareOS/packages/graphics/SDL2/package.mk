@@ -117,7 +117,7 @@ pre_configure_target(){
                           -DSDL_RPATH=OFF \
                           -DRENDER_D3D=OFF \
                           -DSDL_PIPEWIRE=ON \
-                          -DSDL_PULSEAUDIO=ON"
+                          -DSDL_PULSEAUDIO=OFF"
 }
 
 post_makeinstall_target() {

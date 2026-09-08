@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2018-present 5schatten (https://github.com/5schatten)
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="SDL3"
 PKG_VERSION="3.4.10"
@@ -122,7 +123,7 @@ pre_configure_target() {
                            -DSDL_PTHREADS_SEM=ON \
                            -DSDL_RPATH=OFF \
                            -DSDL_PIPEWIRE=ON \
-                           -DSDL_PULSEAUDIO=ON \
+                           -DSDL_PULSEAUDIO=OFF \
                            -DSDL_LIBC=ON \
                            -DSDL_GCC_ATOMICS=ON \
                            -DSDL_KMSDRM=ON \
