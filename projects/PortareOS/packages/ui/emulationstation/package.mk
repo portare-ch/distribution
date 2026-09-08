@@ -40,12 +40,10 @@ pre_configure_target() {
 }
 
 makeinstall_target() {
+  # The glibc locale, which is what setlocale(LC_TIME) and UTF-8 handling need.
+  # Not gettext catalogues: the frontend has none, its interface is English.
+  # Generating it here rather than on first boot saves a minute of it.
   mkdir -p ${INSTALL}/usr/config/locale
-    cp -a ${PKG_BUILD}/locale/lang/* ${INSTALL}/usr/config/locale
-
-    # Pre-generate default (en_US.UTF-8) locale for lower-end devices to speed up first boot
-    # This saves a minute or two on RK3326 in a cost of about 1 MB of SYSTEM size
-    # Copy-paste of a locale generating part of es_settings script
     I18NPATH=$(get_install_dir glibc)/usr/share/i18n/locales/ \
       localedef --force --verbose --inputfile=en_US --charmap=UTF-8 \
       ${INSTALL}/usr/config/locale/en_US.UTF-8 || true
