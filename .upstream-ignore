@@ -22,5 +22,15 @@ aethersx2-sa
 # the wiiu system with it.
 cemu-sa
 
+# A closed-source Nintendo DS binary, a 32-bit-only N64 emulator we never
+# built, and a Jaguar emulator behind retroarch's own. All removed.
+drastic-sa
+daedalusx64-sa
+bigpemu-sa
+
+# An iOS app emulator, and the only thing that pulled sndio in. Both removed.
+touchhle-sa
+sndio
+
 # Only emulationstation ever linked it, and that is libmpv now. Removed.
 vlc
