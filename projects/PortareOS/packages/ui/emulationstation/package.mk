@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0
-# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2024-2026 ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="emulationstation"
-PKG_VERSION="984a93a53e11731e393c97419eaf83ccf72924b7"  # portare-ch/emulationstation-next master
+PKG_VERSION="91188d03c9af5644543283f40f3416e2eb0a55a7"  # portare-ch/emulationstation-next master
 PKG_LICENSE="GPL"
 PKG_SITE="https://github.com/portare-ch/emulationstation-next"
 PKG_URL="${PKG_SITE}.git"
-PKG_DEPENDS_TARGET="boost toolchain SDL2 freetype curl freeimage bash rapidjson SDL2_mixer fping p7zip alsa vlc drm_tool pugixml ${OPENGLES}"
+PKG_DEPENDS_TARGET="boost toolchain SDL2 freetype curl freeimage bash rapidjson SDL2_mixer fping p7zip mpv pipewire drm_tool pugixml ${OPENGLES}"
 PKG_NEED_UNPACK="busybox"
 PKG_LONGDESC="Emulationstation emulator frontend"
 PKG_BUILD_FLAGS="-gold"
@@ -18,7 +19,6 @@ PKG_CMAKE_OPTS_TARGET+=" -DPORTAREOS=1 \
                          -DDISABLE_KODI=1 \
                          -DENABLE_FILEMANAGER=0 \
                          -DCEC=0 \
-                         -DENABLE_PULSE=1 \
                          -DUSE_SYSTEM_PUGIXML=1 \
                          -DGLES3=1"
 
@@ -40,12 +40,10 @@ pre_configure_target() {
 }
 
 makeinstall_target() {
+  # The glibc locale, which is what setlocale(LC_TIME) and UTF-8 handling need.
+  # Not gettext catalogues: the frontend has none, its interface is English.
+  # Generating it here rather than on first boot saves a minute of it.
   mkdir -p ${INSTALL}/usr/config/locale
-    cp -a ${PKG_BUILD}/locale/lang/* ${INSTALL}/usr/config/locale
-
-    # Pre-generate default (en_US.UTF-8) locale for lower-end devices to speed up first boot
-    # This saves a minute or two on RK3326 in a cost of about 1 MB of SYSTEM size
-    # Copy-paste of a locale generating part of es_settings script
     I18NPATH=$(get_install_dir glibc)/usr/share/i18n/locales/ \
       localedef --force --verbose --inputfile=en_US --charmap=UTF-8 \
       ${INSTALL}/usr/config/locale/en_US.UTF-8 || true
