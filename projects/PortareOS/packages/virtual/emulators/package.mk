@@ -8,7 +8,7 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
-PKG_EMUS="amiberry duckstation-sa flycast-sa gzdoom-sa hatarisa hypseus-singe moonlight mupen64plus-sa openbor pico-8   \
+PKG_EMUS="amiberry duckstation-sa flycast-sa gzdoom-sa hypseus-singe moonlight mupen64plus-sa openbor pico-8   \
           ppsspp-sa scummvmsa vice-sa wine yabasanshiro-sa"
 
 EMUS_32BIT=""
@@ -45,50 +45,50 @@ case "${DEVICE}" in
     ;;
   RK3399)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" dolphin-sa mednafen melonds-sa nanoboyadvance-sa"
+    PKG_EMUS+=" dolphin-sa mednafen melonds-sa"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   RK3566|RK3576)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" azahar-sa dolphin-sa mednafen melonds-sa vita3k-sa"
+    PKG_EMUS+=" azahar-sa dolphin-sa mednafen melonds-sa"
     LIBRETRO_CORES+=" dolphin-lr"
     ;;
   RK3588)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" azahar-sa dolphin-sa mednafen melonds-sa supermodel-sa vita3k-sa"
+    PKG_EMUS+=" azahar-sa dolphin-sa mednafen melonds-sa supermodel-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM6115)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" azahar-sa dolphin-sa mednafen melonds-sa supermodel-sa vita3k-sa armsx2-sa"
+    PKG_EMUS+=" azahar-sa dolphin-sa mednafen melonds-sa supermodel-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8250)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" azahar-sa dolphin-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
-                xemu-sa skyemu-sa steam vita3k-sa armsx2-sa"
+    PKG_EMUS+=" azahar-sa dolphin-sa heroic mednafen melonds-sa rpcs3-sa supermodel-sa \
+                xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr kronos-lr"
     ;;
   SM8550)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" ares-sa azahar-sa dolphin-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
-                xemu-sa skyemu-sa steam vita3k-sa armsx2-sa"
+    PKG_EMUS+=" ares-sa azahar-sa dolphin-sa gopher64-sa heroic mednafen melonds-sa rpcs3-sa supermodel-sa \
+                xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr kronos-lr"
     ;;
   SM8650|SM8750)
-    PKG_EMUS+=" ares-sa azahar-sa dolphin-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
-                xemu-sa skyemu-sa steam vita3k-sa armsx2-sa"
+    PKG_EMUS+=" ares-sa azahar-sa dolphin-sa gopher64-sa heroic mednafen melonds-sa rpcs3-sa supermodel-sa \
+                xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr kronos-lr"
     ;;
   S922X)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 pcsx_rearmed-lr"
-    PKG_EMUS+=" azahar-sa dolphin-sa duckstation-sa melonds-sa vita3k-sa armsx2-sa"
+    PKG_EMUS+=" azahar-sa dolphin-sa duckstation-sa melonds-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   AMD64)
-    PKG_EMUS+=" ares-sa azahar-sa dolphin-sa gopher64-sa mednafen melonds-sa nanoboyadvance-sa \
-                xemu-sa skyemu-sa vita3k-sa armsx2-sa"
+    PKG_EMUS+=" ares-sa azahar-sa dolphin-sa gopher64-sa mednafen melonds-sa \
+                xemu-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
 esac
 
@@ -243,9 +243,7 @@ makeinstall_target() {
 
   ## Atari ST
   add_emu_core atarist retroarch hatari true
-  add_emu_core atarist hatarisa hatarisa false
   add_es_system atarist
-  install_script "Start HATARISA.sh"
 
   ## Sammy Atomiswave
   case ${DEVICE} in
@@ -450,12 +448,6 @@ makeinstall_target() {
       ;;
   esac
   case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core gb skyemu skyemu-sa false
-      install_script "Start SkyEmu.sh"
-      ;;
-  esac
-  case ${DEVICE} in
     SM8550|SM8650|SM8750|AMD64)
       add_emu_core gb ares ares-sa false
       ;;
@@ -484,11 +476,6 @@ makeinstall_target() {
       ;;
   esac
   case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core gbh skyemu skyemu-sa false
-      ;;
-  esac
-  case ${DEVICE} in
     SM8550|SM8650|SM8750|AMD64)
       add_emu_core gbh ares ares-sa false
       ;;
@@ -507,20 +494,13 @@ makeinstall_target() {
       ;;
     RK3399|RK3588|SM6115|SM8250|SM8550)
       add_emu_core gba retroarch gpsp false
-      add_emu_core gba nanoboyadvance nanoboyadvance-sa false
       ;;
     SM8650|SM8750|AMD64)
-      add_emu_core gba nanoboyadvance nanoboyadvance-sa false
       ;;
   esac
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       add_emu_core gba mednafen gba false
-      ;;
-  esac
-  case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core gba skyemu skyemu-sa false
       ;;
   esac
   case ${DEVICE} in
@@ -546,11 +526,6 @@ makeinstall_target() {
       ;;
   esac
   case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core gbah skyemu skyemu-sa false
-      ;;
-  esac
-  case ${DEVICE} in
     SM8550|SM8650|SM8750|AMD64)
       add_emu_core gbah ares ares-sa false
       ;;
@@ -572,11 +547,6 @@ makeinstall_target() {
       add_emu_core gbav mednafen gba false
       ;;
   esac
-  case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core gbav skyemu skyemu-sa false
-      ;;
-  esac
   add_es_system gbav
 
   ### Nintendo GameBoy Color
@@ -592,11 +562,6 @@ makeinstall_target() {
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       add_emu_core gbc mednafen gb false
-      ;;
-  esac
-  case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core gbc skyemu skyemu-sa false
       ;;
   esac
   case ${DEVICE} in
@@ -619,11 +584,6 @@ makeinstall_target() {
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       add_emu_core gbch mednafen gb false
-      ;;
-  esac
-  case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core gbch skyemu skyemu-sa false
       ;;
   esac
   case ${DEVICE} in
@@ -930,7 +890,6 @@ makeinstall_target() {
       ;;
     SM8250|SM8550)
       add_emu_core nds melonds melonds-sa true
-      add_emu_core nds skyemu skyemu-sa false
       add_emu_core nds retroarch melonds false
       add_emu_core nds retroarch melondsds false
       add_emu_core nds retroarch desmume false
@@ -939,7 +898,6 @@ makeinstall_target() {
       ;;
     SM8650|SM8750|AMD64)
       add_emu_core nds melonds melonds-sa true
-      add_emu_core nds skyemu skyemu-sa false
       add_emu_core nds retroarch melonds false
       add_emu_core nds retroarch melondsds false
       add_emu_core nds retroarch skyemu false
@@ -1147,15 +1105,6 @@ makeinstall_target() {
   add_emu_core pspminis ppsspp ppsspp-sa true
   add_emu_core pspminis retroarch ppsspp false
   add_es_system pspminis
-
-  ### Sony Playstation Vita
-  case ${DEVICE} in
-    RK3566|RK3576|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
-      add_emu_core psvita vita3k vita3k-sa true
-      add_es_system psvita
-      install_script "Start Vita3K.sh"
-      ;;
-  esac
 
   ### Nintendo Pokemon Mini
   add_emu_core pokemini retroarch pokemini true
