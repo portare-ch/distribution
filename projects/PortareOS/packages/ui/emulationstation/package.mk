@@ -7,7 +7,7 @@ PKG_VERSION="be9b88d7fd68aa9babeae2b1fc3457ff5511b5c5"  # portare-ch/emulationst
 PKG_LICENSE="GPL"
 PKG_SITE="https://github.com/portare-ch/emulationstation-next"
 PKG_URL="${PKG_SITE}.git"
-PKG_DEPENDS_TARGET="boost toolchain SDL2 freetype curl freeimage bash rapidjson SDL2_mixer fping p7zip alsa mpv drm_tool pugixml ${OPENGLES}"
+PKG_DEPENDS_TARGET="boost toolchain SDL2 freetype curl freeimage bash rapidjson SDL2_mixer fping p7zip mpv pipewire drm_tool pugixml ${OPENGLES}"
 PKG_NEED_UNPACK="busybox"
 PKG_LONGDESC="Emulationstation emulator frontend"
 PKG_BUILD_FLAGS="-gold"
@@ -19,7 +19,6 @@ PKG_CMAKE_OPTS_TARGET+=" -DPORTAREOS=1 \
                          -DDISABLE_KODI=1 \
                          -DENABLE_FILEMANAGER=0 \
                          -DCEC=0 \
-                         -DENABLE_PULSE=1 \
                          -DUSE_SYSTEM_PUGIXML=1 \
                          -DGLES3=1"
 
