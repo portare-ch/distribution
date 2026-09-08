@@ -1,0 +1,15 @@
+diff --git a/Source/Core/AudioCommon/CubebStream.cpp b/Source/Core/AudioCommon/CubebStream.cpp
+index 0cdf7f3b99..669156b9ab 100644
+--- a/Source/Core/AudioCommon/CubebStream.cpp
++++ b/Source/Core/AudioCommon/CubebStream.cpp
+@@ -15,8 +15,8 @@
+ #include <objbase.h>
+ #endif
+ 
+-// ~10 ms - needs to be at least 240 for surround
+-constexpr u32 BUFFER_SAMPLES = 512;
++// ~5.3 ms - needs to be at least 240 for surround
++constexpr u32 BUFFER_SAMPLES = 256;
+ 
+ long CubebStream::DataCallback(cubeb_stream* stream, void* user_data, const void* /*input_buffer*/,
+                                void* output_buffer, long num_frames)
