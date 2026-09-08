@@ -4,8 +4,8 @@
 # Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="SDL3"
-PKG_VERSION="3.4.10"
-PKG_SHA256="12b34280415ec8418c864408b93d008a20a6530687ee613d60bfbd20411f2785"
+PKG_VERSION="3.4.16"
+PKG_SHA256="7322236cd12090c3eb40b9728be4d49c76f66ad17d04369584d4ecad5cf77c68"
 PKG_LICENSE="Zlib"
 PKG_SITE="https://www.libsdl.org/"
 PKG_URL="https://www.libsdl.org/release/SDL3-${PKG_VERSION}.tar.gz"
