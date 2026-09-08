@@ -332,12 +332,49 @@ jobs:
             fi
           done
 
+          # The newest nightly or release already published here. The ccache
+          # releases go to distribution-cache, so they cannot win this, but the
+          # prefix filter keeps that true if that ever stops being the case.
+          PREV="$(gh release list --repo "${GITHUB_REPOSITORY}" --limit 30 \
+            --json tagName,isDraft \
+            --jq '[.[] | select(.isDraft | not) | .tagName
+                   | select(test("^(nightly|release)-"))] | first // ""')"
+
+          # fetch-depth: 0 brings the tags with it, but a tag pushed after this
+          # checkout started would not be here yet.
+          if [ -n "${PREV}" ]; then
+            git rev-parse -q --verify "refs/tags/${PREV}^{commit}" >/dev/null \
+              || git fetch origin "refs/tags/${PREV}:refs/tags/${PREV}" || true
+          fi
+
           {
             echo "Built from \`${GITHUB_SHA}\` on \`${GITHUB_REF_NAME}\`."
             echo
             echo "A personal fork for the Retroid Pocket Nova (SM8550)."
             echo "Write the .img.gz to a microSD card. See https://os.portare.org"
             echo "for installation steps."
+            echo
+            echo "## Changes"
+            echo
+            if [ -z "${PREV}" ]; then
+              echo "First published build here, so there is nothing to compare against."
+            elif ! git rev-parse -q --verify "refs/tags/${PREV}^{commit}" >/dev/null; then
+              echo "\`${PREV}\` is not in this checkout, so no commit list could be built."
+            else
+              # Merges are dropped: every PR lands as one, and the commits it
+              # brought are listed anyway, so keeping them says everything twice.
+              COUNT="$(git rev-list --no-merges --count "${PREV}..${GITHUB_SHA}")"
+              if [ "${COUNT}" -eq 0 ]; then
+                echo "Nothing new since \`${PREV}\`. Rebuilt for other reasons."
+              else
+                git log --no-merges --pretty='- %s (\`%h\`)' "${PREV}..${GITHUB_SHA}" | head -100
+                if [ "${COUNT}" -gt 100 ]; then
+                  echo "- ...and $((COUNT - 100)) more"
+                fi
+                echo
+                echo "[Every change since ${PREV}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${PREV}...${TAG})"
+              fi
+            fi
           } > release-notes.md
 
           gh release create "${TAG}" "${FILES[@]}" \
