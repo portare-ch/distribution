@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2022-present JELOS (https://github.com/JustEnoughLinuxOS)
-# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2024-2026 ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="dolphin-sa"
 PKG_LICENSE="GPLv2"
+# pulseaudio and alsa-lib stay: cubeb picks them up by pkg-config and routes
+# through them, even though Dolphin's own Pulse and ALSA backends are off.
 PKG_DEPENDS_TARGET="toolchain libevdev libdrm ffmpeg zlib libpng lzo libusb zstd ecm openal-soft pulseaudio alsa-lib libfmt hidapi curl SDL3"
 PKG_LONGDESC="Dolphin is a GameCube / Wii / Triforce emulator, allowing you to play games for these two platforms on PC with improvements. "
 PKG_TOOLCHAIN="cmake"
@@ -67,8 +70,9 @@ pre_configure_target() {
                            -DUSE_DISCORD_PRESENCE=OFF \
                            -DBUILD_SHARED_LIBS=OFF \
                            -DLINUX_LOCAL_DEV=OFF \
-                           -DENABLE_PULSEAUDIO=ON \
-                           -DENABLE_ALSA=ON \
+                           -DENABLE_CUBEB=ON \
+                           -DENABLE_PULSEAUDIO=OFF \
+                           -DENABLE_ALSA=OFF \
                            -DENABLE_TESTS=OFF \
                            -DENABLE_LLVM=OFF \
                            -DENABLE_ANALYTICS=OFF \
