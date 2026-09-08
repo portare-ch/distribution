@@ -7,9 +7,8 @@
 # Source environment variables
 . /etc/profile
 
-# Stays on pulse against the session default: cemu plays through cubeb,
-# aimed at the pactl sink name set below, and SDL only does input here.
-export SDL_AUDIODRIVER=pulseaudio
+# No SDL_AUDIODRIVER here: cemu plays through cubeb, aimed at the pactl sink
+# name set below, and SDL only does input.
 set_kill set "-9 cemu"
 
 if [ -z "${PASINK}" ]
