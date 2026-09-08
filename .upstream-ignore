@@ -21,3 +21,6 @@ aethersx2-sa
 # Wii U emulator with no usable 4:3 mode on a 4:3 panel. Removed, and
 # the wiiu system with it.
 cemu-sa
+
+# Only emulationstation ever linked it, and that is libmpv now. Removed.
+vlc

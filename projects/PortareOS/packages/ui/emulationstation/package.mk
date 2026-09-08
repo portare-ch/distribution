@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0
-# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2024-2026 ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="emulationstation"
 PKG_VERSION="984a93a53e11731e393c97419eaf83ccf72924b7"  # portare-ch/emulationstation-next master
 PKG_LICENSE="GPL"
 PKG_SITE="https://github.com/portare-ch/emulationstation-next"
 PKG_URL="${PKG_SITE}.git"
-PKG_DEPENDS_TARGET="boost toolchain SDL2 freetype curl freeimage bash rapidjson SDL2_mixer fping p7zip alsa vlc drm_tool pugixml ${OPENGLES}"
+PKG_DEPENDS_TARGET="boost toolchain SDL2 freetype curl freeimage bash rapidjson SDL2_mixer fping p7zip alsa mpv drm_tool pugixml ${OPENGLES}"
 PKG_NEED_UNPACK="busybox"
 PKG_LONGDESC="Emulationstation emulator frontend"
 PKG_BUILD_FLAGS="-gold"
