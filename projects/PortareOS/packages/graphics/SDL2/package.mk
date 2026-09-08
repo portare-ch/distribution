@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2018-present 5schatten (https://github.com/5schatten)
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="SDL2"
 PKG_VERSION="2.32.10"
@@ -9,7 +10,9 @@ PKG_LICENSE="GPL"
 PKG_SITE="https://www.libsdl.org/"
 PKG_URL="https://www.libsdl.org/release/SDL2-${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_HOST="toolchain:host"
-PKG_DEPENDS_TARGET="toolchain alsa-lib systemd dbus pulseaudio libdrm"
+# pipewire is not optional: CheckPipewire needs libpipewire-0.3 by pkg-config
+# at build time, or SDL_AUDIO_DRIVER_PIPEWIRE is never defined at all.
+PKG_DEPENDS_TARGET="toolchain alsa-lib systemd dbus pulseaudio pipewire libdrm"
 PKG_LONGDESC="Simple DirectMedia Layer is a cross-platform development library designed to provide low level access to audio, keyboard, mouse, joystick, and graphics hardware."
 
 if [ ! "${OPENGL_SUPPORT}" = "no" ]; then
@@ -113,8 +116,8 @@ pre_configure_target(){
                           -DCLOCK_GETTIME=OFF \
                           -DSDL_RPATH=OFF \
                           -DRENDER_D3D=OFF \
-                          -DPIPEWIRE=ON \
-                          -DPULSEAUDIO=ON"
+                          -DSDL_PIPEWIRE=ON \
+                          -DSDL_PULSEAUDIO=ON"
 }
 
 post_makeinstall_target() {

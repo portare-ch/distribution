@@ -2,6 +2,7 @@
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2022-present JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 . /etc/profile
 
@@ -206,6 +207,8 @@ fi
   export LD_LIBRARY_PATH=/usr/share/aethersx2-sa/libs
 
 #Run Aethersx2 emulator
+  # Stays on pulse against the session default: this is an appimage with its
+  # own SDL, which we did not build and cannot count on having pipewire.
   export SDL_AUDIODRIVER=pulseaudio
   set_kill set "-9 aethersx2"
   ${EMUPERF} /usr/share/aethersx2-sa/aethersx2 -bigpicture -fullscreen "${1}"

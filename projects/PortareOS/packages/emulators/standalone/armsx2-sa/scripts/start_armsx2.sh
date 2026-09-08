@@ -2,6 +2,7 @@
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2022-present JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 . /etc/profile
 
@@ -213,6 +214,6 @@ fi
   export QT_QPA_PLATFORM=wayland
 
 #Run ARMSX2 emulator
-  export SDL_AUDIODRIVER=pulseaudio
+  export SDL_AUDIODRIVER=pipewire
   set_kill set "-9 armsx2-qt"
   ${EMUPERF} /usr/share/armsx2-sa/armsx2-qt -bigpicture -fullscreen "${1}"

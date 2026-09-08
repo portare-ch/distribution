@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2022-present Frank Hartung (supervisedthinking (@) gmail.com)
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 # Source environment variables
 . /etc/profile
 
-# Ensure we're using pulseaudio
+# Stays on pulse against the session default: cemu plays through cubeb,
+# aimed at the pactl sink name set below, and SDL only does input here.
 export SDL_AUDIODRIVER=pulseaudio
 set_kill set "-9 cemu"
 
