@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2021-present Team LibreELEC (https://libreelec.tv)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="pipewire"
 PKG_VERSION="1.2.6"
@@ -7,7 +8,7 @@ PKG_SHA256="8d9b4e95dba33d218c760fecbb71672c86a56917f803e96fe6c3af62fa783a95"
 PKG_LICENSE="LGPL"
 PKG_SITE="https://pipewire.org"
 PKG_URL="https://github.com/PipeWire/pipewire/archive/${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain libpthread-stubs dbus ncurses alsa-lib pulseaudio systemd libsndfile libusb"
+PKG_DEPENDS_TARGET="toolchain libpthread-stubs dbus ncurses alsa-lib systemd libsndfile libusb"
 PKG_LONGDESC="PipeWire is a server and user space API to deal with multimedia pipeline"
 PKG_PATCH_DIRS+=" ${DEVICE}"
 
@@ -71,7 +72,7 @@ PKG_MESON_OPTS_TARGET="-Ddocs=disabled \
                        -Dudevrulesdir=/usr/lib/udev/rules.d \
                        -Dsdl2=disabled \
                        -Dsndfile=enabled \
-                       -Dlibpulse=enabled \
+                       -Dlibpulse=disabled \
                        -Droc=disabled \
                        -Davahi=disabled \
                        -Decho-cancel-webrtc=disabled \
