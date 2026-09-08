@@ -2,6 +2,7 @@
 # Copyright (C) 2019-present Shanti Gilbert (https://github.com/shantigilbert)
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
 # Copyright (C) 2026-present ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="mpv"
 PKG_VERSION="41f6a645068483470267271e1d09966ca3b9f413" # 0.41.0
@@ -9,7 +10,10 @@ PKG_SHA256="068960e89211f2adc80af03f637fa393fb5e407d3dd23592c8fe8c5490bb7ae4"
 PKG_LICENSE="GPLv2+"
 PKG_SITE="https://github.com/mpv-player/mpv"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain ffmpeg SDL2 luajit libass libplacebo"
+# pipewire is not optional: ao_pipewire.c is gated on finding libpipewire-0.3
+# by pkg-config, and get_option('pipewire') defaults to auto, so without the
+# dependency mpv silently ends up on pulse instead.
+PKG_DEPENDS_TARGET="toolchain ffmpeg SDL2 luajit libass libplacebo pipewire"
 PKG_LONGDESC="Video player based on MPlayer/mplayer2 https://mpv.io"
 
 if [ "${OPENGLES_SUPPORT}" = yes ]; then
@@ -28,7 +32,7 @@ else
   PKG_MESON_OPTS_TARGET+=" -Dwayland=disabled"
 fi
 
-PKG_MESON_OPTS_TARGET+=" -Dsdl2-gamepad=enabled"
+PKG_MESON_OPTS_TARGET+=" -Dsdl2-gamepad=enabled -Dpipewire=enabled"
 
 # Vulkan has issues on S922X so disable
 [ "${DEVICE}" == "S922X" ] && PKG_MESON_OPTS_TARGET+=" -Dvulkan=disabled"
