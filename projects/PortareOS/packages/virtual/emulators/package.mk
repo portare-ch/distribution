@@ -45,49 +45,49 @@ case "${DEVICE}" in
     ;;
   RK3399)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" aethersx2-sa dolphin-sa drastic-sa mednafen melonds-sa nanoboyadvance-sa"
+    PKG_EMUS+=" dolphin-sa drastic-sa mednafen melonds-sa nanoboyadvance-sa"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   RK3566|RK3576)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" aethersx2-sa azahar-sa dolphin-sa drastic-sa mednafen melonds-sa vita3k-sa"
+    PKG_EMUS+=" azahar-sa dolphin-sa drastic-sa mednafen melonds-sa vita3k-sa"
     LIBRETRO_CORES+=" dolphin-lr"
     ;;
   RK3588)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" aethersx2-sa azahar-sa dolphin-sa drastic-sa mednafen melonds-sa supermodel-sa vita3k-sa"
+    PKG_EMUS+=" azahar-sa dolphin-sa drastic-sa mednafen melonds-sa supermodel-sa vita3k-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM6115)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" aethersx2-sa azahar-sa dolphin-sa drastic-sa mednafen melonds-sa supermodel-sa vita3k-sa armsx2-sa"
+    PKG_EMUS+=" azahar-sa dolphin-sa drastic-sa mednafen melonds-sa supermodel-sa vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8250)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 daedalusx64-sa desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" aethersx2-sa azahar-sa bigpemu-sa cemu-sa dolphin-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
+    PKG_EMUS+=" azahar-sa bigpemu-sa dolphin-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
                 xemu-sa skyemu-sa steam vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr kronos-lr"
     ;;
   SM8550)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 daedalusx64-sa desmume-lr gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" aethersx2-sa ares-sa azahar-sa bigpemu-sa cemu-sa dolphin-sa drastic-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
+    PKG_EMUS+=" ares-sa azahar-sa bigpemu-sa dolphin-sa drastic-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
                 xemu-sa skyemu-sa steam vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr kronos-lr"
     ;;
   SM8650|SM8750)
-    PKG_EMUS+=" aethersx2-sa ares-sa azahar-sa bigpemu-sa cemu-sa dolphin-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
+    PKG_EMUS+=" ares-sa azahar-sa bigpemu-sa dolphin-sa gopher64-sa heroic mednafen melonds-sa nanoboyadvance-sa rpcs3-sa supermodel-sa \
                 xemu-sa skyemu-sa steam vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr kronos-lr"
     ;;
   S922X)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 pcsx_rearmed-lr"
-    PKG_EMUS+=" aethersx2-sa azahar-sa dolphin-sa drastic-sa duckstation-sa melonds-sa vita3k-sa armsx2-sa"
+    PKG_EMUS+=" azahar-sa dolphin-sa drastic-sa duckstation-sa melonds-sa vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   AMD64)
-    PKG_EMUS+=" ares-sa azahar-sa cemu-sa dolphin-sa gopher64-sa mednafen melonds-sa nanoboyadvance-sa \
+    PKG_EMUS+=" ares-sa azahar-sa dolphin-sa gopher64-sa mednafen melonds-sa nanoboyadvance-sa \
                 xemu-sa skyemu-sa vita3k-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr beetle-saturn-lr bsnes-lr bsnes-hd-lr dolphin-lr"
 esac
@@ -668,15 +668,6 @@ makeinstall_target() {
       ;;
   esac
 
-  ### Nintendo Wii U
-  case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core wiiu cemu cemu-sa true
-      add_es_system wiiu
-      install_script "Start CEMU.sh"
-      ;;
-  esac
-
   ### Sega GameGear
   add_emu_core gamegear retroarch gearsystem true
   add_emu_core gamegear retroarch genesis_plus_gx false
@@ -1150,22 +1141,12 @@ makeinstall_target() {
   add_es_system psx
 
   ### Sony Playstation 2
+  # The RK boards carried aethersx2 and nothing else, so they lose PS2 with it.
   case ${DEVICE} in
-  AMD64)
+  AMD64|S922X|SM6115|SM8250|SM8550|SM8650|SM8750)
     add_emu_core ps2 armsx2 armsx2-sa true
     install_script "Start ARMSX2.sh"
     add_es_system ps2
-    ;;
-  RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X)
-    add_emu_core ps2 aethersx2 aethersx2-sa true
-    case ${DEVICE} in
-      S922X|SM6115|SM8250|SM8550|SM8650|SM8750)
-        add_emu_core ps2 armsx2 armsx2-sa false
-        install_script "Start ARMSX2.sh"
-      ;;
-    esac
-    add_es_system ps2
-    install_script "Start AetherSX2.sh"
     ;;
   esac
 
