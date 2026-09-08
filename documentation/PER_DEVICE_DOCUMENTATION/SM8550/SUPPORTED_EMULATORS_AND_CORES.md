@@ -89,7 +89,6 @@
 |Nintendo|Triforce (triforce)|2002|`triforce`|.gcm .iso .gcz .ciso .wbfs .rvz .dol .m3u|**dolphin:** dolphin-sa-gc (default)<br>**dolphin:** dolphin-qt-gc<br>|
 |Nintendo|Virtual Boy (virtualboy)|1995|`virtualboy`|.vb .zip .7z|**retroarch:** beetle_vb (default)<br>**mednafen:** vb<br>|
 |Nintendo|Wii (wii)|2006|`wii`|.gcm .iso .gcz .ciso .wbfs .rvz .dol .wad .m3u|**dolphin:** dolphin-sa-wii (default)<br>**dolphin:** dolphin-qt-wii<br>**retroarch:** dolphin<br>|
-|Nintendo|Wii U (wiiu)|2012|`wiiu`|.wud .wux .wua .rpx|**cemu:** cemu-sa (default)<br>|
 |Nintendo|WiiWare (wiiware)|2008|`wiiware`|.gcm .iso .gcz .ciso .wbfs .rvz .dol .wad .m3u|**dolphin:** dolphin-sa-wii (default)<br>**dolphin:** dolphin-qt-wii<br>**retroarch:** dolphin<br>|
 |Palm, Inc.|Palm OS (palm)|1996|`palm`|.prc .pqa .img .pdb .zip|**retroarch:** mu (default)<br>|
 |Panasonic|3DO (3do)|1993|`3do`|.iso .bin .chd .cue|**retroarch:** opera (default)<br>|
