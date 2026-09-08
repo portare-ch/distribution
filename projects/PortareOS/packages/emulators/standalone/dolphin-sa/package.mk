@@ -11,9 +11,9 @@ PKG_DEPENDS_TARGET="toolchain libevdev libdrm ffmpeg zlib libpng lzo libusb zstd
 PKG_LONGDESC="Dolphin is a GameCube / Wii / Triforce emulator, allowing you to play games for these two platforms on PC with improvements. "
 PKG_TOOLCHAIN="cmake"
 
-PKG_VERSION="6094cfcf7b8fba733b3116fdf3414d51c1c0e4a4" #2606
+PKG_VERSION="a2efdf1197be8132674b90fe9cf4761df39752ed" #2606
 PKG_DOLPHIN_VERSION_MAJOR="2606"
-PKG_DOLPHIN_VERSION_MINOR="1"
+PKG_DOLPHIN_VERSION_MINOR="2"
 PKG_SITE="https://github.com/dolphin-emu/dolphin"
 PKG_URL="${PKG_SITE}.git"
 
