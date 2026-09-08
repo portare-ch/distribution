@@ -13,3 +13,7 @@ rocknix/sources/scripts/rocknix-fake-suspend
 
 # Amiga core we do not use; puae covers it. Removed.
 uae4arm-lr
+
+# EOL PS2 appimage. armsx2 is the only PS2 emulator this fork ships.
+# Removed.
+aethersx2-sa
