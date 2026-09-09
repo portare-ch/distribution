@@ -19,6 +19,28 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+      - name: Check that pulse stays banned
+        if: github.event_name == 'pull_request'
+        run: |
+          # Everything in PortareOS speaks PipeWire, natively or through SDL
+          # or the alsa plugin. Mentions are only allowed when they turn
+          # something off.
+          HITS=$(grep -rn -w -E 'pulseaudio|libpulse|libpulse-simple' \
+                   projects/PortareOS distributions/PortareOS \
+                 | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' \
+                 | grep -vE '[Pp]ulse[Aa]udio=(0|off|OFF|no|false|disabled)' \
+                 | grep -vE 'ENABLE_PULSEAUDIO=OFF|USE_PULSEAUDIO=OFF|BACKEND_PULSEAUDIO=off' \
+                 | grep -vE 'SDL_PULSEAUDIO=OFF|--disable-pulse|-Dlibpulse=disabled' \
+                 | grep -vE 'pipewire/(patches|system\.d)/') || true
+
+          if [ -n "$HITS" ]; then
+            echo "--------------------------------------------------------"
+            echo "❌ pulse is banned in PortareOS, but these lines reference it:"
+            echo "$HITS"
+            exit 1
+          fi
+          echo "✅ No pulse references in PortareOS packages."
+
       - name: Validate pull request
         if: github.event_name == 'pull_request'
         run: |
