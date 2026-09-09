@@ -36,6 +36,60 @@ Sources are still fetched from ROCKNIX's `distribution-sources` mirror, and seve
 
 **Please do not raise PortareOS problems with the ROCKNIX maintainers.** For the upstream project, its community and its documentation, go to **[rocknix.org](https://rocknix.org)** and the [ROCKNIX Discord](https://discord.gg/seTxckZjJy).
 
+## Where we are different
+
+Beyond the device tree, the parts of the stack this fork has actually rewritten
+or thrown out.
+
+### PipeWire, and nothing else
+
+Pulse is banned. There is no `pulseaudio` recipe left in the tree, nothing links
+libpulse, no pulse daemon is built, and a check in `validate-pull-request.yml`
+fails the build if any of it comes back.
+
+Everything reaches PipeWire, though not all by the same road, because that is
+decided by what each upstream project supports:
+
+| | reaches PipeWire via |
+| --- | --- |
+| EmulationStation | libpipewire, native |
+| RetroArch, FluidSynth, OpenAL Soft | their own PipeWire backends |
+| Flycast, ares, ARMSX2, RPCS3 | SDL2 / SDL3, built with the PipeWire driver and PulseAudio off |
+| Dolphin | alsa-lib's `pcm_pipewire`, in process |
+
+The one deliberate exception is `pipewire-pulse`, which stays enabled. Steam and
+the games it runs carry their own libpulse in the Steam runtime and cannot be
+recompiled, so something has to answer them.
+
+The latency floor came down with it. `default.clock.min-quantum` and the
+pulse-compat minimums are pinned at 256 frames, 5.3ms at 48kHz, against the 960
+frames (20ms) this fork inherited.
+
+### EmulationStation rewritten for it
+
+[emulationstation-next](https://github.com/portare-ch/emulationstation-next) is
+built from a fork. `VolumeControl` was ALSA and PulseAudio side by side, wrapped
+in `__APPLE__` and `WIN32` branches for platforms this will never run on. It is
+now one native libpipewire implementation that binds the default sink through
+the registry and sets `channelVolumes` directly.
+
+Video playback moved from VLC to libmpv's software render API, and the gettext
+translation layer is gone.
+
+### Bloat removed along the way
+
+VLC, sndio, libao, m8c and pulseaudio are all out of the image. So are ten
+standalone emulators: aethersx2, cemu, drastic, daedalusx64, bigpemu, touchhle,
+skyemu, nanoboyadvance, hatari and vita3k, dropped for being duplicates of
+something already here, 16:9 only, or simply not wanted. Twenty five remain.
+
+That is on top of the device and distribution removals described above.
+
+### Next: suspend
+
+The device still drains battery while suspended, and coming back is slower than
+it should be. It should be instant. That is the next thing to take apart.
+
 ## Features
 
 Inherited from ROCKNIX:
