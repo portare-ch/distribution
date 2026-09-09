@@ -3,7 +3,7 @@
 # Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="emulationstation"
-PKG_VERSION="e968bf5eab8cdc67db0e1702d80becbdcbc9fce5"  # portare-ch/emulationstation-next master
+PKG_VERSION="d62e94ad522af264b84bc89a839f43bc8e657ea7"  # portare-ch/emulationstation-next master
 PKG_LICENSE="GPL"
 PKG_SITE="https://github.com/portare-ch/emulationstation-next"
 PKG_URL="${PKG_SITE}.git"
