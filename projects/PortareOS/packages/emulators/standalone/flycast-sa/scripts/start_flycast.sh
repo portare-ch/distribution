@@ -2,6 +2,7 @@
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2022-present JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 . /etc/profile
 set_kill set "-9 flycast"
@@ -44,6 +45,9 @@ fi
 if [ ! -f "${CONF_DIR}/mappings/SDL_Keyboard.cfg" ]; then
   cp -r "/usr/config/flycast/mappings/SDL_Keyboard.cfg" "${CONF_DIR}/mappings/SDL_Keyboard.cfg"
 fi
+
+#Existing configs still name the pulse backend, which is gone
+sed -i '/^backend =/c\backend = sdl2' "${CONF_DIR}/${FLYCAST_INI}"
 
 #Emulation Station Features
 GAME=$(echo "${1}"| sed "s#^/.*/##")
