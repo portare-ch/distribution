@@ -10,9 +10,8 @@ PKG_LICENSE="GPL"
 PKG_SITE="http://pulseaudio.org/"
 PKG_URL="http://www.freedesktop.org/software/pulseaudio/releases/${PKG_NAME}-${PKG_VERSION}.tar.xz"
 PKG_DEPENDS_TARGET="toolchain libcap libsndfile libtool soxr speexdsp glib:host glib"
-# Client side only. pipewire-pulse is the server here, and -Ddaemon=false
-# means no pulseaudio binary is built at all; what this package ships is
-# libpulse, which the cubeb emulators link, and pactl, which m8c calls.
+# Nothing links libpulse any more. This package survives only for pactl,
+# which Start M8C.sh uses to look up node names, and goes away with it.
 PKG_LONGDESC="libpulse and the pulse command line tools. The daemon is not built; pipewire-pulse is the server."
 
 if [ "${AVAHI_DAEMON}" = "yes" ]; then
