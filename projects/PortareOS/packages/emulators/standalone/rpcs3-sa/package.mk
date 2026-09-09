@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Copyright (C) 2024 ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2024-2026 ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="rpcs3-sa"
 PKG_LICENSE="GPLv2"
@@ -9,7 +10,7 @@ PKG_SITE="https://github.com/RPCS3/rpcs3"
 PKG_URL="${PKG_SITE}.git"
 PKG_TOOLCHAIN="cmake"
 PKG_DEPENDS_TARGET="toolchain llvm qt6 SDL3 ffmpeg curl zlib zstd libpng pugixml \
-                    libusb libevdev alsa-lib pulseaudio openal-soft miniupnpc"
+                    libusb libevdev alsa-lib openal-soft miniupnpc"
 
 if [ "${OPENGL_SUPPORT}" = "yes" ]; then
   PKG_DEPENDS_TARGET+=" ${OPENGL} glew"
@@ -25,7 +26,10 @@ pre_configure_target() {
   export CFLAGS="${CFLAGS} -DGLEW_EGL"
   export CXXFLAGS="${CXXFLAGS} -DGLEW_EGL"
 
-  PKG_CMAKE_OPTS_TARGET+=" -DWITH_LLVM=ON \
+  # FAudio reaches PipeWire through SDL3. cubeb is not optional in rpcs3,
+  # but without libpulse in the sysroot it builds no pulse backend.
+  PKG_CMAKE_OPTS_TARGET+=" -DUSE_FAUDIO=ON \
+                           -DWITH_LLVM=ON \
                            -DBUILD_LLVM=OFF \
                            -DSTATIC_LINK_LLVM=OFF \
                            -DLLVM_DIR=${SYSROOT_PREFIX}/usr/lib/cmake/llvm \
