@@ -2,6 +2,7 @@
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 . /etc/profile
 
@@ -66,6 +67,9 @@ fi
 
 rm -rf ${CONF_DIR}/StateSaves
 ln -sf /storage/roms/savestates/gamecube ${CONF_DIR}/StateSaves
+
+# Existing configs still name the Cubeb backend, which is gone
+sed -i '/^Backend = /c\Backend = ALSA' "${CONF_DIR}/${DOLPHIN_INI}"
 
 # Copy bios, memory cards and other system stuff to roms
 if [ ! -d "/storage/roms/bios/GC/" ]; then
