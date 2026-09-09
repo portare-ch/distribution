@@ -2,6 +2,7 @@
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2022-present JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 . /etc/profile
 
@@ -46,6 +47,10 @@ WCOLORB=$(get_setting write_color_buffers "${PLATFORM}" "${GAME}")
 ZCULLA=$(get_setting zcull_accuracy "${PLATFORM}" "${GAME}")
 SUI=$(get_setting start_ui "${PLATFORM}" "${GAME}")
 CONFIG_YML="/storage/.config/rpcs3/config.yml"
+
+#Existing configs still name the Cubeb renderer and a pulse device id
+sed -i '/^Audio:/ {n; s/Renderer: .*/Renderer: FAudio/}' "${CONFIG_YML}"
+sed -i "s#Audio Device:.*\$#Audio Device: '@@@default@@@'#g" "${CONFIG_YML}"
 
 #Aspect Ratio
 if [ "${ASPECT}" = "4x3" ]; then
