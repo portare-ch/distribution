@@ -19,6 +19,14 @@ concurrency:
   group: build
   cancel-in-progress: false
 
+# Runners are ubuntu-26.04, which GitHub still marks preview. It is not the
+# build environment: that is the container in Dockerfile, currently
+# ubuntu:noble, and the compiler is the gcc the buildsystem builds itself. So
+# the runner supplies docker, git and disk, and little here depends on which
+# release it is. If a run dies for something that has nothing to do with this
+# repository, the label is the first thing to suspect and ubuntu-24.04 is the
+# way back.
+
 # No schedule. Upstream builds nightly and monthly, and every job below was
 # fenced so those crons only fired for ROCKNIX's own repository. The rename
 # turned that fence into a comparison against 'PortareOS/distribution', which
@@ -52,7 +60,7 @@ jobs:
   set-envs:
     environment:
       name: ${{ github.event_name == 'pull_request' && 'pr-approval' || 'auto' }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       NIGHTLY: ${{ steps.set-release-type.outputs.NIGHTLY }}
       OFFICIAL: ${{ steps.set-release-type.outputs.OFFICIAL }}
@@ -225,7 +233,7 @@ jobs:
   rerun-failed-jobs:
     if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next'
     needs: build-devices
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - env:
           GH_REPO: ${{ github.repository }}
@@ -251,7 +259,7 @@ jobs:
     needs:
       - set-envs
       - build-devices
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:

@@ -25,7 +25,7 @@ jobs:
     # so this stage needs every minute it can get and a way to keep what it
     # compiled when it still does not make it (see the ccache steps below).
     timeout-minutes: 360
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       AUTOREMOVE: "yes"
       PROJECT: ${{ inputs.PROJECT }}

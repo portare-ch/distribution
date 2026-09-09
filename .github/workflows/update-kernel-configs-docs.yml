@@ -25,7 +25,7 @@ jobs:
         include:
           - device: SM8550
             project: PortareOS
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -95,7 +95,7 @@ jobs:
           if-no-files-found: error
 
   create-pr-kernel-configs-docs:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     name: Create PR with updated kernel config or docs
     permissions:
       contents: write

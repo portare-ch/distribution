@@ -136,7 +136,7 @@ jobs:
     name: Artifacts cleanup
     needs: build-aarch64-image
     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure')  }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: geekyeggo/delete-artifact@v6
         continue-on-error: true

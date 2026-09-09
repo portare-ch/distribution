@@ -21,7 +21,7 @@ on:
 jobs:
   build-aarch64-rust:
     timeout-minutes: 180
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       AUTOREMOVE: "yes"
       PROJECT: ${{ inputs.PROJECT }}
