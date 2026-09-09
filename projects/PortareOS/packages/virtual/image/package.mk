@@ -25,7 +25,7 @@ PKG_FONTS="corefonts"
 
 PKG_MULTIMEDIA="ffmpeg mpv gmu m8c"
 
-PKG_SOUND="espeak libao"
+PKG_SOUND="espeak"
 
 PKG_SYNC="synctools"
 
