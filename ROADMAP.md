@@ -2,10 +2,11 @@
 
 Intent, not promise. Ordered roughly by how much difference each would make.
 
-**Nothing here has been tested on hardware.** The tree builds and the changes
-are internally consistent; whether the Nova boots with them is unverified.
-Three of these are blocked on measurement rather than code, and there is no
-test rig yet: a 240 fps camera and a way to trigger a known input.
+**Most of this has not been tested on hardware.** The tree builds and the
+changes are internally consistent; whether the Nova behaves with them is
+largely unverified. The audio work is the exception, and it only got confirmed
+by ear. Several items are blocked on measurement rather than code, and there is
+no test rig yet: a 240 fps camera and a way to trigger a known input.
 
 ## The goal
 
@@ -16,6 +17,19 @@ because that is what Android on this device is worst at, then performance and
 visuals wherever they can be had without being paid for in input lag.
 
 ## Planned
+
+### Suspend that actually suspends
+
+Deep suspend is enabled, but the battery still goes down overnight and waking
+the device takes longer than it should. Closing the lid on this thing should
+cost nothing and coming back should be instant.
+
+Nothing is measured yet, so the first job is finding out where the power goes:
+what is still clocked, which wakeup sources are firing, and what
+`/sys/kernel/debug/suspend_stats` and the s2idle residency counters say about
+whether the SoC is reaching its deepest state at all. Resume time then needs
+splitting between the kernel bringing devices back and userspace, where the
+compositor, the gamepad MCU handshake (`1012`) and the panel are all candidates.
 
 ### Every emulator configured on arrival
 
@@ -75,6 +89,17 @@ The service switches the governor to schedutil on start and restores
 performance on stop, so a device not running it behaves as before. That makes
 it a clean A/B once there is a way to measure.
 
+### Audio stack
+
+Landed: pulse is gone from the tree entirely and everything speaks PipeWire,
+natively where the upstream project has a backend and through SDL or the alsa
+plugin where it does not. The latency floor went from 960 frames to 256, 20ms
+to 5.3ms, without crackling on hardware. EmulationStation's volume control was
+rewritten on libpipewire. The README has the full picture.
+
+Remaining: none of it is measured. The floor was walked down until it stopped
+sounding worse, which is not the same as knowing what the pipeline costs.
+
 ### A build that does not waste hours
 
 Landed: the Docker image is rebuilt only when its Dockerfile changes, which
@@ -95,11 +120,6 @@ the compositor can be taken out of the path entirely and emulators handed the
 display directly through KMS/DRM. Best case that removes a whole frame.
 
 Overlaps with replacing sway: one answer may make the other unnecessary.
-
-### Audio stack
-
-Untouched and unmeasured. Worth finding out what the current pipeline costs in
-latency and whether any of it can be shortened or taken out.
 
 ## Not planned
 
