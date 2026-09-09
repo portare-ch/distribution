@@ -75,6 +75,7 @@ ln -sf /storage/roms/savestates/wii ${CONF_DIR}/StateSaves
 
 # Existing configs still name the Cubeb backend, which is gone
 sed -i '/^Backend = /c\Backend = ALSA' "${CONF_DIR}/${DOLPHIN_INI}"
+sed -i '/^SyncOnSkipIdle = /c\SyncOnSkipIdle = True' "${CONF_DIR}/${DOLPHIN_INI}"
 
 # Copy bios, memory cards and other system stuff to roms
 if [ ! -d "/storage/roms/bios/GC/" ]; then
