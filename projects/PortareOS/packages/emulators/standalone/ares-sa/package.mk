@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026-present ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="ares-sa"
 PKG_VERSION="0aafd85789215e84e1e43415c07d4c88461b7899" #v148
@@ -9,7 +10,7 @@ PKG_SITE="https://github.com/ares-emulator/ares"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
 PKG_LONGDESC="Ares is a multi-system emulator. It is a descendant of higan and bsnes, and focuses on accuracy and preservation."
 PKG_DEPENDS_HOST="toolchain"
-PKG_DEPENDS_TARGET="toolchain librashader ares-sa:host SDL3 libao gtk3 openal-soft"
+PKG_DEPENDS_TARGET="toolchain librashader ares-sa:host SDL3 gtk3 openal-soft"
 PKG_TOOLCHAIN="cmake"
 
 pre_configure_host() {
@@ -24,7 +25,11 @@ pre_configure_host() {
 }
 
 pre_configure_target() {
-  PKG_CMAKE_OPTS_TARGET+=" -DCMAKE_BUILD_TYPE=Release \
+  # settings.bml uses the SDL driver, which reaches PipeWire through SDL3
+  PKG_CMAKE_OPTS_TARGET+=" -DARES_ENABLE_PULSEAUDIO=OFF \
+                           -DARES_ENABLE_AO=OFF \
+                           -DARES_ENABLE_OSS=OFF \
+                           -DCMAKE_BUILD_TYPE=Release \
                            -DBUILD_SHARED_LIBS=FALSE \
                            -DWITH_SYSTEM_ZLIB=ON \
                            -DARES_BUILD_LOCAL=OFF \

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
-# Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2024-2026 ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="retroarch"
 PKG_VERSION="bdba046fa6766380bc2457532f38e589df769aaf" # v1.22.2 + fixes
@@ -7,12 +8,8 @@ PKG_SHA256="ba14ddf6fd6712185334cce15d1fa7d36f3419195a34ae6fd6f1ade42095e94f"
 PKG_SITE="https://github.com/libretro/RetroArch"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
 PKG_LICENSE="GPL-3.0-or-later"
-PKG_DEPENDS_TARGET="toolchain SDL2 alsa-lib libass openssl freetype zlib retroarch-assets core-info ffmpeg libass joyutils nss-mdns openal-soft libogg libvorbisidec libvorbis libvpx libpng libdrm pulseaudio miniupnpc flac xz"
+PKG_DEPENDS_TARGET="toolchain SDL2 alsa-lib libass openssl freetype zlib retroarch-assets core-info ffmpeg libass joyutils nss-mdns openal-soft libogg libvorbisidec libvorbis libvpx libpng libdrm miniupnpc flac xz"
 PKG_LONGDESC="Reference frontend for the libretro API."
-
-if [ "${PIPEWIRE_SUPPORT}" = "yes" ]; then
-  PKG_DEPENDS_TARGET+=" pipewire"
-fi
 
 case ${ARCH} in
   arm)
@@ -24,6 +21,7 @@ case ${ARCH} in
 esac
 
 PKG_CONFIGURE_OPTS_TARGET="--disable-qt \
+                           --disable-pulse \
                            --enable-alsa \
                            --enable-udev \
                            --disable-opengl1 \
@@ -36,6 +34,11 @@ PKG_CONFIGURE_OPTS_TARGET="--disable-qt \
                            --enable-sdl2 \
                            --enable-kms \
                            --enable-ffmpeg"
+
+if [ "${PIPEWIRE_SUPPORT}" = "yes" ]; then
+  PKG_DEPENDS_TARGET+=" pipewire"
+  PKG_CONFIGURE_OPTS_TARGET+=" --enable-pipewire"
+fi
 
 case ${ARCH} in
   arm) PKG_CONFIGURE_OPTS_TARGET+=" --enable-neon" ;;
