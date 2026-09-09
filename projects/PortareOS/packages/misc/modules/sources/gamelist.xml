@@ -13,18 +13,6 @@
         <image>./images/file-manager.svg</image>
     </game>
     <game>
-        <path>./Start M8C.sh</path>
-        <name>M8C</name>
-        <desc>Cross-platform M8 tracker headless client.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2022</releasedate>
-        <genre>Tool</genre>
-        <players>1</players>
-        <image>./images/m8c.svg</image>
-    </game>
-    <game>
         <path>./Start FEXConfig.sh</path>
         <name>FEXConfig</name>
         <desc>FEX: Emulate x86 Programs on ARM64.</desc>

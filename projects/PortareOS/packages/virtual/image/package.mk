@@ -23,7 +23,7 @@ PKG_GRAPHICS="imagemagick"
 
 PKG_FONTS="corefonts"
 
-PKG_MULTIMEDIA="ffmpeg mpv gmu m8c"
+PKG_MULTIMEDIA="ffmpeg mpv gmu"
 
 PKG_SOUND="espeak"
 
@@ -59,7 +59,7 @@ else
   [ "${VULKAN_SUPPORT}" = "yes" ] && PKG_DEPENDS_TARGET+=" vkmark"
 
   # Sound support
-  [ "${PIPEWIRE_SUPPORT}" = "yes" ] && PKG_DEPENDS_TARGET+=" alsa pulseaudio pipewire wireplumber"
+  [ "${PIPEWIRE_SUPPORT}" = "yes" ] && PKG_DEPENDS_TARGET+=" alsa pipewire wireplumber"
 
 fi
 
