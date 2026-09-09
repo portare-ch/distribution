@@ -1,15 +1,18 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2021-present Shanti Gilbert (https://github.com/shantigilbert)
 # Copyright (C) 2022-present JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="flycast-sa"
 PKG_VERSION="5aa091fde632fb332c8d8c34e280d62dc951954c" #v2.7
 PKG_LICENSE="GPLv2"
 PKG_SITE="https://github.com/flyinghead/flycast"
 PKG_URL="${PKG_SITE}.git"
-PKG_DEPENDS_TARGET="toolchain alsa SDL2 libzip curl miniupnpc lua54 libao"
+PKG_DEPENDS_TARGET="toolchain alsa SDL2 libzip curl miniupnpc lua54"
 PKG_LONGDESC="Flycast is a multiplatform Sega Dreamcast, Naomi and Atomiswave emulator"
 PKG_TOOLCHAIN="cmake"
+# sdl2 is the only backend: SDL2 talks to PipeWire natively.
+PKG_CMAKE_OPTS_TARGET+=" -DUSE_PULSEAUDIO=OFF -DUSE_LIBAO=OFF"
 PKG_PATCH_DIRS+="${DEVICE}"
 
 if [ "${OPENGL_SUPPORT}" = "yes" ] && [ ! "${PREFER_GLES}" = "yes" ]; then
