@@ -158,7 +158,7 @@ Video:
     Darkening effect strength: 30
     Blur effect strength: 0
 Audio:
-  Renderer: Cubeb
+  Renderer: FAudio
   Audio Provider: CellAudio
   RSXAudio Avport: HDMI 0
   Dump to file: false
@@ -166,7 +166,7 @@ Audio:
   Audio Format: Stereo
   Audio Formats: 0
   Audio Channel Layout: Stereo
-  Audio Device: alsa_output._sys_devices_platform_sound_sound_card0.HiFi__Speaker__sink
+  Audio Device: '@@@default@@@'
   Master Volume: 100
   Enable Buffering: true
   Desired Audio Buffer Duration: 100
