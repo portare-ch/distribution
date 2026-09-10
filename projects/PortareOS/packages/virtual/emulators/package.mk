@@ -9,7 +9,7 @@ PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
 PKG_EMUS="amiberry duckstation-sa flycast-sa gzdoom-sa hypseus-singe moonlight mupen64plus-sa openbor pico-8   \
-          ppsspp-sa scummvmsa vice-sa wine yabasanshiro-sa"
+          ppsspp-sa scummvmsa wine yabasanshiro-sa"
 
 EMUS_32BIT=""
 
@@ -285,17 +285,14 @@ makeinstall_target() {
 
   ### Commodore 128
   add_emu_core c128 retroarch vice_x128 true
-  add_emu_core c128 vicesa x128 false
   add_es_system c128
 
   ### Commodore 16
   add_emu_core c16 retroarch vice_xplus4 true
-  add_emu_core c16 vicesa xplus4 false
   add_es_system c16
 
   ### Commodore 64
   add_emu_core c64 retroarch vice_x64 true
-  add_emu_core c64 vicesa x64sc false
   add_es_system c64
 
   ### Commodore PET
@@ -304,7 +301,6 @@ makeinstall_target() {
 
   ### Commodore VIC-20
   add_emu_core vic20 retroarch vice_xvic true
-  add_emu_core vic20 vicesa xvic false
   add_es_system vic20
 
   ### Capcom Playsystem 1
