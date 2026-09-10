@@ -153,47 +153,35 @@ Measured. The counter sits at 30, dips to 26 when the audio stutters, and
 falls as far as 9 at its worst. So this is not presentation: frames are not
 being made. Whatever is wrong is upstream of the compositor.
 
-GPU utilisation moves with it: 10 to 20 percent at full speed, 80 to 90 percent
-while it drops, then back down when it recovers. On an Adreno 740 emulating a
-Dreamcast, 80 percent is not a busy GPU, it is a slow one. That is the shape of
-devfreq sitting at a low operating point and `simple_ondemand` ramping after
-the work has already arrived, so the burst is measured against a clock that was
-picked for the idle before it.
+Ruled out since, in order:
 
-Two things make that easy to believe here. The governor is `simple_ondemand`
-(see `sleep.d/post/002-freq`), and `max_freq` is whatever the device tree
-leaves it at: `bin/gpu_overclock` would raise it from 680000000 to 1000000000
-but nothing in the tree calls that script.
+The audio backend. `sdl2` replaced `pulse` when pulseaudio was removed and the
+stutter survived it.
 
-The test is one line, and it either fixes the drops or clears the GPU:
+The GPU clock. Utilisation looked damning at first: 10 to 20 percent at full
+speed, 80 to 90 while dropping. But pinning the devfreq governor to
+`performance` holds the GPU at its 680 MHz ceiling and the drops continue
+essentially unchanged. (That test did expose a real bug, a suspend hook
+latching the GPU to powersave, but a different one.)
 
-    echo performance > /sys/devices/platform/soc@0/3d00000.gpu/devfreq/3d00000.gpu/governor
+CPU shortage. `top -H` during a drop: `Flycast-emu` at 42.6 percent of one
+core, `Flycast-rend` at 14.5, `SDLAudioP0` at 2.3, and 87.8 percent of the
+machine idle with a load average of 1.14. Nothing is saturated. There is no
+shortage of anything.
 
-If it holds, `set_setting system.gpuperf performance` makes it survive a reboot
-via `008-perfmode`.
+So flycast is waiting, not working. Which puts the audio path back in front,
+for a better reason than the first guess: flycast gates emulation on the audio
+buffer, so a backend that delivers late does not follow a frame drop, it causes
+one. The `SDLAudioP0` thread exists and is nearly idle, which is what a thread
+blocked on a slow consumer looks like.
 
-If the GPU is cleared, the CPU side is still worth the same treatment, since
-9 fps is three times the frame budget and too large for scheduler jitter:
+The next measurement is `pw-top` during a drop, watching flycast's node for a
+climbing ERR count and for what quantum it negotiated. `backend = alsa` against
+`sdl2` is the A/B underneath it.
 
-    while :; do echo "$(date +%T) $(for f in \
-      /sys/devices/system/cpu/cpufreq/policy*/scaling_cur_freq; do \
-      printf '%s ' $(( $(cat $f)/1000 )); done)| \
-      $(cat /sys/class/thermal/thermal_zone*/temp|sort -n|tail -1|cut -c1-2)C"; \
-      sleep 1; done
-
-Thermal, if the clocks fall and the temperature is high. Governor, if the
-clocks are low and the temperature is not: `irqaffinity=0-2` puts every
-interrupt on the little cluster, and switching to schedutil dropped that
-cluster's idle clock from 2016000 kHz to 556800. That change was made in this
-tree, recently, and this is the shape of symptom it could produce. Neither, if
-the clocks hold, and then it is a block rather than a shortage.
-
-Worth ruling out separately: flycast synchronises to audio, so a stalling audio
-backend does not merely follow a frame drop, it can cause one. `backend = alsa`
-against the current `sdl2` is the cheap A/B, and it also tests the sdl2 switch
-that was made when pulse was removed.
-
-Also unexplained, and possibly a separate bug: the baseline is 30, not 60.
+The baseline is 30 rather than 60, which was filed as possibly separate and
+probably is not: half rate is what an emulator gated on audio does when the
+audio arrives at half the rate it expects.
 
 Note that `pvr.AutoSkipFrame` is not it unless the ES `auto_frame_skip` setting
 has been set by hand. Nothing in the tree defines a default for it, so
