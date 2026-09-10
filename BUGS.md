@@ -6,8 +6,9 @@ small, too uncertain or too far from a fix to file. Nothing here is
 speculative: each item is something observed on the device or read in the
 tree, with enough detail to pick up cold.
 
-Add to it when you leave something behind. Delete an entry when it is fixed,
-not when it is filed.
+Add to it when you leave something behind. When something is fixed, move it to
+Resolved at the bottom rather than deleting it: what was wrong and why is worth
+keeping, especially where the first few explanations were wrong.
 
 ## Unexplained
 
@@ -97,9 +98,33 @@ Diagnosed but unconfirmed. `Dolphin.ini` ran Dual Core with
 `CommandProcessor::HandleUnknownOpcode` singles out as making an unknown FIFO
 opcode "very likely". `SyncOnSkipIdle` is restored to upstream's default.
 
-If it still freezes, Dolphin's own escalation is `SyncGPU = True`, then
-`CPUThread = False`. Change one at a time. `/var/log/exec.log` now carries the
-reason, since the patch that silenced 20 PanicAlerts is gone.
+It still freezes, so that was not it, or not all of it. Dolphin's own
+escalation from here is `SyncGPU = True`, then `CPUThread = False`. One at a
+time. `/var/log/exec.log` now carries the reason, since the patch that silenced
+20 PanicAlerts is gone.
+
+What the kernel rules out: a 2.5 hour dmesg covering a play session has no GPU
+fault, no `*ERROR*` from msm, no hung task, no rcu stall, no OOM. One
+`dpu_encoder_resource_control: invalid parameters` from the display controller,
+once, and nothing else. So whatever stops is stopping in userspace, without the
+kernel noticing. That is Dolphin's own threads or the Vulkan driver deadlocking
+before it submits anything the kernel would object to, and it argues against
+the GPU firmware being the cause.
+
+The measurement nobody has taken: while it is frozen, dump per-thread state.
+
+    P=$(pidof dolphin-emu-nogui)
+    for t in /proc/$P/task/*; do
+      echo "$(basename $t) $(cut -d' ' -f3 $t/stat) $(cat $t/wchan) $(cut -d' ' -f1 $t/syscall)"
+    done
+
+That separates the three candidates in one shot. Threads blocked in an ioctl on
+a DRM fd means the driver. Everything in a futex wait means a deadlock between
+Dolphin's own threads. A thread in state R with no syscall means the JIT is
+spinning.
+
+Soul Calibur III is not a way around this: it is PS2 only, so it belongs to
+armsx2, which is reported to run fine.
 
 ### Truncations in the 240p patch
 
@@ -109,7 +134,92 @@ At the 240p setting a scale of 0.5 truncates to 0. Neither crashes and both
 affect only that one resolution. Left alone because picking a rounding is a
 design call, not a fix.
 
+## Flycast
+
+### Tony Hawk's Pro Skater stutters
+
+The audio backend was changed from `pulse` to `sdl2` when pulseaudio was
+removed, on the theory that the backend was behind the stutter. It still
+stutters, so it was not.
+
+The change did reach the device: `start_flycast.sh` rewrites `backend =` in an
+existing `/storage/.config/flycast/emu.cfg` on every launch, so a config
+predating the switch is not the explanation.
+
+Nor is staleness. `PKG_VERSION` is `5aa091f`, which is exactly `v2.7`, the
+newest tag upstream has.
+
+Measured. The counter sits at 30, dips to 26 when the audio stutters, and
+falls as far as 9 at its worst. So this is not presentation: frames are not
+being made. Whatever is wrong is upstream of the compositor.
+
+Ruled out since, in order:
+
+The audio backend. `sdl2` replaced `pulse` when pulseaudio was removed and the
+stutter survived it.
+
+The GPU clock. Utilisation looked damning at first: 10 to 20 percent at full
+speed, 80 to 90 while dropping. But pinning the devfreq governor to
+`performance` holds the GPU at its 680 MHz ceiling and the drops continue
+essentially unchanged. (That test did expose a real bug, a suspend hook
+latching the GPU to powersave, but a different one.)
+
+CPU shortage. `top -H` during a drop: `Flycast-emu` at 42.6 percent of one
+core, `Flycast-rend` at 14.5, `SDLAudioP0` at 2.3, and 87.8 percent of the
+machine idle with a load average of 1.14. Nothing is saturated. There is no
+shortage of anything.
+
+So flycast is waiting, not working. Which puts the audio path back in front,
+for a better reason than the first guess: flycast gates emulation on the audio
+buffer, so a backend that delivers late does not follow a frame drop, it causes
+one. The `SDLAudioP0` thread exists and is nearly idle, which is what a thread
+blocked on a slow consumer looks like.
+
+The next measurement is `pw-top` during a drop, watching flycast's node for a
+climbing ERR count and for what quantum it negotiated. `backend = alsa` against
+`sdl2` is the A/B underneath it.
+
+The baseline is 30 rather than 60, which was filed as possibly separate and
+probably is not: half rate is what an emulator gated on audio does when the
+audio arrives at half the rate it expects.
+
+Note that `pvr.AutoSkipFrame` is not it unless the ES `auto_frame_skip` setting
+has been set by hand. Nothing in the tree defines a default for it, so
+`get_setting` comes back empty and the launcher takes the `else` arm, which
+writes 0.
+
 ## Audio
+
+### 44.1 kHz cannot reach this hardware
+
+Not a bug, a constraint, written down so nobody proposes the fix again.
+
+The Dreamcast's AICA is 44.1 kHz and has no 48 kHz mode, so flycast opens a
+44100 stream and is right to. The SoC will not take it. Both output paths go
+through a q6afe backend DAI and neither lists 44100, from
+`sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c`:
+
+    Q6AFE_MI2S_RX_DAI    8000 16000 32000 48000 176400
+    Q6AFE_CDC_DMA_RX_DAI 8000 16000 32000 48000 176400
+
+Speakers are `PRIMARY_MI2S_RX` into two `awinic,aw88166`, headphones are
+`RX_CODEC_DMA_RX_0` into `wcd938x`. Both codecs would take 44100: `AW88166_RATES`
+is `SNDRV_PCM_RATE_8000_48000`, and wcd938x carries an explicit
+`WCD938X_FRAC_RATES_MASK`. The Qualcomm DAI between them is what refuses. The
+only DAI in that file listing 44100 is the USB frontend, so a USB DAC would run
+native and nothing built in will.
+
+So a resample from 44100 to 48000 is mandatory here. The only choice is who
+does it, and PipeWire doing it is fine: `pw-top` puts flycast's node at 84.4us
+BUSY against a 21.3ms quantum, four tenths of one percent. It is not the
+stutter, and adding 44100 to `default.clock.allowed-rates` cannot help
+(attempted and closed as PR #86).
+
+If native 44.1 is ever wanted, the change is a kernel patch adding
+`SNDRV_PCM_RATE_44100` to `Q6AFE_MI2S_RX_DAI`, on the theory that LPASS can
+clock it and upstream simply never listed it. Speculative, and it needs
+hardware.
+
 
 ### hdmi_sense sink match is unverified
 
@@ -163,14 +273,10 @@ feature does nothing.
 
 ## EmulationStation
 
-### The volume overlay may be a theme problem
+### Unknown element of type "notification"
 
 `es_log.txt` carries repeated `Unknown element of type "notification"!`
-warnings. If the on-screen volume overlay is drawn as a theme notification
-element, that is why it does not appear, and it is a theme fault rather than a
-code one. `VolumeInfoComponent` itself is fine: it polls `getVolume()` every
-40ms and shows on a change, and the connection bug behind it was fixed in
-`portare-ch/emulationstation-next#12`.
+warnings from theme parsing. Cause unknown, and no symptom is attached to them.
 
 ### The frontend has no damage tracking
 
@@ -233,17 +339,10 @@ once, in #70, and the same phrasing sits in #68's commit message.
 
 ## Resume time
 
-Roughly 2.9s in the kernel plus a long userspace tail, measured from `dmesg`:
+rsinput and Bluetooth are under Resolved, worth about 3.2s between them. What
+is left:
 
-* **rsinput**, 1.48s of the kernel's 2.85s, burning its full handshake retry
-  budget and then failing with `-110`. Fixed in `1013`, unverified on hardware.
-* **Bluetooth**, 1.76s. Answered: it did not need to stop at all, and
-  `sleep.sh` no longer does. `hci_qca` sets `HCI_QUIRK_NON_PERSISTENT_SETUP`
-  when it controls the chip's power, so `hdev->setup` and its firmware
-  download run on every open, while `qca_pm_ops` already suspends the
-  controller into in-band sleep without losing the firmware. Unverified on
-  hardware: watch whether a paired controller still reconnects after resume.
-* **WiFi**, 10.6s to `associated`. The rfkill is not optional:
+* **WiFi**, was 10.6s to `associated`. The rfkill is not optional:
   `ath12k_core_continue_suspend_resume()` returns 0 and does nothing unless
   `ar->ah->state == ATH12K_HW_STATE_OFF`, and `wcn7850 hw2.0` does carry
   `.supports_suspend = true`, so the radio has to be down for the driver's
@@ -251,12 +350,123 @@ Roughly 2.9s in the kernel plus a long userspace tail, measured from `dmesg`:
 
   Measured split: NetworkManager's wake is only ~1.1s, consistently, and a
   flat `sleep 4` in `wifi-resume` was better than a third of the total. That
-  is now a readiness poll. What remains is the firmware reload on unblock and
-  the scan itself, roughly 5s, and nobody has attacked it. Association once
-  the scan lands is 26ms, so the scan is the target. A directed scan on the
-  pinned network's channel would be the thing to try, but `iwctl` does not
-  expose one.
+  is now a readiness poll, and it reports `WIFI ready after 0ms`, meaning iwd
+  answered on the first try and the whole four seconds was wasted. Or meaning
+  the readiness test answers before the chip is up, in which case the scan
+  fires too early and iwd's backoff costs a minute. Those look identical from
+  that log line. **Nobody has measured resume to `associated` since**, and
+  that is the one number that separates them.
+
+  What remains beyond it is the firmware reload on unblock and the scan
+  itself, roughly 5s. Association once the scan lands is 26ms, so the scan is
+  the target. A directed scan on the pinned network's channel would be the
+  thing to try, but `iwctl` does not expose one.
 
 `CONFIG_PM_DEBUG` is off, so `pm_print_times` is unavailable and per-device
 suspend and resume timings have to be read out of `dmesg` timestamps by hand.
 Turning it on is cheap and would make this measurable.
+
+## Resolved
+
+Kept rather than deleted. Several of these took more than one explanation to
+find, and the wrong ones are recorded too.
+
+### The gamepad failed to resume
+
+`rsinput_rx()` treated every serdev receive callback as exactly one frame:
+checksum the whole batch, discard it all on a mismatch. serdev frames nothing,
+so a batch holding two frames, a partial frame, or a frame behind power-cycle
+noise was thrown away entire. At resume that was the MCU's version reply, so
+the handshake added in `1012` timed out three times and gave up with
+`-ETIMEDOUT`, burning 1.48s of a 2.85s kernel resume and leaving the pad on a
+driver that had given up.
+
+`rsinput_process_data()` already validated each frame separately, so the fix in
+`1013` was to delete the batch-wide check and add header resynchronisation.
+
+**Confirmed on hardware.** Across three resumes the version reply is parsed and
+the parameters acknowledged 13ms later, with no `Checksum mismatch`, no timeout
+and no `-110`. That the reply is parsed at all is the proof: the batch checksum
+destroyed it before.
+
+Worth remembering: `1012` was blamed first, and it was innocent. It could not
+succeed while the layer beneath it was discarding the reply.
+
+### Bluetooth reloaded its firmware on every resume
+
+1.76s of `hmtbtfw20.tlv` and `hmtnv20.bin` on each resume, and self-inflicted.
+`hci_qca` sets `HCI_QUIRK_NON_PERSISTENT_SETUP` when it controls the chip's
+power, and `hci_dev_setup_sync()` then runs `hdev->setup` on *every* open, not
+just the first. `sleep.sh` stopping bluetoothd is what closed the device.
+`qca_pm_ops` already carries the controller through system suspend in in-band
+sleep with its firmware intact, so it just had to be left alone.
+
+**Confirmed on hardware.** `QCA Downloading` now appears only at boot, at 2.9s
+and 4.0s uptime, and on none of three later resumes.
+
+Untested: whether a paired controller still reconnects after resume. That is
+the failure mode that would send this back, and restoring the two `systemctl`
+calls in `sleep.sh` is the whole revert.
+
+### EmulationStation had no volume bar and no volume control
+
+Three separate faults wearing one symptom, which is why it took three goes.
+
+1. **The hardware +/- keys never reached ES at all.** `ViewController::input`
+   maps volume to `joystick2up`, the right stick. `input_sense` owns the
+   physical keys and calls `/usr/bin/volume`.
+2. **`/usr/bin/volume` was broken by the pulse ban.** It ended in `pactl
+   set-sink-volume`, and #54 deleted `pactl`. Fixed in #63 by moving to
+   `wpctl`, with the cubic curve converted explicitly since `wpctl` takes a
+   linear factor where `pactl` took a percentage.
+3. **ES could not reach PipeWire.** `PipeWireControl` was a file-scope static,
+   so its constructor ran before `main()` and before the log existed: every
+   error went nowhere and a single failed connect was permanent. Fixed in
+   `emulationstation-next#12` by constructing on first use and retrying.
+
+**Confirmed on hardware.** The overlay now appears on a hardware volume press,
+which exercises the entire chain in one go: `input_sense` to `/usr/bin/volume`
+to `wpctl` setting the sink, `node_param` seeing `channelVolumes` change on the
+PipeWire loop thread, and `VolumeInfoComponent` noticing the new value 40ms
+later.
+
+A wrong turn worth recording: the missing overlay was blamed on the
+`Unknown element of type "notification"` theme warnings. It was not them, and
+they are still there.
+
+### dwc3 never runtime suspended
+
+`a600000.usb` held `avg 1000000  peak 2500000` on the path to `ebi`
+permanently, awake, on battery, with nothing plugged in. Those are
+`USB_MEMORY_AVG_SS_BW` and `USB_MEMORY_PEAK_SS_BW` from `dwc3-qcom.c` to the
+digit. `dwc3_core_probe()` ends with `pm_runtime_forbid()` and the only
+`pm_runtime_allow()` calls are on error and teardown paths, so `power/control`
+stayed `on` and `dwc3_qcom_runtime_suspend()`, which is what calls
+`dwc3_qcom_interconnect_disable()`, could never run.
+
+**Confirmed on hardware.** Writing `auto` took `runtime_status` to `suspended`,
+the usb row to `0 0`, and the `ebi` aggregate from 1735805 to 735805. Shipped
+as a udev rule in #70.
+
+This is an awake-power fix. The system suspend path drops the vote by itself
+through `dwc3_qcom_pm_suspend()`, so it does not touch the suspend draw.
+
+### Blanking the panel did not blank anything
+
+`power-handler` called `external_display blank`, and
+`/usr/bin/external-display` is not in this tree, so the call returned 1 and
+nothing happened. The flag was set, the backlight went dark on a separate path,
+and the DPU carried on scanning out at 120Hz behind it.
+
+**Confirmed on hardware.** `swaymsg "output * power off"` takes
+`ae00000.display-subsystem` from `avg 735805` to `0` and the whole `ebi`
+aggregate with it. A sway fallback is in place, internal outputs only.
+
+### ondemand parked the little cluster at maximum
+
+`008-perfmode` preferred `ondemand` wherever it existed. **Measured**: policy0
+at 2016000 kHz on a 97% idle system, dropping to 556800 under `schedutil`. That
+is also the cluster `irqaffinity=0-2` sends every interrupt to.
+
+It did not move DDR, which was the hypothesis it was meant to test, but it
+stands on its own.
