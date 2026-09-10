@@ -420,9 +420,10 @@ ln -sf /storage/.config/dolphin-emu /storage/.local/share/dolphin-emu
 # Retroachievements
   /usr/bin/cheevos_dolphin.sh
 
-# Set video and audio backend
-  CMD="${CMD} -v $GRENDERER"
-
+# Set the audio backend. The video backend is not passed on the command line:
+# the next assignment overwrote CMD wholesale, so this never reached Dolphin,
+# and $GRENDERER holds emulationstation's spelling ("vulkan", "opengl") rather
+# than Dolphin's ("Vulkan", "OGL"). GFXBackend in Dolphin.ini is what sets it.
 if [ ${DOLPHIN_CORE} = "dolphin-emu" ]; then
   CMD="-b -a ${AUDIO_BACKEND}"
 else
@@ -437,7 +438,7 @@ fi
   echo "ASPECT set to: ${ASPECT}"
   echo "AUDIOBE set to: ${AUDIOBE}"
   echo "CLOCK set to: ${CLOCK}"
-  echo "DOLPHIN_BACKEND set to: ${DOLPHIN_BACKEND}"
+  echo "DOLPHIN_BACKEND set to: @DOLPHIN_BACKEND@"
   echo "ENBCHEATS set to: ${ENBCHEATS}"
   echo "GRENDERER set to: ${GRENDERER}"
   echo "IRES set to: ${IRES}"
