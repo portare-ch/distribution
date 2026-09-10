@@ -190,6 +190,37 @@ writes 0.
 
 ## Audio
 
+### 44.1 kHz cannot reach this hardware
+
+Not a bug, a constraint, written down so nobody proposes the fix again.
+
+The Dreamcast's AICA is 44.1 kHz and has no 48 kHz mode, so flycast opens a
+44100 stream and is right to. The SoC will not take it. Both output paths go
+through a q6afe backend DAI and neither lists 44100, from
+`sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c`:
+
+    Q6AFE_MI2S_RX_DAI    8000 16000 32000 48000 176400
+    Q6AFE_CDC_DMA_RX_DAI 8000 16000 32000 48000 176400
+
+Speakers are `PRIMARY_MI2S_RX` into two `awinic,aw88166`, headphones are
+`RX_CODEC_DMA_RX_0` into `wcd938x`. Both codecs would take 44100: `AW88166_RATES`
+is `SNDRV_PCM_RATE_8000_48000`, and wcd938x carries an explicit
+`WCD938X_FRAC_RATES_MASK`. The Qualcomm DAI between them is what refuses. The
+only DAI in that file listing 44100 is the USB frontend, so a USB DAC would run
+native and nothing built in will.
+
+So a resample from 44100 to 48000 is mandatory here. The only choice is who
+does it, and PipeWire doing it is fine: `pw-top` puts flycast's node at 84.4us
+BUSY against a 21.3ms quantum, four tenths of one percent. It is not the
+stutter, and adding 44100 to `default.clock.allowed-rates` cannot help
+(attempted and closed as PR #86).
+
+If native 44.1 is ever wanted, the change is a kernel patch adding
+`SNDRV_PCM_RATE_44100` to `Q6AFE_MI2S_RX_DAI`, on the theory that LPASS can
+clock it and upstream simply never listed it. Speculative, and it needs
+hardware.
+
+
 ### hdmi_sense sink match is unverified
 
 The external display is DisplayPort over USB-C alt mode, so the connector is
