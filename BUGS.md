@@ -6,8 +6,9 @@ small, too uncertain or too far from a fix to file. Nothing here is
 speculative: each item is something observed on the device or read in the
 tree, with enough detail to pick up cold.
 
-Add to it when you leave something behind. Delete an entry when it is fixed,
-not when it is filed.
+Add to it when you leave something behind. When something is fixed, move it to
+Resolved at the bottom rather than deleting it: what was wrong and why is worth
+keeping, especially where the first few explanations were wrong.
 
 ## Unexplained
 
@@ -163,14 +164,10 @@ feature does nothing.
 
 ## EmulationStation
 
-### The volume overlay may be a theme problem
+### Unknown element of type "notification"
 
 `es_log.txt` carries repeated `Unknown element of type "notification"!`
-warnings. If the on-screen volume overlay is drawn as a theme notification
-element, that is why it does not appear, and it is a theme fault rather than a
-code one. `VolumeInfoComponent` itself is fine: it polls `getVolume()` every
-40ms and shows on a change, and the connection bug behind it was fixed in
-`portare-ch/emulationstation-next#12`.
+warnings from theme parsing. Cause unknown, and no symptom is attached to them.
 
 ### The frontend has no damage tracking
 
@@ -233,23 +230,10 @@ once, in #70, and the same phrasing sits in #68's commit message.
 
 ## Resume time
 
-Roughly 2.9s in the kernel plus a long userspace tail, measured from `dmesg`:
+rsinput and Bluetooth are under Resolved, worth about 3.2s between them. What
+is left:
 
-* **rsinput**, was 1.48s of the kernel's 2.85s, burning its full handshake
-  retry budget and then failing with `-110`. Fixed in `1013` and **confirmed on
-  hardware**: across three resumes the version reply is parsed and the
-  parameters acknowledged 13ms later, with no `Checksum mismatch`, no timeout
-  and no `-110`. That the reply is parsed at all is the proof, since the
-  batch-wide checksum destroyed it before.
-* **Bluetooth**, was 1.76s. It did not need to stop at all, and `sleep.sh` no
-  longer does. `hci_qca` sets `HCI_QUIRK_NON_PERSISTENT_SETUP` when it controls
-  the chip's power, so `hdev->setup` and its firmware download run on every
-  open, while `qca_pm_ops` already suspends the controller into in-band sleep
-  without losing the firmware. **Confirmed on hardware**: `QCA Downloading`
-  now appears only at boot, at 2.9s and 4.0s uptime, and not on any of three
-  later resumes. Still worth watching whether a paired controller reconnects,
-  which nobody has tested with one attached.
-* **WiFi**, 10.6s to `associated`. The rfkill is not optional:
+* **WiFi**, was 10.6s to `associated`. The rfkill is not optional:
   `ath12k_core_continue_suspend_resume()` returns 0 and does nothing unless
   `ar->ah->state == ATH12K_HW_STATE_OFF`, and `wcn7850 hw2.0` does carry
   `.supports_suspend = true`, so the radio has to be down for the driver's
@@ -257,12 +241,123 @@ Roughly 2.9s in the kernel plus a long userspace tail, measured from `dmesg`:
 
   Measured split: NetworkManager's wake is only ~1.1s, consistently, and a
   flat `sleep 4` in `wifi-resume` was better than a third of the total. That
-  is now a readiness poll. What remains is the firmware reload on unblock and
-  the scan itself, roughly 5s, and nobody has attacked it. Association once
-  the scan lands is 26ms, so the scan is the target. A directed scan on the
-  pinned network's channel would be the thing to try, but `iwctl` does not
-  expose one.
+  is now a readiness poll, and it reports `WIFI ready after 0ms`, meaning iwd
+  answered on the first try and the whole four seconds was wasted. Or meaning
+  the readiness test answers before the chip is up, in which case the scan
+  fires too early and iwd's backoff costs a minute. Those look identical from
+  that log line. **Nobody has measured resume to `associated` since**, and
+  that is the one number that separates them.
+
+  What remains beyond it is the firmware reload on unblock and the scan
+  itself, roughly 5s. Association once the scan lands is 26ms, so the scan is
+  the target. A directed scan on the pinned network's channel would be the
+  thing to try, but `iwctl` does not expose one.
 
 `CONFIG_PM_DEBUG` is off, so `pm_print_times` is unavailable and per-device
 suspend and resume timings have to be read out of `dmesg` timestamps by hand.
 Turning it on is cheap and would make this measurable.
+
+## Resolved
+
+Kept rather than deleted. Several of these took more than one explanation to
+find, and the wrong ones are recorded too.
+
+### The gamepad failed to resume
+
+`rsinput_rx()` treated every serdev receive callback as exactly one frame:
+checksum the whole batch, discard it all on a mismatch. serdev frames nothing,
+so a batch holding two frames, a partial frame, or a frame behind power-cycle
+noise was thrown away entire. At resume that was the MCU's version reply, so
+the handshake added in `1012` timed out three times and gave up with
+`-ETIMEDOUT`, burning 1.48s of a 2.85s kernel resume and leaving the pad on a
+driver that had given up.
+
+`rsinput_process_data()` already validated each frame separately, so the fix in
+`1013` was to delete the batch-wide check and add header resynchronisation.
+
+**Confirmed on hardware.** Across three resumes the version reply is parsed and
+the parameters acknowledged 13ms later, with no `Checksum mismatch`, no timeout
+and no `-110`. That the reply is parsed at all is the proof: the batch checksum
+destroyed it before.
+
+Worth remembering: `1012` was blamed first, and it was innocent. It could not
+succeed while the layer beneath it was discarding the reply.
+
+### Bluetooth reloaded its firmware on every resume
+
+1.76s of `hmtbtfw20.tlv` and `hmtnv20.bin` on each resume, and self-inflicted.
+`hci_qca` sets `HCI_QUIRK_NON_PERSISTENT_SETUP` when it controls the chip's
+power, and `hci_dev_setup_sync()` then runs `hdev->setup` on *every* open, not
+just the first. `sleep.sh` stopping bluetoothd is what closed the device.
+`qca_pm_ops` already carries the controller through system suspend in in-band
+sleep with its firmware intact, so it just had to be left alone.
+
+**Confirmed on hardware.** `QCA Downloading` now appears only at boot, at 2.9s
+and 4.0s uptime, and on none of three later resumes.
+
+Untested: whether a paired controller still reconnects after resume. That is
+the failure mode that would send this back, and restoring the two `systemctl`
+calls in `sleep.sh` is the whole revert.
+
+### EmulationStation had no volume bar and no volume control
+
+Three separate faults wearing one symptom, which is why it took three goes.
+
+1. **The hardware +/- keys never reached ES at all.** `ViewController::input`
+   maps volume to `joystick2up`, the right stick. `input_sense` owns the
+   physical keys and calls `/usr/bin/volume`.
+2. **`/usr/bin/volume` was broken by the pulse ban.** It ended in `pactl
+   set-sink-volume`, and #54 deleted `pactl`. Fixed in #63 by moving to
+   `wpctl`, with the cubic curve converted explicitly since `wpctl` takes a
+   linear factor where `pactl` took a percentage.
+3. **ES could not reach PipeWire.** `PipeWireControl` was a file-scope static,
+   so its constructor ran before `main()` and before the log existed: every
+   error went nowhere and a single failed connect was permanent. Fixed in
+   `emulationstation-next#12` by constructing on first use and retrying.
+
+**Confirmed on hardware.** The overlay now appears on a hardware volume press,
+which exercises the entire chain in one go: `input_sense` to `/usr/bin/volume`
+to `wpctl` setting the sink, `node_param` seeing `channelVolumes` change on the
+PipeWire loop thread, and `VolumeInfoComponent` noticing the new value 40ms
+later.
+
+A wrong turn worth recording: the missing overlay was blamed on the
+`Unknown element of type "notification"` theme warnings. It was not them, and
+they are still there.
+
+### dwc3 never runtime suspended
+
+`a600000.usb` held `avg 1000000  peak 2500000` on the path to `ebi`
+permanently, awake, on battery, with nothing plugged in. Those are
+`USB_MEMORY_AVG_SS_BW` and `USB_MEMORY_PEAK_SS_BW` from `dwc3-qcom.c` to the
+digit. `dwc3_core_probe()` ends with `pm_runtime_forbid()` and the only
+`pm_runtime_allow()` calls are on error and teardown paths, so `power/control`
+stayed `on` and `dwc3_qcom_runtime_suspend()`, which is what calls
+`dwc3_qcom_interconnect_disable()`, could never run.
+
+**Confirmed on hardware.** Writing `auto` took `runtime_status` to `suspended`,
+the usb row to `0 0`, and the `ebi` aggregate from 1735805 to 735805. Shipped
+as a udev rule in #70.
+
+This is an awake-power fix. The system suspend path drops the vote by itself
+through `dwc3_qcom_pm_suspend()`, so it does not touch the suspend draw.
+
+### Blanking the panel did not blank anything
+
+`power-handler` called `external_display blank`, and
+`/usr/bin/external-display` is not in this tree, so the call returned 1 and
+nothing happened. The flag was set, the backlight went dark on a separate path,
+and the DPU carried on scanning out at 120Hz behind it.
+
+**Confirmed on hardware.** `swaymsg "output * power off"` takes
+`ae00000.display-subsystem` from `avg 735805` to `0` and the whole `ebi`
+aggregate with it. A sway fallback is in place, internal outputs only.
+
+### ondemand parked the little cluster at maximum
+
+`008-perfmode` preferred `ondemand` wherever it existed. **Measured**: policy0
+at 2016000 kHz on a 97% idle system, dropping to 556800 under `schedutil`. That
+is also the cluster `irqaffinity=0-2` sends every interrupt to.
+
+It did not move DDR, which was the hypothesis it was meant to test, but it
+stands on its own.
