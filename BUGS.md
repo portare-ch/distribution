@@ -197,15 +197,21 @@ persistent state across callbacks.
 
 ## Build and process
 
-### Defaults reach fresh installs only
+### Changed defaults still need a migration
 
-`userconfig-setup` copies `/usr/config/*` with `rsync -a --ignore-existing`,
-and only when `/storage/.configured` is absent. Anything shipped as a config
-default, `es_settings.cfg` included, does not reach an existing device.
+Half fixed. `post-update` now runs an `--ignore-existing` pass over
+`/usr/config`, so a config file that is *new* in an image reaches a device
+that has already booted, where before only `userconfig-setup` did that and
+only once, guarded by `/storage/.configured`.
 
-The same shape applies to `system.cpugovernor`: `008-perfmode` only picks a
-governor when the setting is unset, so devices that already chose `ondemand`
-keep it.
+A changed *value* inside a file the install already has still cannot be
+delivered that way, and needs a one-shot migration at the bottom of
+`post-update`. There is a `migrate` helper and a marker directory for it now,
+so each runs once and a later deliberate choice is not undone on the next
+update. Two exist, for `system.cpugovernor` and `FpsLimit`.
+
+The trap to remember: shipping a new default in a config file is not enough on
+its own. Ask whether an existing device can receive it.
 
 ### Do not reuse a merged branch
 
