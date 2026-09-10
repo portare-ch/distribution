@@ -6,12 +6,24 @@
 
 . /etc/profile
 
-### Get the current cpu and gpu governor, save for when the device wakes from sleep.
+### Get the current cpu and gpu governor, save for when the device wakes from
+### sleep. Never save powersave: that is what this script is about to set, so
+### saving it makes the next resume restore powersave, and every resume after
+### that. The GPU has no other writer once it latches, since runemu only calls
+### gpu_performance_level when gpuperf is set, and a stuck GPU sits at its
+### lowest operating point for the rest of the boot.
 CUR_CPU_FREQ="$(cat ${CPU_FREQ}/scaling_governor)"
 CUR_GPU_FREQ="$(cat ${GPU_FREQ}/governor)"
 
-set_setting sleep.cpugovernor "${CUR_CPU_FREQ}"
-set_setting sleep.gpugovernor "${CUR_GPU_FREQ}"
+case "${CUR_CPU_FREQ}" in
+  ""|powersave) ;;
+  *) set_setting sleep.cpugovernor "${CUR_CPU_FREQ}" ;;
+esac
+
+case "${CUR_GPU_FREQ}" in
+  ""|powersave) ;;
+  *) set_setting sleep.gpugovernor "${CUR_GPU_FREQ}" ;;
+esac
 
 ### Set all governors to powersave
 set_cpu_gov powersave
