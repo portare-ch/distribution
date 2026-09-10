@@ -37,6 +37,19 @@ rsync -a --delete ${EXCLUDE} /usr/config/system/ /storage/.config/system/
 rsync -a --ignore-existing /usr/config/game /storage/.config/
 rsync -a /usr/config/modules /storage/.config/
 
+### Config files that are new in this image. userconfig-setup does this once,
+### guarded by /storage/.configured, so without a pass here a file added to
+### /usr/config never reaches a device that has already booted.
+###
+### --ignore-existing, so this delivers files that are new and never touches
+### one the user has edited. Changed *contents* of an existing file still need
+### a migration at the bottom of this script. system/ is excluded because the
+### block above already syncs it deliberately, and the es configs because they
+### are symlinks into /usr/config.
+rsync -a --ignore-existing --exclude=system \
+      --exclude={es_features.cfg,es_systems.cfg} \
+      /usr/config/* /storage/.config/ >>${LOG} 2>&1
+
 if [ -f "/storage/.config/emulationstation/resources/logo.png" ]
 then
   rm -f /storage/.config/emulationstation/resources/logo.png
@@ -163,3 +176,58 @@ for KEY in system.suspend.enable system.suspend.enable_timed_shutdown \
            system.shutdown_delay system.shutdown_delay_running_game; do
   sed -i "/^${KEY}=/d" /storage/.config/system/configs/system.cfg
 done
+
+### One-shot migrations
+################################################################################
+#
+# For defaults that changed inside a file an existing install already has, so
+# neither userconfig-setup nor the --ignore-existing pass above can deliver
+# them. Each runs once and leaves a marker, so a later deliberate choice by the
+# user is not undone by the next update.
+
+MIGRATIONS="/storage/.config/system/.migrations"
+mkdir -p "${MIGRATIONS}"
+
+migrate() {
+  local name="${1}"
+  shift
+
+  [ -e "${MIGRATIONS}/${name}" ] && return 0
+
+  echo "Migration: ${name}" >>${LOG}
+  "$@" >>${LOG} 2>&1
+  touch "${MIGRATIONS}/${name}"
+}
+
+# ondemand was never chosen: 008-perfmode picked it automatically for any
+# device that offered it, and only ever sets the value when it is unset. On
+# this part it parked the little cluster at 2016000 kHz while idle, where
+# schedutil sits at 556800. Anything the user has since set on purpose is left
+# alone, since only ondemand is moved.
+migrate_cpugovernor() {
+  [ "$(get_setting system.cpugovernor)" = "ondemand" ] || return 0
+  grep -qw schedutil \
+    /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors 2>/dev/null || return 0
+
+  set_setting system.cpugovernor schedutil
+}
+
+# FpsLimit ships as a default in es_settings.cfg, and an existing install
+# already has that file. Read the value out of the image rather than repeating
+# it here, and only insert when the key is absent.
+migrate_es_fpslimit() {
+  local cfg="/storage/.config/emulationstation/es_settings.cfg"
+  local shipped="/usr/config/emulationstation/es_settings.cfg"
+  local value
+
+  [ -f "${cfg}" ] || return 0
+  grep -q 'name="FpsLimit"' "${cfg}" && return 0
+
+  value=$(sed -n 's/.*name="FpsLimit" value="\([0-9]*\)".*/\1/p' "${shipped}" 2>/dev/null)
+  [ -n "${value}" ] || return 0
+
+  sed -i "s|</config>|    <int name=\"FpsLimit\" value=\"${value}\" />\n</config>|" "${cfg}"
+}
+
+migrate cpugovernor-schedutil migrate_cpugovernor
+migrate es-fpslimit migrate_es_fpslimit
