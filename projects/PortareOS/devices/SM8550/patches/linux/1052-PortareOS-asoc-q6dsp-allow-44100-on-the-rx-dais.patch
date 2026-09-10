@@ -1,0 +1,52 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] ASoC: qdsp6: allow 44100 on the LPASS RX DAIs
+
+Both playback backends on SM8550 advertise 8000, 16000, 32000, 48000 and
+176400, so 44.1 kHz content cannot reach the hardware at its own rate and
+is resampled to 48000 before it gets there. That covers most of what this
+device plays: the Dreamcast's AICA is 44.1 kHz with no 48 kHz mode, and so
+are the PS1 SPU and the PSP.
+
+Nothing below the DAI objects to 44100. The speaker amps are two
+awinic,aw88166 whose AW88166_RATES is SNDRV_PCM_RATE_8000_48000, which
+includes it, and which declare no dai_ops at all: the part reads its rate
+off I2S rather than being configured. The headphone codec is wcd938x,
+which carries an explicit WCD938X_FRAC_RATES_MASK listing 44100, 88200 and
+176400. Above the DAI, q6apm_lpass_dai_prepare only copies the rate into
+audioreach_module_config and hands it to the DSP, with no rate of its own.
+The mask is the only thing in the way.
+
+The bet is that LPASS can clock the 44.1 kHz family and upstream simply
+never listed it, which the 176400 already in the mask makes plausible:
+176400 is 4 x 44100, so a 44.1 kHz clock is evidently reachable.
+
+If the bet is wrong the DSP rejects the graph configuration and playback
+fails, or the clock is wrong and the pitch is audibly off. Both show up
+immediately and neither is destructive.
+
+Only the two RX macros are touched. The TX and TDM ones share the same
+mask but capture is not what this is for.
+--- a/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c
++++ b/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c
+@@ -47,8 +47,8 @@
+ 		.playback = {						\
+ 			.stream_name = #did" Playback",	\
+ 			.rates = SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
+-				SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000 |\
+-				SNDRV_PCM_RATE_176400,			\
++				SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_44100 |\
++				SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_176400,	\
+ 			.formats = SNDRV_PCM_FMTBIT_S16_LE |		\
+ 				   SNDRV_PCM_FMTBIT_S24_LE |		\
+ 				   SNDRV_PCM_FMTBIT_S32_LE,		\
+@@ -100,8 +100,8 @@
+ 		.playback = {						\
+ 			.stream_name = pre" MI2S Playback",	\
+ 			.rates = SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
+-				SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000 |\
+-				SNDRV_PCM_RATE_176400,			\
++				SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_44100 |\
++				SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_176400,	\
+ 			.formats = SNDRV_PCM_FMTBIT_S16_LE |		\
+ 				   SNDRV_PCM_FMTBIT_S24_LE |		\
+ 				   SNDRV_PCM_FMTBIT_S32_LE,		\
