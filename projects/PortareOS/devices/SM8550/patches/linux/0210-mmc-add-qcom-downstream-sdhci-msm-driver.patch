@@ -5207,7 +5207,7 @@ diff -rupbN linux.orig/drivers/mmc/host/sdhci-msm-downstream.c linux/drivers/mmc
 +		break;
 +
 +	default:
-+		pr_info("Unhandled mode!!\n");
++		pr_debug("sdhci-msm: PM event %lu is not hibernation\n", mode);
 +	}
 +
 +	return 0;
