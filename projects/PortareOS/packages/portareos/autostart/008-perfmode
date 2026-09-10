@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2022-24 JELOS (https://github.com/JustEnoughLinuxOS)
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 # Minimal OS variable loading for performance
 . /etc/profile.d/001-functions
@@ -18,16 +19,22 @@ else
   onlinethreads all 1
 fi
 
-### If we don't have a default governor set, set it
-### to ondemand if the device supports it, otherwise
-### set to performance, but don't enable it.
+### Pick a default governor if none is set. schedutil first: it is driven by
+### the scheduler's own utilisation signal, where ondemand samples on a timer
+### and knows nothing about what the scheduler is doing. On this big.LITTLE
+### part ondemand parked the little cluster at 2016000 kHz on an otherwise
+### idle system, and the little cluster is where irqaffinity=0-2 sends every
+### interrupt. Switching to schedutil dropped it to 556800 kHz.
 if [ -z "$(get_setting system.cpugovernor)" ]; then
-  GOVTEST="$(awk '/ondemand/ {print $1}' /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors)"
-  if [ -n "${GOVTEST}" ]; then
-    set_setting system.cpugovernor ondemand
-  else
-    set_setting system.cpugovernor performance
-  fi
+  AVAILABLE="$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors 2>/dev/null)"
+  for GOV in schedutil ondemand performance; do
+    case " ${AVAILABLE} " in
+      *" ${GOV} "*)
+        set_setting system.cpugovernor ${GOV}
+        break
+        ;;
+    esac
+  done
 fi
 
 ### Set the default GPU performance mode
