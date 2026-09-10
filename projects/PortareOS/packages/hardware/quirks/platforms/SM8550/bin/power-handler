@@ -83,6 +83,56 @@ external_display() {
 # and the post hooks restore as usual.
 POWER_LED="/sys/class/leds/power-led"
 
+# Blanking the panel does not stop the frontend drawing to it. Its main loop
+# renders and swaps every iteration with no damage tracking, so the Adreno
+# core rail never gets the 66ms it needs to collapse and gpu_cc_gx_gdsc stays
+# on behind a dark screen. ES does stop on its own once ScreenSaverTime
+# elapses, but that is five minutes of holding the rail up.
+#
+# SIGSTOP is enough and costs nothing to undo: no restart, no reloaded
+# gamelists, no lost state. sway is deliberately left running, both because it
+# owns the output we have to power back on and because it is not what keeps
+# the GPU busy.
+FRONTEND="emulationstation"
+
+frontend_pid() {
+  pgrep -x "${FRONTEND}" 2>/dev/null | head -1
+}
+
+freeze_frontend() {
+  local pid
+
+  # Not while a game is running. The GPU is busy with the emulator either way,
+  # so there is nothing to win, and a stopped frontend cannot reap its child.
+  [ -e "/tmp/.process-kill-data" ] && return 0
+
+  pid=$(frontend_pid)
+  [ -n "${pid}" ] || return 0
+
+  ${DEBUG} && log $0 "Freezing ${FRONTEND} (${pid})."
+  kill -STOP "${pid}" 2>/dev/null
+}
+
+# Driven by the process state rather than the blank flag. If anything ever
+# loses that flag while the frontend is stopped, the device looks dead with no
+# way back, so every path that could end a blank calls this unconditionally.
+# Field 3 of /proc/pid/stat, read past the last ")" because comm is not safe
+# to split on.
+thaw_frontend() {
+  local pid state
+
+  pid=$(frontend_pid)
+  [ -n "${pid}" ] || return 0
+
+  state=$(sed 's/.*) //' "/proc/${pid}/stat" 2>/dev/null | cut -d' ' -f1)
+  case "${state}" in
+    T|t)
+      ${DEBUG} && log $0 "Thawing ${FRONTEND} (${pid})."
+      kill -CONT "${pid}" 2>/dev/null
+      ;;
+  esac
+}
+
 case "$1" in
   power)
     # The blank is ours, so a press always ends it first. This also covers the
@@ -92,9 +142,14 @@ case "$1" in
     if [ -e "${BLANK_FLAG}" ]; then
       ${DEBUG} && log $0 "Waking from blank."
       rm -f "${BLANK_FLAG}"
+      thaw_frontend
       external_display unblank
       exit 0
     fi
+
+    # No flag but a stopped frontend means something lost track of a blank.
+    # Undo it before doing anything else.
+    thaw_frontend
 
     # Never suspend while an external display is attached: the output would go
     # down with the SoC. The key becomes a screen toggle instead. The same
@@ -104,12 +159,14 @@ case "$1" in
       ${DEBUG} && log $0 "External display attached, blanking instead of suspending."
       touch "${BLANK_FLAG}"
       external_display blank
+      freeze_frontend
       exit 0
     fi
     if [ "$(get_setting system.suspendmode)" = "off" ]; then
       ${DEBUG} && log $0 "Suspend switched off, blanking instead."
       touch "${BLANK_FLAG}"
       external_display blank
+      freeze_frontend
       exit 0
     fi
 
@@ -138,6 +195,10 @@ case "$1" in
       rm -f "${BLANK_FLAG}"
       external_display unblank
     fi
+
+    # Flag or not. Suspending with the frontend stopped means resume comes
+    # back to a frozen UI, and the freezer will not undo a SIGSTOP.
+    thaw_frontend
     ;;
 
   lid)
