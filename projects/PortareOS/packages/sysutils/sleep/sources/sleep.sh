@@ -29,13 +29,6 @@ powerstate() {
   systemctl ${1} powerstate >${EVENTLOG} 2>&1
 }
 
-bluetooth() {
-  if [ "$(get_setting controllers.bluetooth.enabled)" == "1" ]; then
-    log $0 "Bluetooth: ${1}"
-    systemctl ${1} bluetooth >${EVENTLOG} 2>&1
-  fi
-}
-
 modules() {
   log $0 "Modules: ${1}"
   case ${1} in
@@ -102,6 +95,23 @@ wifi_wait_down() {
   log $0 "WIFI interface ${dev} still up after 3s, suspending anyway."
 }
 
+# Bluetooth is deliberately left running across suspend.
+#
+# hci_qca sets HCI_QUIRK_NON_PERSISTENT_SETUP whenever it controls the chip's
+# power, which it does for the wcn7850 here, and hci_dev_setup_sync() then
+# calls hdev->setup on every open rather than only the first. qca_setup() is
+# what downloads hmtbtfw20.tlv and hmtnv20.bin, so closing and reopening the
+# adapter costs a full firmware load: 1.76s of every resume, measured.
+#
+# The driver already handles system suspend without any of that. qca_pm_ops
+# points at qca_suspend, which puts the controller into in-band sleep instead
+# of powering it down, so the firmware survives as long as the device stays
+# open. Stopping bluetoothd is what closed it.
+#
+# This came from JELOS with no note saying why. If a controller fails to
+# reconnect after resume, that is the reason to look at, and putting the two
+# calls back is the revert.
+
 case $1 in
   pre)
     if [ "$(get_setting wifi.enabled)" == "1" ]; then
@@ -117,7 +127,6 @@ case $1 in
 
     headphones stop
     inputsense stop
-    bluetooth stop
     powerstate stop
     modules stop
     quirks pre
@@ -129,7 +138,6 @@ case $1 in
     powerstate start
     headphones start
     inputsense start
-    bluetooth start
 
     if [ "$(get_setting wifi.enabled)" == "1" ]; then
       # NetworkManager only learns the system is awake after these hooks
