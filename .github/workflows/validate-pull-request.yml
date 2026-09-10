@@ -33,6 +33,13 @@ jobs:
                  | grep -vE 'SDL_PULSEAUDIO=OFF|-Dlibpulse=disabled' \
                  | grep -vE 'pipewire/(patches|system\.d)/') || true
 
+          # vice-sa passed --with-pulse, which names no library and so slipped
+          # past the pattern above until its build failed on a missing
+          # pulse/simple.h. Build flags that ask for pulse count too.
+          HITS="$HITS$(grep -rn -E '(--with-pulse|--enable-pulse|-Dpulse|=pulse)\b' \
+                         packages projects distributions config scripts tools \
+                       | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true)"
+
           if [ -n "$HITS" ]; then
             echo "--------------------------------------------------------"
             echo "❌ pulse is banned, but these lines reference it:"

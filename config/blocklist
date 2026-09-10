@@ -21,5 +21,4 @@ rpcs3-sa # Need to update to llvm 16
 scummvmsa # Updating breaks build packages
 tic80-lr # patches need to be rebased
 vice-lr # Updating breaks build patches
-vice-sa # Doesn't support updating with the script.
 mupen64plus-nx-lr #Upstream brakes video out. 
