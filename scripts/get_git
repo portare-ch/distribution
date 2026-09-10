@@ -25,7 +25,13 @@ fi
 
 _clean_repo() {
   git clean -fdx
-  git restore --staged . || git switch --force # Clear changes and ensure correct branch
+  # checkout -f, not restore --staged. restore --staged only resets the index,
+  # so a tracked file missing from the working tree stays missing and
+  # _repo_exists_and_valid below still calls the source valid: its three checks
+  # only look at the SHA, the origin URL and the branch name, never at whether
+  # the checkout is complete. The build then unpacks an incomplete tree and
+  # fails somewhere unrelated, with no GET line to say the source was reused.
+  git checkout -f || git switch --force # Clear changes and ensure correct branch
 }
 
 _repo_exists_and_valid() {
