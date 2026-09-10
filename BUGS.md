@@ -149,11 +149,33 @@ predating the switch is not the explanation.
 Nor is staleness. `PKG_VERSION` is `5aa091f`, which is exactly `v2.7`, the
 newest tag upstream has.
 
-The measurement that halves the search: does flycast's own FPS counter drop
-during a stutter, or hold at 60? A drop means emulation is falling behind and
-the cause is CPU side. Holding at 60 while the picture judders means frames are
-being produced and lost on the way to the panel, which is presentation, vsync
-or the compositor. Nobody has looked yet.
+Measured. The counter sits at 30, dips to 26 when the audio stutters, and
+falls as far as 9 at its worst. So this is not presentation: frames are not
+being made. Whatever is wrong is upstream of the compositor.
+
+9 fps is three times the frame budget, which is too large for scheduler jitter.
+It is a stall, a clock collapse or a block on something. Three candidates, and
+one measurement covers all of them, taken over ssh while the stutter happens:
+
+    while :; do echo "$(date +%T) $(for f in \
+      /sys/devices/system/cpu/cpufreq/policy*/scaling_cur_freq; do \
+      printf '%s ' $(( $(cat $f)/1000 )); done)| \
+      $(cat /sys/class/thermal/thermal_zone*/temp|sort -n|tail -1|cut -c1-2)C"; \
+      sleep 1; done
+
+Thermal, if the clocks fall and the temperature is high. Governor, if the
+clocks are low and the temperature is not: `irqaffinity=0-2` puts every
+interrupt on the little cluster, and switching to schedutil dropped that
+cluster's idle clock from 2016000 kHz to 556800. That change was made in this
+tree, recently, and this is the shape of symptom it could produce. Neither, if
+the clocks hold, and then it is a block rather than a shortage.
+
+Worth ruling out separately: flycast synchronises to audio, so a stalling audio
+backend does not merely follow a frame drop, it can cause one. `backend = alsa`
+against the current `sdl2` is the cheap A/B, and it also tests the sdl2 switch
+that was made when pulse was removed.
+
+Also unexplained, and possibly a separate bug: the baseline is 30, not 60.
 
 Note that `pvr.AutoSkipFrame` is not it unless the ES `auto_frame_skip` setting
 has been set by hand. Nothing in the tree defines a default for it, so
