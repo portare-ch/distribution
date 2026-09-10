@@ -1,0 +1,111 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] input: rsinput: frame the RX stream instead of the batch
+
+rsinput_rx() treated each serdev receive callback as exactly one complete
+frame: it copied the batch into rx_buf, took the last byte as the checksum,
+validated it across the whole batch, and dropped everything on a mismatch.
+
+serdev does not frame anything. It hands over whatever the tty layer has
+accumulated, so a batch can hold two frames back to back, a frame preceded by
+line noise, or a partial frame. In each of those the batch-wide checksum fails
+and every frame in it is thrown away, valid ones included.
+
+That is why the MCU version handshake fails on resume. The MCU is power-cycled,
+the reset and enable transitions put noise on the line, and the version reply
+arrives in the same batch. dmesg shows "Checksum mismatch" immediately before
+each of the three "MCU version handshake timed out" warnings, and the resume
+ends in
+
+  rsinput serial1-0: PM: dpm_run_callback(): rsinput_resume returns -110
+  rsinput serial1-0: PM: failed to resume: error -110
+
+after burning the full 1.5s retry budget, which is over half of the in-kernel
+resume time on this device.
+
+rsinput_process_data() already walks a batch frame by frame using the declared
+length and validates each checksum on its own, skipping only the frame that is
+actually bad. Drop the batch-wide check in rsinput_rx() and let it.
+
+Add header resynchronisation to that walk while here. It read a length field
+without first confirming it was looking at a frame boundary, so a batch that
+starts mid-frame or with noise misparses. The header is four fixed bytes, so
+walk forward until it matches.
+
+This also fixes silent input loss during normal play: any time two gamepad
+frames landed in one callback, both were discarded.
+
+Signed-off-by: PortareOS <hello@portare.org>
+---
+diff --git a/drivers/input/joystick/rsinput.c b/drivers/input/joystick/rsinput.c
+index 9c99f74..fcbe187 100644
+--- a/drivers/input/joystick/rsinput.c
++++ b/drivers/input/joystick/rsinput.c
+@@ -445,8 +445,24 @@ static void handle_cmd_status(struct rsinput_driver *drv, const uint8_t *data, s
+ 
+ static void rsinput_process_data(struct rsinput_driver *drv, const uint8_t *data, size_t len) {
+     while (len >= MCU_PKT_SIZE_MIN) {
+-        uint16_t payload_length = data[FRAME_POS_LEN_L] | (data[FRAME_POS_LEN_H] << 8);
+-        size_t frame_length = MCU_PKT_SIZE_MIN + payload_length;
++        uint16_t payload_length;
++        size_t frame_length;
++
++        /*
++         * Resynchronise on the frame header before reading anything else. A
++         * receive batch can start mid-frame, or with line noise from the MCU
++         * power cycle at resume, and a length read out of that lands anywhere.
++         * The header is four fixed bytes, so walk forward until it is found.
++         */
++        if (data[0] != FRAME_HEAD_1 || data[1] != FRAME_HEAD_2 ||
++            data[2] != FRAME_HEAD_3 || data[3] != FRAME_HEAD_4) {
++            data++;
++            len--;
++            continue;
++        }
++
++        payload_length = data[FRAME_POS_LEN_L] | (data[FRAME_POS_LEN_H] << 8);
++        frame_length = MCU_PKT_SIZE_MIN + payload_length;
+ 
+         if (len < frame_length) {
+             return;
+@@ -483,7 +499,6 @@ static void rsinput_process_data(struct rsinput_driver *drv, const uint8_t *data
+ 
+ static size_t rsinput_rx(struct serdev_device *serdev, const u8 *data, size_t count) {
+     struct rsinput_driver *drv = serdev_device_get_drvdata(serdev);
+-    uint8_t received_checksum, computed_checksum;
+ 
+     if (!drv || !data || count == 0) {
+         dev_warn_ratelimited(&serdev->dev, "Invalid RX data\n");
+@@ -497,20 +512,19 @@ static size_t rsinput_rx(struct serdev_device *serdev, const u8 *data, size_t co
+ 
+     memcpy(drv->rx_buf, data, count);
+ 
+-    if (count < MCU_PKT_SIZE_MIN) {
+-        dev_warn_ratelimited(&serdev->dev, "Frame too short for checksum validation\n");
+-        goto error;
+-    }
+-
+-    received_checksum = drv->rx_buf[count - 1];
+-
+-    computed_checksum = compute_checksum(drv->rx_buf, count);
+-
+-    if (computed_checksum != received_checksum) {
+-        dev_warn_ratelimited(&serdev->dev, "Checksum mismatch\n");
+-        goto error;
+-    }
+-
++    /*
++     * No checksum here. serdev hands over whatever the tty layer has
++     * accumulated, which is not necessarily one frame: it can be two frames
++     * back to back, a frame behind power-cycle noise, or a partial frame.
++     * Checksumming the batch as though it were a single frame fails in all
++     * three cases and discarded the whole thing, valid frames included. That
++     * is what made the MCU version handshake at resume time out three times
++     * and give up with -ETIMEDOUT.
++     *
++     * rsinput_process_data() already walks the batch frame by frame and
++     * validates each checksum on its own, dropping only the frame that is
++     * really bad. Let it.
++     */
+     rsinput_process_data(drv, drv->rx_buf, count);
+ 
+ error:
