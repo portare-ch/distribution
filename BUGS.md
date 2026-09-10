@@ -98,9 +98,33 @@ Diagnosed but unconfirmed. `Dolphin.ini` ran Dual Core with
 `CommandProcessor::HandleUnknownOpcode` singles out as making an unknown FIFO
 opcode "very likely". `SyncOnSkipIdle` is restored to upstream's default.
 
-If it still freezes, Dolphin's own escalation is `SyncGPU = True`, then
-`CPUThread = False`. Change one at a time. `/var/log/exec.log` now carries the
-reason, since the patch that silenced 20 PanicAlerts is gone.
+It still freezes, so that was not it, or not all of it. Dolphin's own
+escalation from here is `SyncGPU = True`, then `CPUThread = False`. One at a
+time. `/var/log/exec.log` now carries the reason, since the patch that silenced
+20 PanicAlerts is gone.
+
+What the kernel rules out: a 2.5 hour dmesg covering a play session has no GPU
+fault, no `*ERROR*` from msm, no hung task, no rcu stall, no OOM. One
+`dpu_encoder_resource_control: invalid parameters` from the display controller,
+once, and nothing else. So whatever stops is stopping in userspace, without the
+kernel noticing. That is Dolphin's own threads or the Vulkan driver deadlocking
+before it submits anything the kernel would object to, and it argues against
+the GPU firmware being the cause.
+
+The measurement nobody has taken: while it is frozen, dump per-thread state.
+
+    P=$(pidof dolphin-emu-nogui)
+    for t in /proc/$P/task/*; do
+      echo "$(basename $t) $(cut -d' ' -f3 $t/stat) $(cat $t/wchan) $(cut -d' ' -f1 $t/syscall)"
+    done
+
+That separates the three candidates in one shot. Threads blocked in an ioctl on
+a DRM fd means the driver. Everything in a futex wait means a deadlock between
+Dolphin's own threads. A thread in state R with no syscall means the JIT is
+spinning.
+
+Soul Calibur III is not a way around this: it is PS2 only, so it belongs to
+armsx2, which is reported to run fine.
 
 ### Truncations in the 240p patch
 
@@ -109,6 +133,32 @@ reason, since the patch that silenced 20 PanicAlerts is gone.
 At the 240p setting a scale of 0.5 truncates to 0. Neither crashes and both
 affect only that one resolution. Left alone because picking a rounding is a
 design call, not a fix.
+
+## Flycast
+
+### Tony Hawk's Pro Skater stutters
+
+The audio backend was changed from `pulse` to `sdl2` when pulseaudio was
+removed, on the theory that the backend was behind the stutter. It still
+stutters, so it was not.
+
+The change did reach the device: `start_flycast.sh` rewrites `backend =` in an
+existing `/storage/.config/flycast/emu.cfg` on every launch, so a config
+predating the switch is not the explanation.
+
+Nor is staleness. `PKG_VERSION` is `5aa091f`, which is exactly `v2.7`, the
+newest tag upstream has.
+
+The measurement that halves the search: does flycast's own FPS counter drop
+during a stutter, or hold at 60? A drop means emulation is falling behind and
+the cause is CPU side. Holding at 60 while the picture judders means frames are
+being produced and lost on the way to the panel, which is presentation, vsync
+or the compositor. Nobody has looked yet.
+
+Note that `pvr.AutoSkipFrame` is not it unless the ES `auto_frame_skip` setting
+has been set by hand. Nothing in the tree defines a default for it, so
+`get_setting` comes back empty and the launcher takes the `else` arm, which
+writes 0.
 
 ## Audio
 
