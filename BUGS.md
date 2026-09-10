@@ -235,14 +235,20 @@ once, in #70, and the same phrasing sits in #68's commit message.
 
 Roughly 2.9s in the kernel plus a long userspace tail, measured from `dmesg`:
 
-* **rsinput**, 1.48s of the kernel's 2.85s, burning its full handshake retry
-  budget and then failing with `-110`. Fixed in `1013`, unverified on hardware.
-* **Bluetooth**, 1.76s. Answered: it did not need to stop at all, and
-  `sleep.sh` no longer does. `hci_qca` sets `HCI_QUIRK_NON_PERSISTENT_SETUP`
-  when it controls the chip's power, so `hdev->setup` and its firmware
-  download run on every open, while `qca_pm_ops` already suspends the
-  controller into in-band sleep without losing the firmware. Unverified on
-  hardware: watch whether a paired controller still reconnects after resume.
+* **rsinput**, was 1.48s of the kernel's 2.85s, burning its full handshake
+  retry budget and then failing with `-110`. Fixed in `1013` and **confirmed on
+  hardware**: across three resumes the version reply is parsed and the
+  parameters acknowledged 13ms later, with no `Checksum mismatch`, no timeout
+  and no `-110`. That the reply is parsed at all is the proof, since the
+  batch-wide checksum destroyed it before.
+* **Bluetooth**, was 1.76s. It did not need to stop at all, and `sleep.sh` no
+  longer does. `hci_qca` sets `HCI_QUIRK_NON_PERSISTENT_SETUP` when it controls
+  the chip's power, so `hdev->setup` and its firmware download run on every
+  open, while `qca_pm_ops` already suspends the controller into in-band sleep
+  without losing the firmware. **Confirmed on hardware**: `QCA Downloading`
+  now appears only at boot, at 2.9s and 4.0s uptime, and not on any of three
+  later resumes. Still worth watching whether a paired controller reconnects,
+  which nobody has tested with one attached.
 * **WiFi**, 10.6s to `associated`. The rfkill is not optional:
   `ath12k_core_continue_suspend_resume()` returns 0 and does nothing unless
   `ar->ah->state == ATH12K_HW_STATE_OFF`, and `wcn7850 hw2.0` does carry
