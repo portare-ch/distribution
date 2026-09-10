@@ -231,9 +231,12 @@ Roughly 2.9s in the kernel plus a long userspace tail, measured from `dmesg`:
 
 * **rsinput**, 1.48s of the kernel's 2.85s, burning its full handshake retry
   budget and then failing with `-110`. Fixed in `1013`, unverified on hardware.
-* **Bluetooth**, 1.76s. `sleep.sh` stops the service on suspend, so every
-  resume re-initialises the controller and downloads `hmtbtfw20.tlv` and
-  `hmtnv20.bin` again. Whether it needs to stop at all is an open question.
+* **Bluetooth**, 1.76s. Answered: it did not need to stop at all, and
+  `sleep.sh` no longer does. `hci_qca` sets `HCI_QUIRK_NON_PERSISTENT_SETUP`
+  when it controls the chip's power, so `hdev->setup` and its firmware
+  download run on every open, while `qca_pm_ops` already suspends the
+  controller into in-band sleep without losing the firmware. Unverified on
+  hardware: watch whether a paired controller still reconnects after resume.
 * **WiFi**, 10.6s to `associated`. rfkill-blocked on suspend, full
   reassociation on resume. `sleep.sh` explains why for ath12k.
 
