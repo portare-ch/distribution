@@ -3,11 +3,27 @@
 
 . ${ROOT}/packages/addons/addon-depends/multimedia-tools-depends/mpg123/package.mk
 
-PKG_DEPENDS_TARGET+=" SDL2 openal-soft"
+PKG_DEPENDS_TARGET+=" SDL2"
 PKG_BUILD_FLAGS="+pic"
 
-# Deliberately empty, where the base recipe sets --disable-shared
-# --enable-static. Two things link libmpg123 here, SDL2_mixer and gmu, so it is
-# built shared for them to share. This was an "unset" at the bottom of the
-# file, below a block it silently cancelled; saying it here says what it does.
-PKG_CONFIGURE_OPTS_TARGET=""
+# sdl is the only output module built.
+#
+# mpg123 1.33 has no pipewire module: --with-audio offers alsa, tinyalsa, jack,
+# oss, portaudio, pulse, sdl, sndio and a few for platforms this is not. pulse
+# is banned, jack is unavailable because our pipewire is built
+# -Dpipewire-jack=disabled, and alsa would work but only through pcm_pipewire.
+# SDL2 here is built with SDL_PIPEWIRE=ON and SDL_PULSEAUDIO=OFF, with
+# SDL_AUDIODRIVER=pipewire pinned in /etc/profile, which is the route flycast,
+# ares, ARMSX2 and RPCS3 already take.
+#
+# Four things link libmpg123 to decode with, and none of them runs the binary:
+# SDL2_mixer, gmu, amiberry and easyrpg-lr. Building no output module at all
+# would be defensible on that, but a PortMaster port can call anything on
+# PATH, and one small module is cheaper than a silent player.
+#
+# openal-soft was in the dependencies and is not in that list at all, so it
+# was never building anything. Dropped.
+#
+# Deliberately dropping the base recipe's --disable-shared --enable-static:
+# four things link this, so it is built shared for them to share.
+PKG_CONFIGURE_OPTS_TARGET="--with-audio=sdl"
