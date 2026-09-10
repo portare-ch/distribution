@@ -37,8 +37,14 @@ if [ -z "$(get_setting system.cpugovernor)" ]; then
   done
 fi
 
-### Set the default GPU performance mode
+### Set the GPU performance mode. When nothing is configured, still put the
+### governor back to auto rather than leaving it wherever the last boot left
+### it. Suspend sets it to powersave and only the resume hook undoes that, so a
+### boot that inherits a latched powersave otherwise keeps the GPU at its
+### lowest operating point with no other writer to correct it.
 GPUPERF=$(get_setting system.gpuperf)
 if [ -n "${GPUPERF}" ]; then
   gpu_performance_level ${GPUPERF}
+else
+  gpu_performance_level auto
 fi
