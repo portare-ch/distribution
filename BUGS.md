@@ -153,9 +153,27 @@ Measured. The counter sits at 30, dips to 26 when the audio stutters, and
 falls as far as 9 at its worst. So this is not presentation: frames are not
 being made. Whatever is wrong is upstream of the compositor.
 
-9 fps is three times the frame budget, which is too large for scheduler jitter.
-It is a stall, a clock collapse or a block on something. Three candidates, and
-one measurement covers all of them, taken over ssh while the stutter happens:
+GPU utilisation moves with it: 10 to 20 percent at full speed, 80 to 90 percent
+while it drops, then back down when it recovers. On an Adreno 740 emulating a
+Dreamcast, 80 percent is not a busy GPU, it is a slow one. That is the shape of
+devfreq sitting at a low operating point and `simple_ondemand` ramping after
+the work has already arrived, so the burst is measured against a clock that was
+picked for the idle before it.
+
+Two things make that easy to believe here. The governor is `simple_ondemand`
+(see `sleep.d/post/002-freq`), and `max_freq` is whatever the device tree
+leaves it at: `bin/gpu_overclock` would raise it from 680000000 to 1000000000
+but nothing in the tree calls that script.
+
+The test is one line, and it either fixes the drops or clears the GPU:
+
+    echo performance > /sys/devices/platform/soc@0/3d00000.gpu/devfreq/3d00000.gpu/governor
+
+If it holds, `set_setting system.gpuperf performance` makes it survive a reboot
+via `008-perfmode`.
+
+If the GPU is cleared, the CPU side is still worth the same treatment, since
+9 fps is three times the frame budget and too large for scheduler jitter:
 
     while :; do echo "$(date +%T) $(for f in \
       /sys/devices/system/cpu/cpufreq/policy*/scaling_cur_freq; do \
