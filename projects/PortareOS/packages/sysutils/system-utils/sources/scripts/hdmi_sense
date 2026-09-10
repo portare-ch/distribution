@@ -2,6 +2,15 @@
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
+
+# External display audio routing.
+#
+# The name is inherited. On this platform the external display is DisplayPort
+# over USB-C alt mode, so the connector is DP-1: see 111-sway-init, which
+# reads /sys/class/drm/card0-DP-1/edid, and power-handler, which is written
+# around msm_dp_display_disable(). Scanning only HDMI-A-* meant this never
+# saw a plug event here.
 
 . /etc/profile
 
@@ -11,47 +20,54 @@ CURRENT_STATE=""
 # No action on S922X
 [ "${HW_DEVICE}" = "S922X" ] && exit 0
 
-for HDMI in /sys/class/drm/card*/card*-HDMI-A-[0-9]/status
+# Audio sinks as "id<TAB>node.name". wpctl addresses nodes by id where pactl
+# took a name, so the lookup has to carry both.
+sinks() {
+  pw-dump 2>/dev/null | jq -r '.[]
+    | select(.type == "PipeWire:Interface:Node")
+    | select(.info.props["media.class"] == "Audio/Sink")
+    | "\(.id)\t\(.info.props["node.name"] // "")"'
+}
+
+# The ALSA device behind a DP output is still named for HDMI on this SoC, so
+# both spellings count as external.
+external_sink() { sinks | awk -F'\t' 'tolower($2) ~ /hdmi|displayport|[._-]dp[._-]/  { print $1; exit }'; }
+internal_sink() { sinks | awk -F'\t' 'tolower($2) !~ /hdmi|displayport|[._-]dp[._-]/ { print $1; exit }'; }
+
+# Connected wins over disconnected: a device can expose more than one
+# connector, and only the unmatched globs stay literal.
+for STATUS in /sys/class/drm/card*/card*-DP-[0-9]/status \
+              /sys/class/drm/card*/card*-HDMI-A-[0-9]/status
 do
-  HDMI_STATE=$(<${HDMI})
-  case "${HDMI_STATE}" in
+  [ -r "${STATUS}" ] || continue
+  case "$(<${STATUS})" in
     connected)
-      DEFAULT_SINK=$(pactl list short sinks | awk '/hdmi/ {print $2; exit}')
-      CURRENT_STATE="${HDMI_STATE}"
+      CURRENT_STATE="connected"
       break
       ;;
     disconnected)
-      CURRENT_STATE="${HDMI_STATE}"
-      break
+      CURRENT_STATE="disconnected"
       ;;
   esac
 done
 
-if [ -z "${DEFAULT_SINK}" ]
-then
-  DEFAULT_ID=$(pactl list short cards | awk '! /hdmi/ {print $1; exit}')
-  DEFAULT_SINK=$(pactl list short sinks | awk '! /hdmi/ {print $2; exit}')
-
-  if [ ! -z "${DEFAULT_SINK}" ]
-  then
-    ### Set the default sink ignoring HDMI
-    pactl set-default-sink ${DEFAULT_SINK}
-    pactl set-default-source ${DEFAULT_SINK}.monitor
-  fi
-
-  if [ ! -z "${DEVICE_PIPEWIRE_PROFILE}" ]
-  then
-    pactl set-card-profile ${DEFAULT_ID} ${DEVICE_PIPEWIRE_PROFILE}
-  fi
-
+# The udev event fires more than once per plug. Bail before touching the graph
+# rather than after: this check used to sit below the switching, so it saved
+# nothing but a write to the status file.
+if [ -n "${CURRENT_STATE}" ] && [ -f "${TMP_STATUS}" ]; then
+  [ "$(cat "${TMP_STATUS}")" = "${CURRENT_STATE}" ] && exit 0
 fi
 
-pactl set-default-sink ${DEFAULT_SINK}
-# Save the HDMI port connection status to avoid duplicate handling.
-# The udev event can be triggered multiple times, so we skip if the status hasn't changed.
+DEFAULT_SINK=""
+[ "${CURRENT_STATE}" = "connected" ] && DEFAULT_SINK=$(external_sink)
+
+# Falls back to the internal sink when nothing is plugged in, and also when a
+# display is attached but has not registered a sink.
+[ -z "${DEFAULT_SINK}" ] && DEFAULT_SINK=$(internal_sink)
+
+if [ -n "${DEFAULT_SINK}" ]; then
+  wpctl set-default "${DEFAULT_SINK}"
+fi
+
 [ -z "${CURRENT_STATE}" ] && exit 0
-if [ -f "${TMP_STATUS}" ]; then
-    LAST=$(cat "${TMP_STATUS}")
-    [ "${LAST}" = "${CURRENT_STATE}" ] && exit 0
-fi
 echo "${CURRENT_STATE}" > "${TMP_STATUS}"

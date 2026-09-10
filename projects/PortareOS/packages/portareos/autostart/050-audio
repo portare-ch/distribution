@@ -13,8 +13,11 @@ then
   systemctl start pipewire-pulse
 fi
 
-### Auto switch between internal and bluetooth devices
-pactl load-module module-switch-on-connect blocklist="Dirtywave_M8|DirtyWave_M8|hdmi" 2>/dev/null
+### Auto switch between internal and bluetooth devices is wireplumber's job
+### now. 89-bluez-auto-connect.conf gives bluetooth sinks priority 2000 so a
+### headset takes the default when it connects, and 89-external-display-audio
+### drops DP and HDMI sinks below the speaker so they never take it on their
+### own. hdmi_sense below is what moves audio to a display, deliberately.
 
 ### Set up audio routing (Internal or HDMI)
 /usr/bin/hdmi_sense 2>/dev/null
