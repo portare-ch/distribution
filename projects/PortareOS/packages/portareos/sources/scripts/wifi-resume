@@ -46,12 +46,40 @@ else
 fi
 /usr/bin/wifictl enable
 
-WLAN="$(ls /sys/class/net 2>/dev/null | grep -m1 ^wlan)"
-[ -z "${WLAN}" ] && exit 0
-
 # The firmware reloads on unblock and iwd's first scans fail against it, after
-# which its retry backoff wastes a minute. Kick one once the chip has settled.
-sleep 4
+# which its retry backoff wastes a minute, so the scan below has to wait for
+# the chip. This was a flat "sleep 4". Measured against a resume that took
+# 10.6s to reach "associated", of which NetworkManager's wake was only 1.1s,
+# that flat wait was better than a third of the whole thing: too long when the
+# reload is quick and too short when it is not.
+#
+# Poll for iwd being able to talk to the station instead, which is exactly the
+# readiness the scan needs. The interface is polled for as well: it is not
+# necessarily back the moment the unblock returns, and reading it once meant
+# an early resume left here without kicking any scan at all, which is the
+# minute of backoff this exists to avoid.
+READY_SECONDS=10
+
+WLAN=""
+WAITED=0
+while [ "${WAITED}" -lt "$((READY_SECONDS * 5))" ]; do
+  [ -z "${WLAN}" ] && WLAN="$(ls /sys/class/net 2>/dev/null | grep -m1 ^wlan)"
+  [ -n "${WLAN}" ] && iwctl station "${WLAN}" show >/dev/null 2>&1 && break
+  WAITED=$((WAITED + 1))
+  sleep 0.2
+done
+
+if [ -z "${WLAN}" ]; then
+  log $0 "No wlan interface ${READY_SECONDS}s after unblock."
+  exit 0
+fi
+
+if [ "${WAITED}" -ge "$((READY_SECONDS * 5))" ]; then
+  log $0 "iwd did not answer for ${WLAN} within ${READY_SECONDS}s, scanning anyway."
+else
+  log $0 "WIFI ready after $((WAITED * 200))ms, scanning."
+fi
+
 iwctl station "${WLAN}" scan >/dev/null 2>&1 ||:
 
 exit 0

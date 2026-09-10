@@ -237,8 +237,19 @@ Roughly 2.9s in the kernel plus a long userspace tail, measured from `dmesg`:
   download run on every open, while `qca_pm_ops` already suspends the
   controller into in-band sleep without losing the firmware. Unverified on
   hardware: watch whether a paired controller still reconnects after resume.
-* **WiFi**, 10.6s to `associated`. rfkill-blocked on suspend, full
-  reassociation on resume. `sleep.sh` explains why for ath12k.
+* **WiFi**, 10.6s to `associated`. The rfkill is not optional:
+  `ath12k_core_continue_suspend_resume()` returns 0 and does nothing unless
+  `ar->ah->state == ATH12K_HW_STATE_OFF`, and `wcn7850 hw2.0` does carry
+  `.supports_suspend = true`, so the radio has to be down for the driver's
+  suspend path to run at all. The reassociation cannot be avoided.
+
+  Measured split: NetworkManager's wake is only ~1.1s, consistently, and a
+  flat `sleep 4` in `wifi-resume` was better than a third of the total. That
+  is now a readiness poll. What remains is the firmware reload on unblock and
+  the scan itself, roughly 5s, and nobody has attacked it. Association once
+  the scan lands is 26ms, so the scan is the target. A directed scan on the
+  pinned network's channel would be the thing to try, but `iwctl` does not
+  expose one.
 
 `CONFIG_PM_DEBUG` is off, so `pm_print_times` is unavailable and per-device
 suspend and resume timings have to be read out of `dmesg` timestamps by hand.
