@@ -31,15 +31,42 @@ BLANK_FLAG="/run/power-blank-active.flag"
 # dock audio stays dead until a physical replug.
 EXTERNAL_DISPLAY="/usr/bin/external-display"
 
-# External display dependency. The helper itself is not part of this series,
-# and where it is missing every question below answers "not attached", so the
-# handler suspends exactly as it would on a device with no external output.
-# To drop external display handling altogether, remove this wrapper and the
-# two branches that call it: the blank instead of suspend in "power", and the
-# release in "release".
+# External display dependency. The helper itself is not part of this series.
+# Where it is missing, "connected" answers "not attached" so the handler
+# suspends exactly as it would on a device with no external output, and the
+# blanking falls through to sway below.
+# The helper is not in this tree, so before this fallback existed the blank
+# path did nothing at all: the flag was set, "blank" returned 1, and the DPU
+# carried on scanning out. Measured, that left 735805 kBps of DDR bandwidth
+# and the whole display pipeline powered behind a dark screen.
+#
+# sway does the same job. Internal outputs only, which is the rule the helper
+# existed to enforce: a DPMS off on an active DP output makes
+# msm_dp_display_disable() report the audio jack as unplugged.
+sway_power() {
+  local out
+  echo "${UI_SERVICE}" | grep -q sway || return 1
+  for out in $(swaymsg -t get_outputs -r 2>/dev/null | jq -r '.[].name' 2>/dev/null); do
+    case "${out}" in
+      DP-*|HDMI-*) continue ;;
+    esac
+    swaymsg "output ${out} power ${1}" >/dev/null 2>&1
+  done
+}
+
 external_display() {
-  [ -x "${EXTERNAL_DISPLAY}" ] || return 1
-  "${EXTERNAL_DISPLAY}" "$@"
+  if [ -x "${EXTERNAL_DISPLAY}" ]; then
+    "${EXTERNAL_DISPLAY}" "$@"
+    return
+  fi
+
+  # Without the helper there is no external display to ask about, so
+  # "connected" stays false and only the blanking is answered.
+  case "${1}" in
+    blank)   sway_power off ;;
+    unblank) sway_power on ;;
+    *)       return 1 ;;
+  esac
 }
 
 # Deliberately no sink muting. wireplumber persists mute per route, so a sink
