@@ -6,9 +6,8 @@
 PKG_DEPENDS_TARGET+=" SDL2 openal-soft"
 PKG_BUILD_FLAGS="+pic"
 
-if [ "${PIPEWIRE}" = yes ]; then
-  PKG_DEPENDS_TARGET="${PKG_DEPENDS_TARGET} pipewire"
-  PKG_CONFIGURE_OPTS_TARGET="${PKG_CONFIGURE_OPTS_TARGET} --with-default-audio=pulse --with-audio=pulse"
-fi
-
-unset PKG_CONFIGURE_OPTS_TARGET
+# Deliberately empty, where the base recipe sets --disable-shared
+# --enable-static. Two things link libmpg123 here, SDL2_mixer and gmu, so it is
+# built shared for them to share. This was an "unset" at the bottom of the
+# file, below a block it silently cancelled; saying it here says what it does.
+PKG_CONFIGURE_OPTS_TARGET=""
