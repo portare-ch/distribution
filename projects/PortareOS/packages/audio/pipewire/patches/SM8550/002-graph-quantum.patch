@@ -4,9 +4,10 @@ index 0d54cf9b90..bdea2ca072 100644
 +++ b/src/daemon/pipewire.conf.in
 @@ -43,7 +43,7 @@ context.properties = {
      #default.clock.rate          = 48000
-     #default.clock.allowed-rates = [ 48000 ]
+-    #default.clock.allowed-rates = [ 48000 ]
 -    #default.clock.quantum       = 1024
 -    #default.clock.min-quantum   = 32
++    default.clock.allowed-rates = [ 48000 44100 ]
 +    default.clock.quantum       = 512
 +    default.clock.min-quantum   = 256
      #default.clock.max-quantum   = 2048
