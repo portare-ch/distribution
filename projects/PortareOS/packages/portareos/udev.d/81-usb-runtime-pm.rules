@@ -1,0 +1,9 @@
+# dwc3_core_probe() ends with pm_runtime_forbid(), and the only
+# pm_runtime_allow() calls in the driver are on its error and remove paths, so
+# power/control stays "on" forever and the controller never runtime suspends.
+# dwc3_qcom_runtime_suspend() is what calls dwc3_qcom_interconnect_disable(),
+# so while it never runs the glue holds its SuperSpeed vote of 1000000 avg /
+# 2500000 peak kBps on the path to ebi, permanently, whether or not anything
+# is plugged in. That is a DDR bandwidth floor for the whole time the device
+# is awake. Hand runtime PM back.
+ACTION=="add", SUBSYSTEM=="platform", DRIVER=="dwc3-qcom", ATTR{power/control}="auto"
