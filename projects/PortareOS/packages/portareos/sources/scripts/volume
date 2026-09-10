@@ -2,6 +2,7 @@
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 
 # Source minimal predefined functions and variables
@@ -39,5 +40,9 @@ then
   VOLUME=50
 fi
 
-pactl -- set-sink-volume @DEFAULT_SINK@ ${VOLUME}%
+# wpctl takes a linear factor where pactl's % was cubic. EmulationStation
+# applies the same cubic curve to its own slider, so a given percentage
+# lands on the same volume whichever path set it.
+LINEAR=$(awk -v v="${VOLUME}" 'BEGIN { printf "%.6f", (v/100)^3 }')
+wpctl set-volume @DEFAULT_AUDIO_SINK@ "${LINEAR}"
 set_setting "audio.volume" ${VOLUME}
