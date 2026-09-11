@@ -23,7 +23,9 @@ This fork exists to correct that, and to carry Nova-specific work that would not
 Several of the kernel patches behind those come from [pocknix-os](https://github.com/shuuri-labs/pocknix-os) rather than from this fork. See Credits.
 
 Where this is going next is in [ROADMAP.md](ROADMAP.md), and what is known
-to be broken or unfinished is in [BUGS.md](BUGS.md).
+to be broken or unfinished is in [BUGS.md](BUGS.md), and what to try next
+about performance, with the tests to tell whether it worked, is in
+[docs/performance-plan.md](docs/performance-plan.md).
 
 ## Relationship to upstream
 
