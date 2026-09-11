@@ -24,7 +24,13 @@ case ${TARGET_ARCH} in
     ;;
 esac
 
-PKG_MAKE_OPTS_TARGET="REGENIE=1 \
+# A libretro core hands audio to the frontend through
+# retro_audio_sample_batch and never opens a device, so the bundled portaudio
+# is compiled and linked for nothing. Building it also meant needing alsa-lib,
+# which mame-lr never declared and was getting because the toolchain stage
+# happened to build it first.
+PKG_MAKE_OPTS_TARGET="NO_USE_PORTAUDIO=1 \
+		      REGENIE=1 \
 		      VERBOSE=1 \
 		      NOWERROR=1 \
 		      OPENMP=1 \
