@@ -19,14 +19,26 @@ concurrency:
   group: build
   cancel-in-progress: false
 
-# No schedule. Upstream builds nightly and monthly, and every job below was
-# fenced so those crons only fired for ROCKNIX's own repository. The rename
-# turned that fence into a comparison against 'PortareOS/distribution', which
-# is not this repository and not anything, so scheduled runs could never have
-# started. Rather than repoint the fence and quietly begin a five-hour build
-# every night, the crons are gone: builds here are dispatched. Add a cron back
-# when a nightly is actually wanted.
+# Nightly at 23:00 UTC, which is 01:00 in Aargau on summer time and 00:00 on
+# winter time. A build takes roughly two to four hours incrementally, so it has
+# landed either way by the time anyone is awake.
+#
+# This costs nothing on a quiet day. Automatic triggers consult
+# build-needed.sh, which diffs against the head of the last green build, and
+# the run stops at set-envs when nothing build-affecting has changed. Only
+# workflow_dispatch skips that check, on the grounds that a person who clicked
+# the button asked for an image.
+#
+# The concurrency group is "build" with cancel-in-progress false, so a nightly
+# that collides with a build already running queues behind it rather than
+# killing it.
+#
+# Still no monthly cron. set-release-type already treats a "0 0 1 * *" schedule
+# as an official release, so adding that line is all it would take, but
+# publishing a release is a decision rather than a timer.
 on:
+  schedule:
+    - cron: '0 23 * * *'
   workflow_dispatch:
     inputs:
       release:
