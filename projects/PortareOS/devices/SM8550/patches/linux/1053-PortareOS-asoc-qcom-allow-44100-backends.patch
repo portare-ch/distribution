@@ -1,0 +1,52 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] ASoC: qcom: stop pinning 44.1 kHz playback to 48000
+
+sc8280xp_be_hw_params_fixup() runs on every backend link and opens with
+
+	rate->min = rate->max = 48000;
+
+so even once a DAI advertises 44100, the backend is moved to 48000 and
+the DSP resamples. Widening the DAI masks alone therefore buys nothing:
+it relocates the resample from PipeWire into the DSP.
+
+Most of what this device plays is 44.1 kHz. The Dreamcast's AICA, the
+PS1 SPU and the PSP all run at it and none has a 48 kHz mode.
+
+The incoming rate is captured before the pin and restored for the two
+playback ports that can carry it, PRIMARY_MI2S_RX and
+RX_CODEC_DMA_RX_0, and only when the frontend asked for exactly 44100.
+Every other backend keeps the pin, which matters most for
+DISPLAY_PORT_RX_0: its DAI offers 48000, 96000 and 192000 only, so a
+44.1 stream reaching it would fail. Capture is untouched, as are the
+format and channel fixups.
+--- a/sound/soc/qcom/sc8280xp.c
++++ b/sound/soc/qcom/sc8280xp.c
+@@ -76,6 +76,7 @@
+ 	struct snd_interval *channels = hw_param_interval(params,
+ 					SNDRV_PCM_HW_PARAM_CHANNELS);
+ 	struct snd_mask *fmt = hw_param_mask(params, SNDRV_PCM_HW_PARAM_FORMAT);
++	unsigned int fe_rate = rate->min;
+ 
+ 	rate->min = rate->max = 48000;
+ 	snd_mask_set_format(fmt, SNDRV_PCM_FORMAT_S16_LE);
+@@ -88,6 +89,20 @@
+ 	case TX_CODEC_DMA_TX_3:
+ 		channels->min = 1;
+ 		break;
++	case PRIMARY_MI2S_RX:
++	case RX_CODEC_DMA_RX_0:
++		/*
++		 * Most of what this device plays is 44.1 kHz: the Dreamcast's
++		 * AICA, the PS1 SPU and the PSP all run at it and have no
++		 * 48 kHz mode. Pinning the backend to 48000 makes the DSP
++		 * resample every one of them. Let 44.1 through on the two
++		 * playback ports that can carry it, and leave every other
++		 * backend pinned - DISPLAY_PORT_RX_0 in particular offers
++		 * only 48000, 96000 and 192000.
++		 */
++		if (fe_rate == 44100)
++			rate->min = rate->max = 44100;
++		break;
+ 	default:
+ 		break;
+ 	}
