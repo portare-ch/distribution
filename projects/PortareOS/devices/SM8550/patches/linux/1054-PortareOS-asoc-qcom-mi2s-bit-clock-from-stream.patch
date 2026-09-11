@@ -1,0 +1,63 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] ASoC: qcom: derive the MI2S bit clock from the stream
+
+The third and last thing pinning this link to 48 kHz, and the only one
+that is about the hardware rather than about Linux bookkeeping.
+
+The board's sound node names LPASS_CLK_ID_SEN_MI2S_IBIT as "i2s_clk"
+and fixes it:
+
+	assigned-clock-rates = <1536000>;
+
+1536000 is 48000 x 2 x 16. The primary I2S patch enables that clock at
+startup, so the link runs at a 48 kHz bit clock whatever the DAI masks
+say, confirmed on hardware while playing:
+
+  LPASS_CLK_ID_SEN_MI2S_IBIT  1  1  0  1536000 ... sound  i2s_clk
+
+Set it from the stream instead. 44.1 kHz then gets 1411200 and the
+device tree value becomes a default rather than a ceiling.
+
+Done in the machine prepare op, which soc_pcm_prepare() calls before
+snd_soc_dapm_stream_event(), so the clock is already at the right rate
+when the aw88166 amps check their PLL against BCLK at DAPM PRE_PMU.
+That ordering is what the primary I2S patch exists to protect and this
+keeps it.
+
+Only PRIMARY_MI2S_RX is touched, and a clk_set_rate that the clock
+controller refuses is warned about rather than swallowed: if q6prm
+cannot produce 1411200 this is where it says so.
+--- a/sound/soc/qcom/sc8280xp.c
++++ b/sound/soc/qcom/sc8280xp.c
+@@ -101,6 +101,31 @@
+ 	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+ 	struct snd_soc_dai *cpu_dai = snd_soc_rtd_to_cpu(rtd, 0);
+ 	struct sc8280xp_snd_data *data = snd_soc_card_get_drvdata(rtd->card);
++	struct snd_pcm_runtime *runtime = substream->runtime;
++
++	/*
++	 * The bit clock comes from a fixed assigned-clock-rates in the device
++	 * tree, 1536000, which is 48000 x 2 x 16. That makes 48 kHz the only
++	 * rate the link can carry however wide the DAI masks are. Derive it
++	 * from the stream instead, so 44.1 kHz content gets 1411200 and the
++	 * device tree value becomes a default rather than a ceiling.
++	 *
++	 * This runs before snd_soc_dapm_stream_event(), so the clock is at the
++	 * right rate before the aw88166 amps check their PLL against BCLK at
++	 * DAPM PRE_PMU, which is the ordering the primary I2S patch exists to
++	 * protect.
++	 */
++	if (cpu_dai->id == PRIMARY_MI2S_RX && data->i2s_clk && runtime) {
++		unsigned long bclk = (unsigned long)runtime->rate *
++				     runtime->channels *
++				     snd_pcm_format_width(runtime->format);
++		int ret = clk_set_rate(data->i2s_clk, bclk);
++
++		if (ret)
++			dev_warn(rtd->card->dev,
++				 "could not set i2s bit clock to %lu: %d\n",
++				 bclk, ret);
++	}
+ 
+ 	return qcom_snd_sdw_prepare(substream, &data->stream_prepared[cpu_dai->id]);
+ }
