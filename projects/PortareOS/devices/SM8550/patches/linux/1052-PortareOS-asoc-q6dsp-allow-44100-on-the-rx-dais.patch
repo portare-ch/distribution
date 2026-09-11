@@ -1,31 +1,31 @@
 From: PortareOS <hello@portare.org>
-Subject: [PATCH] ASoC: qdsp6: allow 44100 on the LPASS RX DAIs
+Subject: [PATCH] ASoC: qdsp6: allow 44100 on the playback DAIs
 
-Both playback backends on SM8550 advertise 8000, 16000, 32000, 48000 and
-176400, so 44.1 kHz content cannot reach the hardware at its own rate and
-is resampled to 48000 before it gets there. That covers most of what this
-device plays: the Dreamcast's AICA is 44.1 kHz with no 48 kHz mode, and so
-are the PS1 SPU and the PSP.
+Three sites, not two. The first version of this patch changed the
+Q6AFE_CDC_DMA_RX_DAI and Q6AFE_MI2S_RX_DAI macros and assumed both
+playback ports were built from them. Only the headphone port is.
 
-Nothing below the DAI objects to 44100. The speaker amps are two
-awinic,aw88166 whose AW88166_RATES is SNDRV_PCM_RATE_8000_48000, which
-includes it, and which declare no dai_ops at all: the part reads its rate
-off I2S rather than being configured. The headphone codec is wcd938x,
-which carries an explicit WCD938X_FRAC_RATES_MASK listing 44100, 88200 and
-176400. Above the DAI, q6apm_lpass_dai_prepare only copies the rate into
-audioreach_module_config and hands it to the DSP, with no rate of its own.
-The mask is the only thing in the way.
+PRIMARY_MI2S_RX, which is the speakers, is written out longhand inside
+q6dsp_audio_fe_dais[] with its own narrower list:
 
-The bet is that LPASS can clock the 44.1 kHz family and upstream simply
-never listed it, which the 176400 already in the mask makes plausible:
-176400 is 4 x 44100, so a 44.1 kHz clock is evidently reachable.
+	.stream_name = "Primary MI2S Playback",
+	.rates = SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_8000 |
+		 SNDRV_PCM_RATE_16000,
 
-If the bet is wrong the DSP rejects the graph configuration and playback
-fails, or the clock is wrong and the pitch is audibly off. Both show up
-immediately and neither is destructive.
+48000, 8000 and 16000, and nothing else. So the speakers refused 44100
+no matter what the macro said, which is what the hardware reported:
 
-Only the two RX macros are touched. The TX and TDM ones share the same
-mask but capture is not what this is for.
+  # aplay -D hw:0,0 -f S16_LE -r 44100 -c 2 -d 2 /dev/urandom
+  Warning: rate is not accurate (requested = 44100Hz, got = 48000Hz)
+
+Refined rather than rejected, which is a rate mask doing its job.
+
+44100 is added to that entry and kept in both macros, so the headphone
+path via RX_CODEC_DMA_RX_0 keeps what it already gained. Capture is left
+alone.
+
+This half only makes the rate reachable. The machine driver pins every
+backend to 48000 separately; see the next patch.
 --- a/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c
 +++ b/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c
 @@ -47,8 +47,8 @@
@@ -50,3 +50,14 @@ mask but capture is not what this is for.
  			.formats = SNDRV_PCM_FMTBIT_S16_LE |		\
  				   SNDRV_PCM_FMTBIT_S24_LE |		\
  				   SNDRV_PCM_FMTBIT_S32_LE,		\
+@@ -386,8 +386,8 @@
+ 	}, {
+ 		.playback = {
+ 			.stream_name = "Primary MI2S Playback",
+-			.rates = SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_8000 |
+-				 SNDRV_PCM_RATE_16000,
++			.rates = SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_44100 |
++				 SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000,
+ 			.formats = SNDRV_PCM_FMTBIT_S16_LE |
+ 				   SNDRV_PCM_FMTBIT_S24_LE,
+ 			.channels_min = 1,
