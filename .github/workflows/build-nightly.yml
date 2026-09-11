@@ -33,12 +33,26 @@ concurrency:
 # that collides with a build already running queues behind it rather than
 # killing it.
 #
-# Still no monthly cron. set-release-type already treats a "0 0 1 * *" schedule
-# as an official release, so adding that line is all it would take, but
-# publishing a release is a decision rather than a timer.
+# Monthly on the 1st at 00:00 UTC, which set-release-type turns into an
+# official release: OFFICIAL=yes, INCREMENTAL=no, and the publish step tags it
+# release-<date>-<run> rather than nightly-<date>-<run> and drops the
+# --prerelease flag.
+#
+# That cron string has to stay exactly "0 0 1 * *". set-release-type compares
+# github.event.schedule against that literal, so respacing it silently demotes
+# the monthly build to a nightly prerelease.
+#
+# Releases always build cold, so nothing published rests on restored state.
+# A release therefore takes closer to five hours than two.
+#
+# On the 1st both crons fire, an hour apart. Nothing needs to arbitrate that:
+# the concurrency group queues them, and by the time the 23:00 nightly runs
+# build-needed.sh is diffing against the release that landed that morning, so
+# it skips unless something has actually changed since.
 on:
   schedule:
     - cron: '0 23 * * *'
+    - cron: '0 0 1 * *'
   workflow_dispatch:
     inputs:
       release:
@@ -141,8 +155,11 @@ jobs:
             echo "INCREMENTAL=yes" >> $GITHUB_OUTPUT
           fi
       # Whether anything since the last green build can affect what gets built.
-      # Only consulted for automatic triggers: a workflow_dispatch means a
-      # person asked for an image and gets one either way.
+      # Only consulted for runs nobody asked for by name: a workflow_dispatch
+      # means a person asked for an image, and an official release is a
+      # published artifact on a promised cadence. Both get one either way.
+      # Skipping a nightly on a quiet day saves a runner; skipping the monthly
+      # release leaves a gap someone has to explain.
       - name: Is a build needed
         id: build-needed
         env:
@@ -151,6 +168,9 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "NEEDED=yes" >> $GITHUB_OUTPUT
             echo "dispatched by hand - building regardless." >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ steps.set-release-type.outputs.OFFICIAL }}" == "yes" ]]; then
+            echo "NEEDED=yes" >> $GITHUB_OUTPUT
+            echo "official release - building regardless." >> $GITHUB_STEP_SUMMARY
           else
             NEEDED="$(.github/scripts/build-needed.sh)"
             echo "NEEDED=${NEEDED}" >> $GITHUB_OUTPUT
