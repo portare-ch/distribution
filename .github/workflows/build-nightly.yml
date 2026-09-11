@@ -19,14 +19,40 @@ concurrency:
   group: build
   cancel-in-progress: false
 
-# No schedule. Upstream builds nightly and monthly, and every job below was
-# fenced so those crons only fired for ROCKNIX's own repository. The rename
-# turned that fence into a comparison against 'PortareOS/distribution', which
-# is not this repository and not anything, so scheduled runs could never have
-# started. Rather than repoint the fence and quietly begin a five-hour build
-# every night, the crons are gone: builds here are dispatched. Add a cron back
-# when a nightly is actually wanted.
+# Nightly at 23:00 UTC, which is 01:00 in Aargau on summer time and 00:00 on
+# winter time. A build takes roughly two to four hours incrementally, so it has
+# landed either way by the time anyone is awake.
+#
+# This costs nothing on a quiet day. Automatic triggers consult
+# build-needed.sh, which diffs against the head of the last green build, and
+# the run stops at set-envs when nothing build-affecting has changed. Only
+# workflow_dispatch skips that check, on the grounds that a person who clicked
+# the button asked for an image.
+#
+# The concurrency group is "build" with cancel-in-progress false, so a nightly
+# that collides with a build already running queues behind it rather than
+# killing it.
+#
+# Monthly on the 1st at 00:00 UTC, which set-release-type turns into an
+# official release: OFFICIAL=yes, INCREMENTAL=no, and the publish step tags it
+# release-<date>-<run> rather than nightly-<date>-<run> and drops the
+# --prerelease flag.
+#
+# That cron string has to stay exactly "0 0 1 * *". set-release-type compares
+# github.event.schedule against that literal, so respacing it silently demotes
+# the monthly build to a nightly prerelease.
+#
+# Releases always build cold, so nothing published rests on restored state.
+# A release therefore takes closer to five hours than two.
+#
+# On the 1st both crons fire, an hour apart. Nothing needs to arbitrate that:
+# the concurrency group queues them, and by the time the 23:00 nightly runs
+# build-needed.sh is diffing against the release that landed that morning, so
+# it skips unless something has actually changed since.
 on:
+  schedule:
+    - cron: '0 23 * * *'
+    - cron: '0 0 1 * *'
   workflow_dispatch:
     inputs:
       release:
@@ -131,6 +157,11 @@ jobs:
       # Whether anything since the last green build can affect what gets built.
       # Only consulted for automatic triggers: a workflow_dispatch means a
       # person asked for an image and gets one either way.
+      #
+      # The monthly release is not exempt. A month in which nothing changed
+      # produces no release, because a release whose contents are identical to
+      # the last one is noise: it invites people to download it, and tells them
+      # nothing by existing. The cadence is a ceiling, not a promise.
       - name: Is a build needed
         id: build-needed
         env:
