@@ -1,0 +1,112 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
+#
+# Record what the machine was doing during a run, so two runs can be compared
+# without anyone having to remember what was set at the time.
+#
+#   perf-probe <label> [seconds]      default 60
+#
+# Writes /storage/perf/<label>/env.txt, samples.csv and summary.txt. Start it,
+# play, read summary.txt. Frametimes come from MangoHud when the run was
+# launched with it enabled; everything else is sampled here at 1 Hz.
+
+set -u
+
+LABEL="${1:?usage: perf-probe <label> [seconds]}"
+SECONDS_TO_RUN="${2:-60}"
+OUT="/storage/perf/${LABEL}"
+GPU="$(echo /sys/class/devfreq/*gpu* | cut -d' ' -f1)"
+BAT="$(echo /sys/class/power_supply/*/charge_now | cut -d' ' -f1)"; BAT="${BAT%/*}"
+
+mkdir -p "${OUT}" || exit 1
+
+# Everything that decides how the run behaves. Recorded once, because a number
+# nobody wrote down is a run nobody can repeat.
+{
+  echo "label      ${LABEL}"
+  echo "date       $(date -Is)"
+  echo "uptime     $(cut -d' ' -f1 /proc/uptime)"
+  echo "kernel     $(uname -r)"
+  echo "cmdline    $(cat /proc/cmdline)"
+  echo
+  for p in /sys/devices/system/cpu/cpufreq/policy*; do
+    echo "cpu ${p##*/} gov=$(cat "${p}"/scaling_governor) min=$(cat "${p}"/scaling_min_freq) max=$(cat "${p}"/scaling_max_freq)"
+  done
+  [ -d "${GPU}" ] && echo "gpu gov=$(cat "${GPU}"/governor) min=$(cat "${GPU}"/min_freq) max=$(cat "${GPU}"/max_freq)"
+  echo "gpu opps   $(cat "${GPU}"/available_frequencies 2>/dev/null)"
+  echo
+  echo "irqaffinity $(sed -n 's/.*\(irqaffinity=[^ ]*\).*/\1/p' /proc/cmdline)"
+  echo "pw quantum  $(pw-metadata -n settings 2>/dev/null | sed -n "s/.*'clock.force-quantum' value:'\([0-9]*\)'.*/\1/p")"
+  echo "pw rate     $(pw-metadata -n settings 2>/dev/null | sed -n "s/.*'clock.force-rate' value:'\([0-9]*\)'.*/\1/p")"
+  echo
+  grep -H . "${GPU}"/governor "${GPU}"/min_freq "${GPU}"/max_freq 2>/dev/null
+  echo
+  echo "--- emulator config ---"
+  for f in /storage/.config/flycast/emu.cfg /storage/.config/dolphin-emu/Dolphin.ini; do
+    [ -f "${f}" ] && { echo "[${f}]"; grep -E "^(backend|pvr\.|rend\.|GFXBackend|Backend) " "${f}" 2>/dev/null; }
+  done
+} > "${OUT}/env.txt" 2>&1
+
+echo "t,cpu0_khz,cpu_big_khz,gpu_hz,temp_c,charge_uah,emu_pct,xruns" > "${OUT}/samples.csv"
+
+pid_of_emu() {
+  for n in flycast dolphin-emu-nogui rpcs3-sa armsx2-sa retroarch ppsspp; do
+    p="$(pidof "${n}" 2>/dev/null | cut -d' ' -f1)"; [ -n "${p}" ] && { echo "${p}"; return; }
+  done
+}
+
+END=$(( $(date +%s) + SECONDS_TO_RUN ))
+while [ "$(date +%s)" -lt "${END}" ]; do
+  P="$(pid_of_emu)"
+  # utime+stime in ticks, differenced against the previous sample below
+  CPU_T=0; [ -n "${P:-}" ] && CPU_T=$(awk '{print $14+$15}' "/proc/${P}/stat" 2>/dev/null || echo 0)
+  printf '%s,%s,%s,%s,%s,%s,%s,%s\n' \
+    "$(date +%s)" \
+    "$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq 2>/dev/null)" \
+    "$(cat /sys/devices/system/cpu/cpufreq/policy7/scaling_cur_freq 2>/dev/null || cat /sys/devices/system/cpu/cpufreq/policy4/scaling_cur_freq 2>/dev/null)" \
+    "$(cat "${GPU}"/cur_freq 2>/dev/null)" \
+    "$(( $(cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | sort -n | tail -1) / 1000 ))" \
+    "$(cat "${BAT}/charge_now" 2>/dev/null)" \
+    "${CPU_T}" \
+    "$(pw-top -b -n 1 2>/dev/null | awk 'NR>1 {e+=$8} END {print e+0}')" \
+    >> "${OUT}/samples.csv"
+  sleep 1
+done
+
+# MangoHud writes its own csv when the run was launched with logging on.
+MH="$(ls -t /storage/mangologs/*.csv 2>/dev/null | head -1)"
+[ -n "${MH}" ] && cp "${MH}" "${OUT}/frametimes.csv"
+
+{
+  echo "=== ${LABEL}, ${SECONDS_TO_RUN}s ==="
+  awk -F, 'NR>1 {
+      n++; g[n]=$4; c[n]=$3; if ($5>tmax) tmax=$5
+      if (NR==2) {q0=$6; x0=$8} ; q1=$6; x1=$8
+    }
+    END {
+      if (!n) { print "no samples"; exit }
+      asort(g); asort(c)
+      printf "gpu   median %d Hz   p95 %d Hz   max %d Hz\n", g[int(n/2)], g[int(n*0.95)], g[n]
+      printf "cpu   median %d kHz  p95 %d kHz\n", c[int(n/2)], c[int(n*0.95)]
+      printf "temp  max %d C\n", tmax
+      printf "drain %.0f mAh over the window\n", (q0-q1)/1000
+      printf "xruns %d\n", x1-x0
+    }' "${OUT}/samples.csv" 2>/dev/null || \
+  awk -F, 'NR>1 {n++} END {print "samples: " n " (install gawk for percentiles)"}' "${OUT}/samples.csv"
+
+  if [ -f "${OUT}/frametimes.csv" ]; then
+    echo
+    awk -F, '$1+0>0 {n++; f[n]=$1+0; s+=$1}
+      END {
+        if (!n) exit
+        asort(f)
+        printf "frametime  mean %.1f ms  p50 %.1f  p95 %.1f  p99 %.1f  max %.1f\n", \
+               s/n/1000, f[int(n/2)]/1000, f[int(n*0.95)]/1000, f[int(n*0.99)]/1000, f[n]/1000
+        printf "fps        mean %.1f\n", 1000000*n/s
+      }' "${OUT}/frametimes.csv" 2>/dev/null
+  else
+    echo
+    echo "no frametimes: relaunch with mangohud logging on to get them"
+  fi
+} | tee "${OUT}/summary.txt"
