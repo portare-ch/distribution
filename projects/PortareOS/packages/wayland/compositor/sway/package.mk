@@ -9,8 +9,8 @@ PKG_LONGDESC="i3-compatible Wayland compositor"
 PKG_TOOLCHAIN="meson"
 PKG_PATCH_DIRS+="${DEVICE}"
 
-PKG_VERSION="1.11"
-PKG_SHA256="0e37a55b7c3379230e97e1ad982542b75016a0c7d6676198604e557f9b373dae"
+PKG_VERSION="1.12"
+PKG_SHA256="a7b1becc217433c11c6284d36bcea0687b87b77b0ed26a384565292ec321f2b1"
 PKG_URL="https://github.com/swaywm/sway/releases/download/${PKG_VERSION}/sway-${PKG_VERSION}.tar.gz"
 
 # to enable xwayland package: https://gitlab.freedesktop.org/xorg/lib/libxcb-wm/-/tree/master/icccm?ref_type=heads
@@ -24,12 +24,13 @@ PKG_MESON_OPTS_TARGET="-Ddefault-wallpaper=false \
                        -Dtray=disabled \
                        -Dgdk-pixbuf=enabled \
                        -Dman-pages=disabled \
-                       -Dsd-bus-provider=auto"
+                       -Dsd-bus-provider=auto \
+                       -Dwerror=false"
 
-pre_configure_target() {
-  # sway does not build without -Wno flags as all warnings being treated as errors
-  export TARGET_CFLAGS=$(echo "${TARGET_CFLAGS} -Wno-unused-variable")
-}
+# sway carries werror=true in its meson default_options, so any warning the
+# toolchain raises is a build failure. This used to be worked around by
+# exporting a single -Wno-unused-variable, which only covered the warning of
+# the day; -Dwerror=false covers the reason.
 
 post_makeinstall_target() {
   mkdir -p ${INSTALL}/usr/lib/sway
