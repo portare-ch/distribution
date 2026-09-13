@@ -1,13 +1,13 @@
 diff --git a/tools/perf/Makefile.config b/tools/perf/Makefile.config
-index 15fbba9f4ca8..9e7a378c6491 100644
 --- a/tools/perf/Makefile.config
 +++ b/tools/perf/Makefile.config
-@@ -1165,15 +1165,15 @@ ifndef NO_RUST
+@@ -1141,16 +1141,16 @@
    endif
  
    ifneq ($(CROSS_COMPILE),)
 -    RUST_TARGET_FLAGS_arm	:= arm-unknown-linux-gnueabi
 -    RUST_TARGET_FLAGS_arm64	:= aarch64-unknown-linux-gnu
+-    RUST_TARGET_FLAGS_loongarch	:= loongarch64-unknown-linux-gnu
 -    RUST_TARGET_FLAGS_m68k	:= m68k-unknown-linux-gnu
 -    RUST_TARGET_FLAGS_mips	:= mipsel-unknown-linux-gnu
 -    RUST_TARGET_FLAGS_powerpc	:= powerpc64le-unknown-linux-gnu
@@ -17,6 +17,7 @@ index 15fbba9f4ca8..9e7a378c6491 100644
 -    RUST_TARGET_FLAGS_x86_64	:= x86_64-unknown-linux-gnu
 +    RUST_TARGET_FLAGS_arm	:= arm-portareos-linux-gnueabi
 +    RUST_TARGET_FLAGS_arm64	:= aarch64-portareos-linux-gnu
++    RUST_TARGET_FLAGS_loongarch	:= loongarch64-portareos-linux-gnu
 +    RUST_TARGET_FLAGS_m68k	:= m68k-portareos-linux-gnu
 +    RUST_TARGET_FLAGS_mips	:= mipsel-portareos-linux-gnu
 +    RUST_TARGET_FLAGS_powerpc	:= powerpc64le-portareos-linux-gnu
