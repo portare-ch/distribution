@@ -20,4 +20,9 @@ makeinstall_target() {
     "SM8650") cp -a SM8650/* ${INSTALL}/$(get_full_firmware_dir) ;;
     "SM8750") cp -a SM8750/* ${INSTALL}/$(get_full_firmware_dir) ;;
   esac
+
+  if [ "${DEVICE}" = "SM8550" ]; then
+    python3 ${PKG_DIR}/sources/tplg-allow-44100.py \
+      ${INSTALL}/$(get_full_firmware_dir)/qcom/sm8550/AYN-Odin2-tplg.bin
+  fi
 }
