@@ -5,7 +5,7 @@
 
 PKG_VERSION="15.3.0"
 PKG_SHA256="fa59c1beef8995f27c4d71c1df227587189315d3e6faff1bb4306e61b0c530eb"
-PKG_URL="https://ftpmirror.gnu.org/gcc/${PKG_NAME}-${PKG_VERSION}/${PKG_NAME}-${PKG_VERSION}.tar.xz"
+PKG_URL="https://sourceware.org/pub/gcc/releases/${PKG_NAME}-${PKG_VERSION}/${PKG_NAME}-${PKG_VERSION}.tar.xz"
 
 case ${TARGET_ARCH} in
   arm|aarch64)
