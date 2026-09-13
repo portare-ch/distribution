@@ -24,12 +24,25 @@ when the aw88166 amps check their PLL against BCLK at DAPM PRE_PMU.
 That ordering is what the primary I2S patch exists to protect and this
 keeps it.
 
+A q6dsp clock only tells the DSP its rate when it is prepared, and
+startup has already prepared this one, so clk_set_rate() alone lands on
+the next stream. The first version did only that, and every rate change
+failed one stream late:
+
+  48000 -> 44100   port starts on 1536000   APM_CMD_GRAPH_START refused
+  44100 -> 48000   port starts on 1411200   APM_CMD_GRAPH_START refused
+
+Asking for the same rate twice worked the second time, at 44100 as at
+48000, with the amps quiet. So when the rate changes the clock is
+unprepared, set and prepared again, which is balanced against the
+enable in startup.
+
 Only PRIMARY_MI2S_RX is touched, and a clk_set_rate that the clock
 controller refuses is warned about rather than swallowed: if q6prm
 cannot produce 1411200 this is where it says so.
 --- a/sound/soc/qcom/sc8280xp.c
 +++ b/sound/soc/qcom/sc8280xp.c
-@@ -101,6 +101,31 @@
+@@ -157,6 +157,46 @@
  	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
  	struct snd_soc_dai *cpu_dai = snd_soc_rtd_to_cpu(rtd, 0);
  	struct sc8280xp_snd_data *data = snd_soc_card_get_drvdata(rtd->card);
@@ -51,12 +64,27 @@ cannot produce 1411200 this is where it says so.
 +		unsigned long bclk = (unsigned long)runtime->rate *
 +				     runtime->channels *
 +				     snd_pcm_format_width(runtime->format);
-+		int ret = clk_set_rate(data->i2s_clk, bclk);
++		int ret;
 +
-+		if (ret)
-+			dev_warn(rtd->card->dev,
-+				 "could not set i2s bit clock to %lu: %d\n",
-+				 bclk, ret);
++		/*
++		 * A q6dsp clock only reports its rate to the DSP when it is
++		 * prepared, and startup has already prepared this one. Setting
++		 * the rate alone would take effect on the next stream, so this
++		 * stream would start the port against the previous stream's
++		 * bit clock and the DSP refuses APM_CMD_GRAPH_START. Re-vote.
++		 */
++		if (clk_get_rate(data->i2s_clk) != bclk) {
++			clk_disable_unprepare(data->i2s_clk);
++			ret = clk_set_rate(data->i2s_clk, bclk);
++			if (ret)
++				dev_warn(rtd->card->dev,
++					 "could not set i2s bit clock to %lu: %d\n",
++					 bclk, ret);
++			ret = clk_prepare_enable(data->i2s_clk);
++			if (ret)
++				dev_err(rtd->card->dev,
++					"could not enable i2s bit clock: %d\n", ret);
++		}
 +	}
  
  	return qcom_snd_sdw_prepare(substream, &data->stream_prepared[cpu_dai->id]);
