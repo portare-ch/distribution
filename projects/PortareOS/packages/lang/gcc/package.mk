@@ -3,8 +3,8 @@
 
 . ${ROOT}/packages/lang/gcc/package.mk
 
-PKG_VERSION="15.2.0"
-PKG_SHA256="438fd996826b0c82485a29da03a72d71d6e3541a83ec702df4271f6fe025d24e"
+PKG_VERSION="15.3.0"
+PKG_SHA256="fa59c1beef8995f27c4d71c1df227587189315d3e6faff1bb4306e61b0c530eb"
 PKG_URL="https://ftpmirror.gnu.org/gcc/${PKG_NAME}-${PKG_VERSION}/${PKG_NAME}-${PKG_VERSION}.tar.xz"
 
 case ${TARGET_ARCH} in
