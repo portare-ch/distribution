@@ -20,10 +20,18 @@
 };
 
 &i2c_hub_3 {
+	/*
+	 * Byte-at-a-time reads (the AYN i2c_hub workaround inherited from the
+	 * RP6) take 63 transfers per ft5426 frame and cap touch at ~28 Hz.
+	 * Bulk reads at 400 kHz keep up with the controller's 120 Hz reports.
+	 */
+	clock-frequency = <400000>;
+
 	touchscreen@38 {
 		touchscreen-size-x = <1280>;
 		touchscreen-size-y = <960>;
 		/delete-property/ touchscreen-inverted-y;
+		/delete-property/ no-regmap-bulk-read;
 	};
 };
 

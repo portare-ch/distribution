@@ -172,31 +172,41 @@ map_path() {
 }
 
 # Pinned in this fork, never imported: package names, or single files by
-# their upstream path below packages/ (entries with a slash).
-declare -A PINNED=()
+# their upstream path below packages/ (entries with a slash). Kept as a
+# newline-delimited string rather than an associative array so the script
+# runs on the bash 3.2 macOS ships.
+PINNED=$'\n'
 if [ -f "${IGNORE_FILE}" ]; then
   while read -r name; do
     name="${name%%#*}"; name="${name// /}"
-    [ -n "${name}" ] && PINNED["${name}"]=1
+    [ -n "${name}" ] && PINNED+="${name}"$'\n'
   done < "${IGNORE_FILE}"
 fi
+pinned() {
+  case "${PINNED}" in *$'\n'"$1"$'\n'*) return 0 ;; esac
+  return 1
+}
 
 # Directory names that mean "some other board or architecture": every device
 # upstream has at the imported commit that we do not, plus the architectures
 # we do not build. Ours come from projects/<us>/devices; theirs from theirs.
 # arm stays out of the list: build-arm still produces the 32-bit sysroot.
-declare -A FOREIGN=()
-for d in $(git ls-tree -d --name-only "${TO_SHA}" "${THEIRS_PROJECT}/devices/" 2>/dev/null | xargs -rn1 basename); do
-  [ -d "${OURS_PROJECT}/devices/${d}" ] || FOREIGN["${d}"]=1
+FOREIGN=$'\n'
+for d in $(git ls-tree -d --name-only "${TO_SHA}" "${THEIRS_PROJECT}/devices/" 2>/dev/null | xargs -n1 basename); do
+  [ -d "${OURS_PROJECT}/devices/${d}" ] || FOREIGN+="${d}"$'\n'
 done
-for a in x86 x86_64 riscv64; do FOREIGN["${a}"]=1; done
+for a in x86 x86_64 riscv64; do FOREIGN+="${a}"$'\n'; done
+foreign() {
+  case "${FOREIGN}" in *$'\n'"$1"$'\n'*) return 0 ;; esac
+  return 1
+}
 
 # Does any directory component of a path within a package name a foreign
 # board or arch? Prints the component.
 foreign_component() {
   local IFS=/ seg
   for seg in $1; do
-    [ -n "${FOREIGN[${seg}]:-}" ] && { printf '%s\n' "${seg}"; return 0; }
+    foreign "${seg}" && { printf '%s\n' "${seg}"; return 0; }
   done
   return 1
 }
@@ -417,7 +427,7 @@ while IFS=$'\t' read -r status a b; do
   # A file pinned by its upstream path is never touched, whether or not the
   # package around it is imported.
   their_rel="${their_path#${THEIRS_PROJECT}/}"; their_rel="${their_rel#packages/}"
-  if [ -n "${PINNED[${their_rel}]:-}" ]; then
+  if pinned "${their_rel}"; then
     skipped_pinned+=("${their_rel}")
     continue
   fi
@@ -430,7 +440,7 @@ while IFS=$'\t' read -r status a b; do
       continue
     fi
     # A package pinned in this fork is never touched.
-    if [ -n "${PINNED[$(basename "${their_root}")]:-}" ]; then
+    if pinned "$(basename "${their_root}")"; then
       skipped_pinned+=("${our_root#${OURS_PROJECT}/packages/}")
       continue
     fi
