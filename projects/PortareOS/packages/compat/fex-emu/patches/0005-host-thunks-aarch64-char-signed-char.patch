@@ -1,9 +1,7 @@
 diff --git a/ThunkLibs/include/common/Host.h b/ThunkLibs/include/common/Host.h
 --- a/ThunkLibs/include/common/Host.h
 +++ b/ThunkLibs/include/common/Host.h
-@@ -446,8 +446,22 @@ struct host_to_guest_convertible {
-   operator guest_layout<uint8_t*>() const requires (std::is_same_v<T, char*>)
-   {
+@@ -448,6 +448,20 @@ struct host_to_guest_convertible {
      return (guest_layout<uint8_t*>)reinterpret_cast<const host_to_guest_convertible<uint8_t*>&>(*this);
    }
  
