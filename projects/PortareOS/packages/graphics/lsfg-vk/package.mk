@@ -3,10 +3,12 @@
 
 PKG_NAME="lsfg-vk"
 PKG_VERSION="8b0da2661c6f3473a7fccc8ba643880050e71642"
-PKG_SHA256="2bfcc74919cb202669740a3c6ba348ebf702e2fef37310dce2ae095854fda1cb"
+PKG_SHA256="29815a0dc4e4ae379b1de6559d358ce485dcae931a71851d00c63cbf97251c7c"
 PKG_LICENSE="GPL-3.0"
-PKG_SITE="https://github.com/PancakeTAS/lsfg-vk"
-PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
+# Upstream left GitHub and restarted the repository under CC BY-NC-ND 4.0;
+# the archive keeps this GPL-3.0 tree.
+PKG_SITE="https://git.lsfg-vk.dev/lsfg-vk-archive"
+PKG_URL="${PKG_SITE}/snapshot/lsfg-vk-archive-${PKG_VERSION}.tar.xz"
 PKG_DEPENDS_HOST="toolchain:host vulkan-headers:host"
 PKG_DEPENDS_TARGET="toolchain ${VULKAN} lsfg-vk:host"
 PKG_LONGDESC="Lossless Scaling Frame Generation Vulkan layer for Linux."
