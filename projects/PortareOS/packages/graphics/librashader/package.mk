@@ -3,7 +3,7 @@
 
 PKG_NAME="librashader"
 PKG_LICENSE="MPLv2"
-PKG_VERSION="76462c030b75c4f2d56e5386c3d4d7d1128318b8"
+PKG_VERSION="87e8a97b50516d997defeaa168173dcd185d4022" # v0.12.0
 PKG_SITE="https://github.com/SnowflakePowered/librashader"
 PKG_URL="${PKG_SITE}.git"
 PKG_DEPENDS_TARGET="toolchain cargo:host cargo rust glfw"
