@@ -126,6 +126,10 @@ PortareOS uses its own boot partition label, so the first image must be written 
 
 Installation steps are at [os.portare.org](https://os.portare.org).
 
+## A note about AI
+
+Yes, 100% and I plan to keep it that way.
+
 ## Licenses
 
 **PortareOS** is a fork of **ROCKNIX**, which is a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution). All licenses apply, and credit belongs to the ROCKNIX and JELOS teams.
