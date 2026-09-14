@@ -40,9 +40,8 @@ then
   VOLUME=50
 fi
 
-# wpctl takes a linear factor where pactl's % was cubic. EmulationStation
-# applies the same cubic curve to its own slider, so a given percentage
-# lands on the same volume whichever path set it.
-LINEAR=$(awk -v v="${VOLUME}" 'BEGIN { printf "%.6f", (v/100)^3 }')
-wpctl set-volume @DEFAULT_AUDIO_SINK@ "${LINEAR}"
+# wpctl applies the cubic curve itself, the same one EmulationStation uses for
+# its slider, so it takes the plain fraction. Cubing it here as well put 30% at
+# -94 dB.
+wpctl set-volume @DEFAULT_AUDIO_SINK@ "$(awk -v v="${VOLUME}" 'BEGIN { printf "%.2f", v / 100 }')"
 set_setting "audio.volume" ${VOLUME}
