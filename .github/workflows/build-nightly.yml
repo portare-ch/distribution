@@ -257,6 +257,10 @@ jobs:
     if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next'
     needs: build-devices
     runs-on: ubuntu-24.04
+    # The repository's default token is read-only, and dispatching a
+    # workflow needs actions: write.
+    permissions:
+      actions: write
     steps:
       - env:
           GH_REPO: ${{ github.repository }}
