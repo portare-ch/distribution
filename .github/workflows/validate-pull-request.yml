@@ -24,6 +24,12 @@ jobs:
         run: |
           # Everything speaks PipeWire, natively or through SDL or the alsa
           # plugin. Mentions are only allowed when they turn something off.
+          #
+          # One exception, the last filter: Steam's arm64 client is a binary
+          # that links libpulse.so.0 and cannot be rebuilt, so start_steam.sh
+          # links the copy out of Steam's own runtime. Nothing in the image
+          # links or builds against it, and pipewire-pulse is what answers it,
+          # which is the same ground the pipewire-pulse server stands on.
           HITS=$(grep -rn -w -E 'pulseaudio|libpulse|libpulse-simple|pactl|pacmd|paplay|parec' \
                    packages projects distributions config scripts tools \
                  | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' \
@@ -31,7 +37,8 @@ jobs:
                  | grep -vE '(--without-|--disable-)pulse' \
                  | grep -vE 'ENABLE_PULSEAUDIO=OFF|USE_PULSEAUDIO=OFF|BACKEND_PULSEAUDIO=off' \
                  | grep -vE 'SDL_PULSEAUDIO=OFF|-Dlibpulse=disabled' \
-                 | grep -vE 'pipewire/(patches|system\.d)/') || true
+                 | grep -vE 'pipewire/(patches|system\.d)/' \
+                 | grep -vE 'steam/scripts/start_steam\.sh:[0-9]+:.*libpulse') || true
 
           # vice-sa passed --with-pulse, which names no library and so slipped
           # past the pattern above until its build failed on a missing

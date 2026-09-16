@@ -20,6 +20,7 @@ steam_apply_fps_limit
 steam_set_cpu_affinity
 steam_debug_print
 
+steam_arm64_link_runtime_libs
 steam_arm64_binfmt_and_proton_prep
 steam_read_sway_geometry
 steam_setup_environment

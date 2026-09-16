@@ -166,6 +166,39 @@ steam_dual_screen_end() {
   fi
 }
 
+# The arm64 client links against libraries this image does not ship, libpulse
+# above all: pulse is banned here and the ban stays, since pipewire-pulse is
+# what answers Steam. Steam's own arm64 runtime carries them, but under their
+# versioned file names only, so nothing resolves a plain soname and steamui.so
+# dies with "Failed to load steamui.so".
+#
+# Link the sonames the client asks for into the directory the launch already
+# puts on LD_LIBRARY_PATH. Only what the image is missing, because that path
+# comes first and a link for a library we do ship would shadow it. libpulse
+# pulls in libpulsecommon and libasyncns, neither of which is a soname the
+# client names itself.
+steam_arm64_link_runtime_libs() {
+  local libdir="/storage/.local/share/Steam/lib/aarch64-linux-gnu"
+  local runtime
+  runtime=$(ls -d /storage/.local/share/Steam/steam-runtime-steamrt-arm64/*/files/lib/aarch64-linux-gnu 2>/dev/null | sort | tail -1)
+
+  [ -d "${runtime}" ] || return 0
+  mkdir -p "${libdir}"
+
+  local soname src
+  for soname in libpulse.so.0 libasyncns.so.0 libva.so.2 libibus-1.0.so.5; do
+    [ -e "/usr/lib/${soname}" ] && continue
+    src=$(ls "${runtime}/${soname}"* 2>/dev/null | sort | tail -1)
+    [ -n "${src}" ] && ln -sfn "${src}" "${libdir}/${soname}"
+  done
+
+  # Named for the pulseaudio release rather than an ABI, so it is linked under
+  # whatever name the runtime ships and follows a runtime update by itself.
+  for src in "${runtime}"/pulseaudio/libpulsecommon-*.so; do
+    [ -e "${src}" ] && ln -sfn "${src}" "${libdir}/$(basename "${src}")"
+  done
+}
+
 steam_arm64_binfmt_and_proton_prep() {
   echo 0 >/proc/sys/fs/binfmt_misc/x86
   echo 0 > /proc/sys/fs/binfmt_misc/box32
