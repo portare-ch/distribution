@@ -101,6 +101,7 @@ makeinstall_target() {
 
   mkdir -p ${INSTALL}/usr/config
   cp -rf ${PKG_DIR}/config/common/ARMSX2 ${INSTALL}/usr/config
+  cp -f ${PKG_DIR}/config/common/armsx2.gptk ${INSTALL}/usr/config/ARMSX2
 
   # The generic config is right for the Nova as it stands (#15): nothing in
   # PCSX2.ini names a resolution, AspectRatio "Auto 4:3/3:2" fills the 4:3
