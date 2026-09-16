@@ -6,6 +6,11 @@
 
 . /etc/profile
 
+#load gptokeyb support files
+control-gen_init.sh
+source /storage/.config/gptokeyb/control.ini
+get_controls
+
 #Check if ARMSX2 exists in .config
 if [ ! -d "/storage/.config/ARMSX2" ]; then
     mkdir -p "/storage/.config/ARMSX2"
@@ -15,6 +20,11 @@ fi
 #Check if ARMSX2 ini exists in .config
 if [ ! -f "/storage/.config/ARMSX2/inis/PCSX2.ini" ]; then
         cp -r "/usr/config/ARMSX2/inis/PCSX2.ini" "/storage/.config/ARMSX2/inis/"
+fi
+
+#Check if the gptokeyb mapping exists in .config
+if [ ! -f "/storage/.config/ARMSX2/armsx2.gptk" ]; then
+        cp -r "/usr/config/ARMSX2/armsx2.gptk" "/storage/.config/ARMSX2/"
 fi
 
 #Check if secrets ini exists in .config
@@ -216,4 +226,9 @@ fi
 #Run ARMSX2 emulator
   export SDL_AUDIODRIVER=pipewire
   set_kill set "-9 armsx2-qt"
+
+# gptokeyb maps nothing here; it runs for its exit combo, which is the only
+# way out of ARMSX2 short of the three-button kill in input_sense.
+  ${GPTOKEYB} "armsx2-qt" -c "/storage/.config/ARMSX2/armsx2.gptk" &
   ${EMUPERF} /usr/share/armsx2-sa/armsx2-qt -bigpicture -fullscreen "${1}"
+  kill -9 "$(pidof gptokeyb)"
