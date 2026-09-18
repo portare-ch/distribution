@@ -433,6 +433,14 @@ if [ "${KMSMODE}" = "1" ]; then
   export SDL_VIDEODRIVER=kmsdrm
   export SDL_KMSDRM_REQUIRE_DRM_MASTER=1
   unset WAYLAND_DISPLAY DISPLAY
+
+  ### RetroArch does not go through SDL for the display. It was built
+  ### with --enable-kms and picks that context on its own once nothing
+  ### hands it a wayland socket, but the config carries a context
+  ### setting of its own, so name it rather than hope.
+  if [ -n "${RABIN}" ]; then
+    echo 'video_context_driver = "kms"' >> "${RETROARCH_APPEND_CONFIG}"
+  fi
 fi
 
 # If the rom is a shell script just execute it, useful for DOSBOX and ScummVM scan scripts
