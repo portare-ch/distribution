@@ -28,5 +28,16 @@ makeinstall_target() {
   mkdir -p ${INSTALL}/usr/lib/compat
     curl -Lo ${PKG_BUILD}/compat.tar.gz ${COMPAT_URL}
     tar -xvf ${PKG_BUILD}/compat.tar.gz -C ${INSTALL}/usr/lib
-    rm -rf ${INSTALL}/usr/lib/compat/libSDL2-2.0.so.0*
+    # Keep the real SDL2 this tarball ships. Ports are prebuilt aarch64
+    # binaries linked against real SDL2, and the system libSDL2 is now
+    # sdl2-compat. ROCKNIX ran that pairing for three weeks and saw ports
+    # segfault - Apotris and Aquaria confirmed - with scaling and audio
+    # faults besides. control.txt exports LD_LIBRARY_PATH=/usr/lib/compat
+    # for every port, so the ports find this one first and everything
+    # else in the image keeps the shim.
+    if [ "${PREFER_GLES}" = "yes" ]; then
+      mv ${INSTALL}/usr/lib/compat/libSDL2-2.0.so.0.gles ${INSTALL}/usr/lib/compat/libSDL2-2.0.so.0
+    else
+      rm -rf ${INSTALL}/usr/lib/compat/libSDL2-2.0.so.0.gles
+    fi
 }

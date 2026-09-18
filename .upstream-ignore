@@ -44,3 +44,8 @@ vita3k-sa
 
 # Only emulationstation ever linked it, and that is libmpv now. Removed.
 vlc
+
+# SDL2 is sdl2-compat here: the SDL2 API on top of SDL3, so SDL2 clients
+# get SDL3's backends and, with them, wp_tearing_control. Upstream's
+# recipe builds real SDL2 and would undo that, patches and all.
+SDL2
