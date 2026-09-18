@@ -3,124 +3,52 @@
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
 # Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
+# SDL2 by name, ABI and headers only. The source is sdl2-compat, which
+# implements the SDL2 API on top of SDL3, so everything that links
+# libSDL2-2.0.so.0 keeps linking it and SDL3 does the work underneath.
+# The package name stays SDL2 because 65 recipes in this tree name it.
+#
+# Why: SDL2 2.32 never implemented wp_tearing_control. An SDL2 client
+# under sway therefore cannot present without waiting for a vblank, so a
+# frame that runs a hair late costs a whole one - on the 120 Hz panel
+# that is 30 fps falling to 24, then 20. sway 1.11 offers the protocol
+# and SDL3 speaks it.
+#
+# The backends move with it: wayland, kmsdrm, alsa, pipewire, vulkan and
+# gles are all built by the SDL3 recipe, which already enables the same
+# set this recipe used to. sdl2-compat itself has no backends and needs
+# only SDL3's headers to build; it dlopens libSDL3.so.0 at runtime.
+#
+# This recipe is pinned in .upstream-ignore. Without that the next
+# upstream import quietly restores real SDL2 and the swap goes with it.
+
 PKG_NAME="SDL2"
-PKG_VERSION="2.32.10"
-PKG_SHA256="5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165"
-PKG_LICENSE="GPL"
-PKG_SITE="https://www.libsdl.org/"
-PKG_URL="https://www.libsdl.org/release/SDL2-${PKG_VERSION}.tar.gz"
+PKG_VERSION="2.32.72"
+PKG_SHA256="a14d2f78dad8e83ef1039b6534ace4d14f11f5b11d023af989affd70ac1bb35e"
+PKG_LICENSE="Zlib"
+PKG_SITE="https://github.com/libsdl-org/sdl2-compat"
+PKG_URL="${PKG_SITE}/releases/download/release-${PKG_VERSION}/sdl2-compat-${PKG_VERSION}.tar.gz"
+PKG_SOURCE_DIR="sdl2-compat-${PKG_VERSION}"
 PKG_DEPENDS_HOST="toolchain:host"
-# pipewire is not optional: CheckPipewire needs libpipewire-0.3 by pkg-config
-# at build time, or SDL_AUDIO_DRIVER_PIPEWIRE is never defined at all.
-PKG_DEPENDS_TARGET="toolchain alsa-lib systemd dbus pipewire libdrm"
-PKG_LONGDESC="Simple DirectMedia Layer is a cross-platform development library designed to provide low level access to audio, keyboard, mouse, joystick, and graphics hardware."
+PKG_DEPENDS_TARGET="toolchain SDL3"
+PKG_LONGDESC="The SDL2 API implemented on top of SDL3, so SDL2 applications get SDL3's backends"
+PKG_TOOLCHAIN="cmake"
 
-if [ ! "${OPENGL_SUPPORT}" = "no" ]; then
-  PKG_DEPENDS_TARGET+=" ${OPENGL} glu"
-  PKG_CMAKE_OPTS_TARGET+=" -DSDL_OPENGL=ON \
-                           -DVIDEO_OPENGL=ON \
-                           -DVIDEO_KMSDRM=OFF"
-else
-  PKG_CMAKE_OPTS_TARGET+=" -DSDL_OPENGL=OFF \
-                           -DVIDEO_OPENGL=OFF \
-                           -DVIDEO_KMSDRM=OFF"
-fi
-
-if [ "${OPENGLES_SUPPORT}" = "yes" ]; then
-  PKG_DEPENDS_TARGET+=" ${OPENGLES}"
-  PKG_CMAKE_OPTS_TARGET+=" -DSDL_OPENGLES=ON \
-                           -DVIDEO_OPENGLES=ON \
-                           -DVIDEO_KMSDRM=ON"
-else
-  PKG_CMAKE_OPTS_TARGET+=" -DSDL_OPENGLES=OFF \
-                           -DVIDEO_OPENGLES=OFF \
-                           -DVIDEO_KMSDRM=OFF"
-fi
-
-if [ "${VULKAN_SUPPORT}" = "yes" ]; then
-  PKG_DEPENDS_TARGET+=" ${VULKAN}"
-  PKG_CMAKE_OPTS_TARGET+=" -DSDL_VULKAN=ON \
-                           -DVIDEO_OPENGL=OFF \
-                           -DVIDEO_VULKAN=ON"
-else
-  PKG_CMAKE_OPTS_TARGET+=" -DSDL_VULKAN=OFF \
-                           -DVIDEO_VULKAN=OFF"
-fi
-
-if [ "${DISPLAYSERVER}" = "wl" ]; then
-  PKG_DEPENDS_TARGET+=" wayland"
-  case ${ARCH} in
-    arm)
-      true
-      ;;
-    *)
-      PKG_DEPENDS_TARGET+=" ${WINDOWMANAGER}"
-      ;;
-  esac
-  PKG_CMAKE_OPTS_TARGET+=" -DSDL_WAYLAND=ON \
-                           -DVIDEO_WAYLAND=ON \
-                           -DVIDEO_WAYLAND_QT_TOUCH=ON \
-                           -DWAYLAND_SHARED=ON \
-                           -DVIDEO_X11=OFF \
-                           -DSDL_X11=OFF"
-else
-  PKG_CMAKE_OPTS_TARGET+=" -DVIDEO_WAYLAND=OFF \
-                           -DVIDEO_WAYLAND_QT_TOUCH=ON \
-                           -DWAYLAND_SHARED=OFF \
-                           -DVIDEO_X11=OFF \
-                           -DSDL_X11=OFF"
-fi
-
-case ${DEVICE} in
-  RK*) PKG_DEPENDS_TARGET+=" librga" ;;
-esac
-
-pre_configure_target(){
-  export LDFLAGS="${LDFLAGS} -ludev"
-  PKG_CMAKE_OPTS_TARGET+="-DSDL_STATIC=OFF \
-                          -DLIBC=ON \
-                          -DGCC_ATOMICS=ON \
-                          -DALTIVEC=OFF \
-                          -DOSS=OFF \
-                          -DALSA=ON \
-                          -DALSA_SHARED=ON \
-                          -DJACK=OFF \
-                          -DJACK_SHARED=OFF \
-                          -DESD=OFF \
-                          -DESD_SHARED=OFF \
-                          -DARTS=OFF \
-                          -DARTS_SHARED=OFF \
-                          -DNAS=OFF \
-                          -DNAS_SHARED=OFF \
-                          -DLIBSAMPLERATE=OFF \
-                          -DLIBSAMPLERATE_SHARED=OFF \
-                          -DSNDIO=OFF \
-                          -DDISKAUDIO=OFF \
-                          -DDUMMYAUDIO=OFF \
-                          -DVIDEO_X11=OFF \
-                          -DVIDEO_MIR=OFF \
-                          -DMIR_SHARED=OFF \
-                          -DVIDEO_COCOA=OFF \
-                          -DVIDEO_DIRECTFB=OFF \
-                          -DVIDEO_VIVANTE=OFF \
-                          -DDIRECTFB_SHARED=OFF \
-                          -DFUSIONSOUND=OFF \
-                          -DFUSIONSOUND_SHARED=OFF \
-                          -DVIDEO_DUMMY=OFF \
-                          -DINPUT_TSLIB=ON \
-                          -DSDL_HIDAPI_JOYSTICK=ON \
-                          -DPTHREADS=ON \
-                          -DPTHREADS_SEM=ON \
-                          -DDIRECTX=OFF \
-                          -DSDL_DLOPEN=ON \
-                          -DCLOCK_GETTIME=OFF \
-                          -DSDL_RPATH=OFF \
-                          -DRENDER_D3D=OFF \
-                          -DSDL_PIPEWIRE=ON \
-                          -DSDL_PULSEAUDIO=OFF"
-}
+PKG_CMAKE_OPTS_TARGET="-DSDL2COMPAT_STATIC=OFF \
+                       -DSDL2COMPAT_TESTS=OFF \
+                       -DSDL2COMPAT_INSTALL=ON \
+                       -DSDL2COMPAT_INSTALL_TESTS=OFF \
+                       -DSDL2COMPAT_INSTALL_CPACK=OFF \
+                       -DSDL2COMPAT_WERROR=OFF"
 
 post_makeinstall_target() {
+  # sdl2-config reports /usr paths; the build needs them under sysroot.
   sed -e "s:\(['=LI]\)/usr:\\1${SYSROOT_PREFIX}/usr:g" -i ${SYSROOT_PREFIX}/usr/bin/sdl2-config
+
+  # Upstream installs the pkg-config file as sdl2-compat.pc. Everything
+  # that asks pkg-config for "sdl2", which is most of the emulators,
+  # finds nothing at all without this.
+  ln -sf sdl2-compat.pc ${SYSROOT_PREFIX}/usr/lib/pkgconfig/sdl2.pc
+
   rm -rf ${INSTALL}/usr/bin
 }
