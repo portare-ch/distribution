@@ -28,6 +28,27 @@ ROMNAME="$1"
 BASEROMNAME=${ROMNAME##*/}
 GAMEFOLDER="${ROMNAME//${BASEROMNAME}}"
 
+### A KMS launch hands the panel to the emulator itself, which page
+### flips straight to the display with no compositor to composite and
+### blit through. sway has to go for that, and essway requires sway, so
+### stopping it ends EmulationStation and every process in its cgroup,
+### this script included. Re-exec into a scope of our own first, the way
+### start_steam.sh does, so the run and the cleanup at the bottom
+### survive the front-end going away.
+KMSMODE=$(get_setting "kmsmode" "${PLATFORM}" "${BASEROMNAME}")
+if [ "${KMSMODE}" = "1" ] && [ -z "${RUNEMU_KMS_SCOPE}" ]; then
+  systemctl stop runemu-kms.scope 2>/dev/null || true
+  exec systemd-run \
+    --scope \
+    --slice=system.slice \
+    --unit=runemu-kms \
+    --collect \
+    -E RUNEMU_KMS_SCOPE=1 \
+    -E HOME="${HOME}" \
+    -E TZ="${TZ}" \
+    -- "${0}" "${@}"
+fi
+
 ### Define the variables used throughout the script
 BLUETOOTH_STATE=$(get_setting controllers.bluetooth.enabled)
 ES_CONFIG="/storage/.emulationstation/es_settings.cfg"
@@ -402,6 +423,18 @@ if [ "${DEVICE_MANGOHUD_SUPPORT}" == "true" ]; then
   fi
 fi
 
+### Take the display for a KMS launch. SDL finds the panel through GBM,
+### but only while nothing else holds DRM master, and sway lets go a
+### moment after systemd reports it stopped.
+if [ "${KMSMODE}" = "1" ]; then
+  ${VERBOSE} && log $0 "KMS launch, stopping sway"
+  systemctl stop sway
+  sleep 2
+  export SDL_VIDEODRIVER=kmsdrm
+  export SDL_KMSDRM_REQUIRE_DRM_MASTER=1
+  unset WAYLAND_DISPLAY DISPLAY
+fi
+
 # If the rom is a shell script just execute it, useful for DOSBOX and ScummVM scan scripts
 if [[ "${ROMNAME}" == *".sh" ]] && [ ! "${PLATFORM}" = "ports" ] && [ ! "${PLATFORM}" = "windows" ]; then
         ${VERBOSE} && log $0 "Executing shell script ${ROMNAME}"
@@ -485,6 +518,13 @@ then
     log $0 "backup saves to the cloud."
     /usr/bin/run /usr/bin/cloud_backup
   fi
+fi
+
+### Bring the front-end back after a KMS launch. essway requires sway,
+### so starting it starts the compositor too.
+if [ "${KMSMODE}" = "1" ]; then
+  ${VERBOSE} && log $0 "KMS launch over, starting the front-end"
+  systemctl start essway
 fi
 
 ${VERBOSE} && log $0 "Checking errors: ${ret_error} "
