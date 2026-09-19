@@ -69,6 +69,27 @@ else
   unset EMUPERF
 fi
 
+  # Latency settings, forced on every launch rather than shipped as defaults.
+  #
+  # armsx2 writes its whole in-memory config back to PCSX2.ini when it exits,
+  # so anything set only in the shipped ini survives exactly until the first
+  # clean exit and is then replaced by whatever the emulator held. The ini we
+  # install also never reaches a device that has already booted: post-update
+  # copies configs with --ignore-existing so it cannot clobber user settings.
+  # Writing them here, before the emulator starts, is the only place that
+  # holds for every launch on every device.
+  #
+  # VsyncQueueSize is frames the emulator may queue ahead of the GPU: at 2
+  # that is up to two frames, ~33ms, of input delay on a 60Hz title.
+  sed -i '/^VsyncQueueSize =/c\VsyncQueueSize = 0' /storage/.config/ARMSX2/inis/PCSX2.ini
+
+  # The audio buffer is deliberately left where upstream put it. Cutting
+  # BufferMS/OutputLatencyMS from 50/20 to 20/10 was tried on a Nova and
+  # dropped audio audibly during cutscenes, with nothing in armsx2's own log
+  # to show for it - it does not report underruns, so the only instrument
+  # that caught it was listening. If this is revisited, move in smaller steps
+  # and judge it by ear on an FMV-heavy scene, not by the log.
+
   #Aspect Ratio
 	if [ "$ASPECT" = "0" ]
 	then
