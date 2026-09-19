@@ -174,12 +174,20 @@ jobs:
         id: collect
         run: |
           set -e
-          bin=$(find build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
-                  -maxdepth 2 -type f -path '*/emulationstation-*/emulationstation' | head -1)
+          root="build.PortareOS-${{ inputs.DEVICE }}.aarch64"
+          # The package unpacks under $root/build/emulationstation-<sha>/, and
+          # ES points cmake's runtime output at its own source root, so the
+          # binary sits beside the sources rather than in the cmake dir.
+          bin=$(find "${root}" -maxdepth 4 -type f -name emulationstation \
+                  2>/dev/null | grep -E '/emulationstation-[^/]+/emulationstation$' \
+                  | head -1) || true
           if [ -z "${bin}" ]; then
             echo "::error::The build produced no emulationstation binary."
+            echo "Looked under ${root}. What is actually there:"
+            find "${root}" -maxdepth 4 -name 'emulationstation*' 2>/dev/null | head -40
             exit 1
           fi
+          echo "Found ${bin}"
           mkdir -p out
           cp "${bin}" out/emulationstation
           file out/emulationstation
