@@ -83,21 +83,38 @@ jobs:
       # it has to be taken from the last run that produced one. A failed run
       # still uploads it if it got that far, so failures are not filtered out:
       # what matters is that the artifact exists.
+      #
+      # Queried over REST with curl rather than the gh CLI: the step that
+      # frees disk space above removes gh from the runner, so anything here
+      # has to hold to what survives it. The artifacts endpoint filters by
+      # name and returns newest first, so the first hit is the one wanted.
       - name: Take the toolchain from the last Build run that has one
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -e
+          set -eo pipefail
           name="aarch64-toolchain (${{ inputs.DEVICE }})"
-          for id in $(gh run list --workflow Build --limit 20 \
-                        --json databaseId --jq '.[].databaseId'); do
-            if gh run download "${id}" -n "${name}" 2>/dev/null; then
-              echo "Toolchain from run ${id}"
-              exit 0
-            fi
-          done
-          echo "::error::No Build run in the last 20 has an \"${name}\" artifact. Run a full Build first."
-          exit 1
+          json=$(curl -sS -G --fail \
+                   -H "Authorization: Bearer ${GH_TOKEN}" \
+                   -H "Accept: application/vnd.github+json" \
+                   --data-urlencode "name=${name}" \
+                   --data-urlencode "per_page=1" \
+                   "https://api.github.com/repos/${{ github.repository }}/actions/artifacts")
+          case "${json}" in
+            *'"expired":true'*)
+              echo "::error::The newest \"${name}\" artifact has expired. Run a full Build first."
+              exit 1 ;;
+          esac
+          url=$(printf '%s' "${json}" \
+                  | grep -o '"archive_download_url":"[^"]*"' | head -1 | cut -d'"' -f4)
+          if [ -z "${url}" ]; then
+            echo "::error::No \"${name}\" artifact found. Run a full Build first."
+            exit 1
+          fi
+          curl -sSL --fail -H "Authorization: Bearer ${GH_TOKEN}" -o toolchain.zip "${url}"
+          unzip -q toolchain.zip
+          rm toolchain.zip
+          ls -l build.aarch64-toolchain.tar.zst
 
       - name: Extract the toolchain
         run: |
