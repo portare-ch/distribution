@@ -1,0 +1,174 @@
+name: Build ES binary
+
+# Iterating on the emulationstation fork does not need a whole image. A full
+# build is two to four hours; this restores the base stage's saved state,
+# builds the one package, and uploads the bare binary, which is minutes.
+#
+# To try it on a running device without reflashing - / is a read-only
+# squashfs, so the binary is bind-mounted over the shipped one:
+#
+#   scp emulationstation root@device:/storage/
+#   ssh root@device 'chmod +x /storage/emulationstation &&
+#     mount --bind /storage/emulationstation /usr/bin/emulationstation &&
+#     systemctl restart essway'
+#
+# A bind mount does not survive a reboot, so a binary that does not start
+# cannot leave the device without a frontend: power-cycle and the shipped one
+# is back.
+#
+# The binary is only as good as the state it was linked against. If the image
+# on the device is older than the state this restored, its libraries may not
+# match and the binary may not load. Use it to test a code change against the
+# build the device came from, not to upgrade a device in place.
+
+on:
+  workflow_dispatch:
+    inputs:
+      DEVICE:
+        description: 'Device'
+        required: false
+        default: 'SM8550'
+        type: string
+      es_ref:
+        description: 'emulationstation-next commit or branch to build (blank = the pin in the recipe)'
+        required: false
+        default: ''
+        type: string
+
+# Deliberately not the "build" group. That group serialises image builds
+# because they write ccache and build-state archives that are keyed by device
+# and would overwrite each other. This job only ever reads those archives and
+# saves nothing, so it cannot corrupt a build running alongside it - and
+# queueing a five-minute job behind a four-hour one would defeat the point.
+concurrency:
+  group: build-es-binary-${{ inputs.DEVICE }}
+  cancel-in-progress: true
+
+jobs:
+  build-es-binary:
+    timeout-minutes: 90
+    runs-on: ubuntu-24.04
+    env:
+      EMULATION_DEVICE: no
+      ENABLE_32BIT: no
+      MODULES_PKG: no
+      AUTOREMOVE: "yes"
+      PROJECT: PortareOS
+      DEVICE: ${{ inputs.DEVICE }}
+      ARCH: aarch64
+      DISABLE_COLORS: yes
+      CCACHE_COMPILERCHECK: content
+      CCACHE_COMPRESS: 1
+      CCACHE_COMPRESSLEVEL: 6
+      CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
+    steps:
+      - name: Maximize build space
+        uses: justinthelaw/maximize-github-runner-space@v0.9.0
+        with:
+          skip-components: docker-engine
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Lowercase the owner
+        run: echo "OWNER_LC=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "${GITHUB_ENV}"
+
+      - name: Retrieve ccache
+        run: |
+          URL="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache/ccache-aarch64-${{ inputs.DEVICE }}.tar"
+          curl -L --fail --silent --show-error "$URL" | tar -xf - || echo "Cache archive not found, skipping."
+
+      # The toolchain is an artifact of a Build run rather than a release, so
+      # it has to be taken from the last run that produced one. A failed run
+      # still uploads it if it got that far, so failures are not filtered out:
+      # what matters is that the artifact exists.
+      - name: Take the toolchain from the last Build run that has one
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          name="aarch64-toolchain (${{ inputs.DEVICE }})"
+          for id in $(gh run list --workflow Build --limit 20 \
+                        --json databaseId --jq '.[].databaseId'); do
+            if gh run download "${id}" -n "${name}" 2>/dev/null; then
+              echo "Toolchain from run ${id}"
+              exit 0
+            fi
+          done
+          echo "::error::No Build run in the last 20 has an \"${name}\" artifact. Run a full Build first."
+          exit 1
+
+      - name: Extract the toolchain
+        run: |
+          tar --zstd -xf build.aarch64-toolchain.tar.zst
+          rm build.aarch64-toolchain.tar.zst
+
+      - name: Snapshot the upstream build state
+        id: upstream
+        run: |
+          echo "digest=$(.github/scripts/build-state.sh snapshot \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64)" >> "${GITHUB_OUTPUT}"
+
+      # Without this every dependency of emulationstation builds from cold,
+      # which is the whole cost this workflow exists to avoid.
+      - name: Restore the base stage's saved build state
+        env:
+          CACHE_REPO: ${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}
+        run: |
+          .github/scripts/build-state.sh restore \
+            build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
+            state-aarch64-${{ inputs.DEVICE }}-base \
+            "${{ steps.upstream.outputs.digest }}"
+
+      # The recipe clones a git URL and carries no checksum, so any commit or
+      # branch can be pinned here without touching anything else. This is what
+      # lets a pull request be tested before it is merged.
+      - name: Repin emulationstation
+        if: inputs.es_ref != ''
+        run: |
+          set -e
+          recipe=projects/PortareOS/packages/ui/emulationstation/package.mk
+          sed -i 's|^PKG_VERSION=.*|PKG_VERSION="${{ inputs.es_ref }}"|' "${recipe}"
+          grep -m1 '^PKG_VERSION=' "${recipe}"
+          ./scripts/clean emulationstation || true
+
+      - name: Build emulationstation
+        run: |
+          ./scripts/get_env > .env
+          set -e
+          { docker run --init --env-file .env --rm --user $(id -u):$(id -g) \
+              -v ${PWD}:${PWD} -w ${PWD} \
+              "ghcr.io/${OWNER_LC}/portareos-build:latest" \
+              bash -c "./scripts/build emulationstation"; echo $? > docker_exit_code; } \
+            | tee output.log | grep -E --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
+          exit $(<docker_exit_code)
+
+      - name: Collect the binary
+        id: collect
+        run: |
+          set -e
+          bin=$(find build.PortareOS-${{ inputs.DEVICE }}.aarch64 \
+                  -maxdepth 2 -type f -path '*/emulationstation-*/emulationstation' | head -1)
+          if [ -z "${bin}" ]; then
+            echo "::error::The build produced no emulationstation binary."
+            exit 1
+          fi
+          mkdir -p out
+          cp "${bin}" out/emulationstation
+          file out/emulationstation
+          ls -l out/emulationstation
+
+      - name: Archive output.logs (${{ inputs.DEVICE }}-es-binary)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: output.logs-${{ inputs.DEVICE }}-es-binary
+          path: |
+            output.log
+            ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.threads/logs/
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: emulationstation-${{ inputs.DEVICE }}
+          path: out/emulationstation
