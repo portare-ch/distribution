@@ -11,18 +11,23 @@ PKG_DEPENDS_TARGET="toolchain SDL3 fluidsynth opusfile libogg libvorbis flac mpg
 PKG_LONGDESC="SDL3 mixer, the audio half emulationstation needs before it can leave SDL2"
 PKG_TOOLCHAIN="cmake"
 
-# Nothing depends on this yet. It is here so the SDL3 side of an
-# emulationstation port is a version bump rather than a packaging job:
-# ES reaches for SDL_mixer in four files, and SDL3_ttf was already the
-# only SDL3 satellite library we carried.
+# emulationstation's audio layer is built on this: it reaches for
+# SDL_mixer in four files.
 #
 # VENDORED=OFF: the release tarball carries a copy of every decoder and
 # builds those in preference to the ones the image already has.
-# DEPS_SHARED=OFF links them instead of dlopening them by soname.
+#
+# DEPS_SHARED stays ON, which is both the default and what SDL2_mixer did
+# under autotools: the decoders are dlopened by soname instead of linked.
+# Linking them put fluidsynth in this library's NEEDED, and fluidsynth
+# wants libgomp, which is not on the sysroot's link path - so every
+# consumer failed to link, emulationstation first:
+#
+#   libfluidsynth.so.3: undefined reference to `GOMP_parallel@GOMP_4.0'
+#
 # GME defaults to ON and wants game-music-emu, which this image has not
 # got, so it has to be named off or configure fails.
 PKG_CMAKE_OPTS_TARGET="-DSDLMIXER_VENDORED=OFF \
-                       -DSDLMIXER_DEPS_SHARED=OFF \
                        -DSDLMIXER_GME=OFF \
                        -DSDLMIXER_TESTS=OFF \
                        -DSDLMIXER_EXAMPLES=OFF \
