@@ -92,25 +92,34 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -eo pipefail
+          set -e
           name="aarch64-toolchain (${{ inputs.DEVICE }})"
           json=$(curl -sS -G --fail \
                    -H "Authorization: Bearer ${GH_TOKEN}" \
                    -H "Accept: application/vnd.github+json" \
                    --data-urlencode "name=${name}" \
                    --data-urlencode "per_page=1" \
-                   "https://api.github.com/repos/${{ github.repository }}/actions/artifacts")
-          case "${json}" in
-            *'"expired":true'*)
-              echo "::error::The newest \"${name}\" artifact has expired. Run a full Build first."
-              exit 1 ;;
-          esac
+                   "https://api.github.com/repos/${{ github.repository }}/actions/artifacts") \
+            || { echo "::error::Could not query the artifacts API."; exit 1; }
+
+          # The API pretty-prints, so there is a space after every colon.
+          # Patterns that assume "key":"value" match nothing here, and a
+          # no-match under pipefail aborts the step before the checks below
+          # can say why - which is exactly how this failed the first time.
           url=$(printf '%s' "${json}" \
-                  | grep -o '"archive_download_url":"[^"]*"' | head -1 | cut -d'"' -f4)
+                  | grep -o '"archive_download_url":[[:space:]]*"[^"]*"' \
+                  | head -1 | sed 's/.*"\(https[^"]*\)"/\1/') || true
           if [ -z "${url}" ]; then
             echo "::error::No \"${name}\" artifact found. Run a full Build first."
             exit 1
           fi
+          expired=$(printf '%s' "${json}" \
+                      | grep -oE '"expired":[[:space:]]*(true|false)' | head -1) || true
+          case "${expired}" in
+            *true)
+              echo "::error::The newest \"${name}\" artifact has expired. Run a full Build first."
+              exit 1 ;;
+          esac
           curl -sSL --fail -H "Authorization: Bearer ${GH_TOKEN}" -o toolchain.zip "${url}"
           unzip -q toolchain.zip
           rm toolchain.zip
