@@ -27,8 +27,8 @@ case ${DEVICE} in
     PKG_PATCH_DIRS="${LINUX} ${DEVICE} default"
     ;;
   H700|SM6115|SM8250|SM8550|SM8650|SM8750)
-    PKG_VERSION="7.2.5"
-    PKG_SHA256="55ddf0df8325d9dad96fcff7bd93977d22e3f50af06527572af59b77c7632b78"
+    PKG_VERSION="7.2.6"
+    PKG_SHA256="039aef84f2b0994aeda3f4fcfc3d02ec9d7a9bbb9020ea264c43f446c860f606"
     PKG_URL="https://www.kernel.org/pub/linux/kernel/v${PKG_VERSION/.*/}.x/${PKG_NAME}-${PKG_VERSION}.tar.xz"
     # PKG_VERSION no longer matches the 7.2 patch dir, so it is no longer
     # added automatically - list it explicitly or those patches are silently

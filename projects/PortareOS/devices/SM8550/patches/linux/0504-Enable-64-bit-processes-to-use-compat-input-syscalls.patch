@@ -83,9 +83,10 @@ diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
 index 961216093f11ab..86fca7d168cc66 100644
 --- a/include/uapi/linux/prctl.h
 +++ b/include/uapi/linux/prctl.h
-@@ -311,4 +311,9 @@ struct prctl_mm_map {
- # define PR_SET_MEM_MODEL_DEFAULT	0
- # define PR_SET_MEM_MODEL_TSO		1
+@@ -415,5 +415,10 @@ struct prctl_mm_map {
+ # define PR_CFI_ENABLE		_BITUL(0)
+ # define PR_CFI_DISABLE		_BITUL(1)
+ # define PR_CFI_LOCK		_BITUL(2)
  
 +#define PR_GET_COMPAT_INPUT    0x63494e50
 +#define PR_SET_COMPAT_INPUT    0x43494e50
