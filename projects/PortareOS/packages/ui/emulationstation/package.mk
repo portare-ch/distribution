@@ -3,11 +3,11 @@
 # Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="emulationstation"
-PKG_VERSION="432de98a39ad880006ad0c42d3f177cc42ad7012"  # portare-ch/emulationstation-next master
+PKG_VERSION="2bc752a04d3c8d5ad7153c85193001a7043655cc"  # portare-ch/emulationstation-next master
 PKG_LICENSE="GPL"
 PKG_SITE="https://github.com/portare-ch/emulationstation-next"
 PKG_URL="${PKG_SITE}.git"
-PKG_DEPENDS_TARGET="boost toolchain SDL2 freetype curl freeimage bash rapidjson SDL2_mixer fping p7zip mpv pipewire drm_tool pugixml ${OPENGLES}"
+PKG_DEPENDS_TARGET="boost toolchain SDL3 freetype curl freeimage bash rapidjson SDL3_mixer fping p7zip mpv pipewire drm_tool pugixml ${OPENGLES}"
 PKG_NEED_UNPACK="busybox"
 PKG_LONGDESC="Emulationstation emulator frontend"
 PKG_BUILD_FLAGS="-gold"
