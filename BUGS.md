@@ -179,9 +179,39 @@ The next measurement is `pw-top` during a drop, watching flycast's node for a
 climbing ERR count and for what quantum it negotiated. `backend = alsa` against
 `sdl2` is the A/B underneath it.
 
-The baseline is 30 rather than 60, which was filed as possibly separate and
-probably is not: half rate is what an emulator gated on audio does when the
-audio arrives at half the rate it expects.
+That `pw-top` was taken, during Tony Hawk gameplay on a KMS launch:
+
+    R  50  1024  44100  18.9us  53.1us  0.00  0.00  0  S16LE 2 44100  alsa_output...Speaker__sink
+    R  47  1024  44100  27.2us  17.2us  0.00  0.00  0  S16LE 2 44100  Audio Stream
+
+Quantum 1024 at 44100, ERR 0 on both flycast's stream and the sink, wait and
+busy times in the tens of microseconds. No xruns, and the rate is the one the
+Dreamcast wants, so the audio path is not visibly late at the moment the
+frames are missing. That weakens the gating theory rather than settling it:
+the remaining A/B, `backend = alsa` against `sdl2`, is still untried.
+
+The baseline is 30 because the game renders at 30. Flycast says so itself:
+
+    N[RENDERER]: Swap interval changed to 4
+
+which is `swapInterval` 2, from DupeFrames on a 120 Hz panel, times
+`gameSwapInterval` 2. `setSwapInterval` is called with what the game asks
+for, and Tony Hawk asks for every second Dreamcast vblank. So the 30 is not
+evidence of anything being starved, and the earlier reading of it as "half
+rate is what an emulator gated on audio does" should not be carried forward.
+
+Per-thread sampling during gameplay, which refines the earlier `top -H`
+numbers: `Flycast-emu` 17 percent of one core, `Flycast-rend` 3 percent, GPU
+load 4 to 14 percent with the devfreq governor pinned to `performance` and
+the clock held at 680 MHz. Still waiting, not working.
+
+One more thing the frametime logs show. With vsync on, gameplay frametimes
+land on multiples of the 8.33 ms vblank - 599 frames at 33 ms, 309 at 41, 207
+at 50 - so a frame that misses by a hair costs a whole vblank and 30 fps
+becomes 24, then 20. Flycast's Vulkan backend always takes FIFO on ARM, and
+until SDL2 was replaced by sdl2-compat nothing in the image could tear under
+sway either. `rend.vsync = no` now ships as the default and removes the 24
+fps step, but the drops themselves survive it, so this was never the cause.
 
 Note that `pvr.AutoSkipFrame` is not it unless the ES `auto_frame_skip` setting
 has been set by hand. Nothing in the tree defines a default for it, so
