@@ -34,6 +34,11 @@ on:
         required: false
         default: ''
         type: string
+      package:
+        description: 'Package to build (default emulationstation). Any other name just proves it builds.'
+        required: false
+        default: 'emulationstation'
+        type: string
 
 # Deliberately not the "build" group. That group serialises image builds
 # because they write ccache and build-state archives that are keyed by device
@@ -159,19 +164,23 @@ jobs:
           grep -m1 '^PKG_VERSION=' "${recipe}"
           ./scripts/clean emulationstation || true
 
-      - name: Build emulationstation
+      - name: Build ${{ inputs.package }}
         run: |
           ./scripts/get_env > .env
           set -e
           { docker run --init --env-file .env --rm --user $(id -u):$(id -g) \
               -v ${PWD}:${PWD} -w ${PWD} \
               "ghcr.io/${OWNER_LC}/portareos-build:latest" \
-              bash -c "./scripts/build emulationstation"; echo $? > docker_exit_code; } \
+              bash -c "./scripts/build ${{ inputs.package }}"; echo $? > docker_exit_code; } \
             | tee output.log | grep -E --color=never --line-buffered "^GET|^UNPACK|^BUILD|^INSTALL" || true
           exit $(<docker_exit_code)
 
+      # Only emulationstation produces something worth carrying back to a
+      # device. For any other package the point is the step above: it either
+      # builds against this image's libraries or it does not.
       - name: Collect the binary
         id: collect
+        if: inputs.package == 'emulationstation'
         run: |
           set -e
           root="build.PortareOS-${{ inputs.DEVICE }}.aarch64"
@@ -203,6 +212,7 @@ jobs:
             ./build.PortareOS-${{ inputs.DEVICE }}.aarch64/.threads/logs/
 
       - uses: actions/upload-artifact@v7
+        if: inputs.package == 'emulationstation'
         with:
           name: emulationstation-${{ inputs.DEVICE }}
           path: out/emulationstation
