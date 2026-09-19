@@ -2,12 +2,18 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="portmaster"
-PKG_VERSION="2026.05.04-1202"
-PKG_SHA256="9d6f25d461afced95569923a57c6a9c42df225190c043d74fe2ec0edcf40a477"
+PKG_VERSION="2026.09.13-0343"
+PKG_SHA256="2afda49a51b5760c14fda0a12dc543694a6b6a4b4e9ae9d4e11659996382d80a"
 PKG_LICENSE="MIT"
 PKG_SITE="https://github.com/PortsMaster/PortMaster-GUI"
 PKG_URL="https://github.com/PortsMaster/PortMaster-GUI/releases/download/${PKG_VERSION}/PortMaster.zip"
-PKG_DEPENDS_TARGET="toolchain portareos-hotkey gamecontrollerdb oga_controls control-gen xmlstarlet list-guid gst-plugins-base"
+# pugwash is a pySDL2 program: it dlopens SDL2 and its satellites by name at
+# import time rather than linking them, so nothing here can be inferred from
+# the binary and every one has to be declared. It imports sdl2, sdl2.ext,
+# sdl2.sdlgfx and sdl2.sdlmixer, and pySDL2 resolves SDL2, SDL2_gfx,
+# SDL2_mixer, SDL2_ttf and SDL2_image out of /usr/lib.
+PKG_DEPENDS_TARGET="toolchain portareos-hotkey gamecontrollerdb oga_controls control-gen xmlstarlet list-guid gst-plugins-base \
+                    SDL2 SDL2_mixer SDL2_gfx SDL2_ttf SDL2_image"
 PKG_LONGDESC="Portmaster - a simple tool that allows you to download various game ports"
 PKG_TOOLCHAIN="manual"
 
