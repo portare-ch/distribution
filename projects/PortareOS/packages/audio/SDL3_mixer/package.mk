@@ -27,7 +27,19 @@ PKG_TOOLCHAIN="cmake"
 #
 # GME defaults to ON and wants game-music-emu, which this image has not
 # got, so it has to be named off or configure fails.
+# Which decoders can be dlopened depends on how this image builds them.
+# flac, mpg123 and libvorbis are configured --disable-shared, so there is no
+# soname for SDL_mixer to load and it refuses at configure time:
+#
+#   CMake Error: "libFLAC.a" is not a .so shared library
+#
+# Link those three in. A static archive adds no NEEDED entry, so this does
+# not bring back the libgomp failure - that came from fluidsynth, which is
+# shared and stays dlopened along with xmp, opusfile and wavpack.
 PKG_CMAKE_OPTS_TARGET="-DSDLMIXER_VENDORED=OFF \
+                       -DSDLMIXER_FLAC_LIBFLAC_SHARED=OFF \
+                       -DSDLMIXER_MP3_MPG123_SHARED=OFF \
+                       -DSDLMIXER_VORBIS_VORBISFILE_SHARED=OFF \
                        -DSDLMIXER_GME=OFF \
                        -DSDLMIXER_TESTS=OFF \
                        -DSDLMIXER_EXAMPLES=OFF \
