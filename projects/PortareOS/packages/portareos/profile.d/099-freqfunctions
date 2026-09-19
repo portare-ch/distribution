@@ -103,10 +103,32 @@ get_gpu_performance_level() {
   get_setting system.gpuperf
 }
 
+set_gpu_min_freq() {
+  if [ -e "${GPU_FREQ}/min_freq" ]; then
+    echo ${1} >${GPU_FREQ}/min_freq 2>/dev/null
+  fi
+}
+
+get_gpu_hw_min_freq() {
+  tr " " "\n" <${GPU_FREQ}/available_frequencies 2>/dev/null | grep -E "^[0-9]+$" | sort -n | head -1
+}
+
+# A number is a floor, not a governor: keep simple_ondemand adaptive and stop
+# it decaying to the hardware minimum between bursts. The GPU sat at 124800000
+# for 482 of the first 800 seconds of an uptime and crossed to 295000000 and
+# back 3800 times, so every burst was ramped from a clock chosen for the idle
+# before it. Raising the floor costs far less idle power than pinning
+# performance, and unlike the ceiling it cannot throttle.
 gpu_performance_level() {
   case ${1} in
     auto|default)
       set_gpu_gov ondemand
+      HW_MIN=$(get_gpu_hw_min_freq)
+      [ -n "${HW_MIN}" ] && set_gpu_min_freq ${HW_MIN}
+      ;;
+    [0-9]*)
+      set_gpu_gov ondemand
+      set_gpu_min_freq ${1}
       ;;
     *)
       set_gpu_gov ${1}
