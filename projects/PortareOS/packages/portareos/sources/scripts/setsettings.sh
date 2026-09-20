@@ -30,7 +30,6 @@ PLATFORM=${1,,}
 ROM="${2##*/}"
 CORE=${3,,}
 
-
 #Autosave
 AUTOSAVE="$@"
 AUTOSAVE="${AUTOSAVE#*-autosave=*}"
@@ -982,23 +981,6 @@ function set_saturnopts() {
     fi
 }
 
-function set_snesopts() {
-    log "Set up SNES..."
-    if [ "${CORE}" = "beetle_supafaust" ]
-    then
-        log "Set up beetle_supafaust"
-        local FAUSTDIR="${RETROARCH_PATH}/config/Supafaust"
-        if [ ! -d "${FAUSTDIR}" ]
-        then
-            mkdir -p "${FAUSTDIR}"
-        fi
-        if [ ! -f "${FAUSTDIR}/Supafaust.opt" ]
-        then
-            cp "/usr/config/retroarch/Supafaust.opt" "${FAUSTDIR}/Supafaust.opt"
-        fi
-    fi
-}
-
 function set_dreamcastopts() {
     log "Set up Dreamcast..."
     if [ "${CORE}" = "flycast" ]
@@ -1314,7 +1296,6 @@ set_analogsupport &
 set_tatemode &
 set_n64opts &
 set_saturnopts &
-set_snesopts &
 set_dreamcastopts &
 set_melondsdsopts &
 

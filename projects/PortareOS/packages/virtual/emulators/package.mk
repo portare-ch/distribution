@@ -14,7 +14,7 @@ EMUS_32BIT=""
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays retropie-shaders slang-shaders"
 
-LIBRETRO_CORES="beetle-gba-lr bsnes2014-accuracy-lr bsnes2014-balanced-lr bsnes2014-performance-lr bsnes-mercury-accuracy-lr bsnes-mercury-balanced-lr bsnes-mercury-performance-lr beetle-supafaust-lr doublecherrygb-lr fbalpha2012-lr fbalpha2019-lr fbneo-lr flycast-lr gambatte-lr gearboy-lr gearsystem-lr geolith-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr mame-lr mame2003-plus-lr mame2010-lr mame2015-lr mesen-s-lr mgba-lr neocd_lr parallel-n64-lr picodrive-lr sameboy-lr scummvm-lr skyemu-lr smsplus-gx-lr snes9x-lr snes9x2002-lr snes9x2005_plus-lr snes9x2010-lr supersnes9x-lr swanstation-lr tgbdual-lr vba-next-lr vbam-lr"
+LIBRETRO_CORES="beetle-gba-lr doublecherrygb-lr fbalpha2012-lr fbalpha2019-lr fbneo-lr flycast-lr gambatte-lr gearboy-lr gearsystem-lr geolith-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr mame-lr mame2003-plus-lr mame2010-lr mame2015-lr mgba-lr neocd_lr parallel-n64-lr picodrive-lr sameboy-lr scummvm-lr skyemu-lr smsplus-gx-lr snes9x-lr swanstation-lr tgbdual-lr vba-next-lr vbam-lr"
 
 ### aarch64 libretro and sa cores
 if [ "${ARCH}" = "aarch64" ]; then
@@ -32,7 +32,7 @@ case "${DEVICE}" in
   RK3399)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" mednafen"
-    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   RK3566|RK3576)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
@@ -43,35 +43,35 @@ case "${DEVICE}" in
   RK3588)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" mednafen"
-    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM6115)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" mednafen armsx2-sa"
-    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM8250)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" mednafen rpcs3-sa xemu-sa steam armsx2-sa"
-    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM8550)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" ares-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
-    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM8650|SM8750)
     PKG_EMUS+=" ares-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
-    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   S922X)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
     PKG_EMUS+=" armsx2-sa"
-    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   AMD64)
     PKG_EMUS+=" ares-sa mednafen xemu-sa armsx2-sa"
-    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
 esac
 
 # Split building emulators into 2 stages, needed to fit the jobs into the 6 hour GH runner time limit.
@@ -205,8 +205,6 @@ makeinstall_target() {
   add_emu_core gb retroarch vbam false
   add_emu_core gb retroarch DoubleCherryGB false
   add_emu_core gb retroarch skyemu false
-  add_emu_core gb retroarch mesen-s false
-  add_emu_core gb retroarch supersnes9x false
   case ${DEVICE} in
     RK3399|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
       add_emu_core gb retroarch bsnes false
@@ -233,8 +231,6 @@ makeinstall_target() {
   add_emu_core gbh retroarch vbam false
   add_emu_core gbh retroarch DoubleCherryGB false
   add_emu_core gbh retroarch skyemu false
-  add_emu_core gbh retroarch mesen-s false
-  add_emu_core gbh retroarch supersnes9x false
   case ${DEVICE} in
     RK3399|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
       add_emu_core gbh retroarch bsnes false
@@ -328,7 +324,6 @@ makeinstall_target() {
   add_emu_core gbc retroarch vbam false
   add_emu_core gbc retroarch DoubleCherryGB false
   add_emu_core gbc retroarch skyemu false
-  add_emu_core gbc retroarch mesen-s false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       add_emu_core gbc mednafen gb false
@@ -350,7 +345,6 @@ makeinstall_target() {
   add_emu_core gbch retroarch vbam false
   add_emu_core gbch retroarch DoubleCherryGB false
   add_emu_core gbch retroarch skyemu false
-  add_emu_core gbch retroarch mesen-s false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       add_emu_core gbch mednafen gb false
@@ -456,13 +450,6 @@ makeinstall_target() {
 
   ### Nintendo MSU-1
   add_emu_core snesmsu1 retroarch snes9x true
-  add_emu_core snesmsu1 retroarch supersnes9x false
-  add_emu_core snesmsu1 retroarch beetle_supafaust false
-  case ${DEVICE} in
-    H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core snesmsu1 mednafen snes_faust false
-      ;;
-  esac
   add_es_system snesmsu1
 
   ### Sega Naomi
@@ -664,122 +651,37 @@ makeinstall_target() {
 
   ### Nintendo SNES
   add_emu_core snes retroarch snes9x true
-  add_emu_core snes retroarch snes9x2010 false
-  add_emu_core snes retroarch snes9x2002 false
-  add_emu_core snes retroarch snes9x2005_plus false
-  add_emu_core snes retroarch supersnes9x false
-  add_emu_core snes retroarch beetle_supafaust false
-  add_emu_core snes retroarch bsnes_mercury_accuracy false
-  add_emu_core snes retroarch bsnes_mercury_balanced false
-  add_emu_core snes retroarch bsnes_mercury_performance false
-  add_emu_core snes retroarch bsnes2014_accuracy false
-  add_emu_core snes retroarch bsnes2014_balanced false
-  add_emu_core snes retroarch bsnes2014_performance false
-  add_emu_core snes retroarch mesen-s false
   case ${DEVICE} in
     RK3399|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
       add_emu_core snes retroarch bsnes false
-      add_emu_core snes retroarch bsnes_hd_beta false
-      ;;
-  esac
-  case ${DEVICE} in
-    H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core snes mednafen snes_faust false
-      ;;
-  esac
-  case ${DEVICE} in
-    SM8550|SM8650|SM8750|AMD64)
-      add_emu_core snes ares ares-sa false
       ;;
   esac
   add_es_system snes
 
   ### Nintendo SNES Hacks
   add_emu_core snesh retroarch snes9x true
-  add_emu_core snesh retroarch snes9x2010 false
-  add_emu_core snesh retroarch snes9x2002 false
-  add_emu_core snesh retroarch snes9x2005_plus false
-  add_emu_core snesh retroarch supersnes9x false
-  add_emu_core snesh retroarch beetle_supafaust false
-  add_emu_core snesh retroarch bsnes_mercury_accuracy false
-  add_emu_core snesh retroarch bsnes_mercury_balanced false
-  add_emu_core snesh retroarch bsnes_mercury_performance false
-  add_emu_core snesh retroarch bsnes2014_accuracy false
-  add_emu_core snesh retroarch bsnes2014_balanced false
-  add_emu_core snesh retroarch bsnes2014_performance false
-  add_emu_core snesh retroarch mesen-s false
   case ${DEVICE} in
     RK3399|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
       add_emu_core snesh retroarch bsnes false
-      add_emu_core snesh retroarch bsnes_hd_beta false
-      ;;
-  esac
-  case ${DEVICE} in
-    H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core snesh mednafen snes_faust false
-      ;;
-  esac
-  case ${DEVICE} in
-    SM8550|SM8650|SM8750|AMD64)
-      add_emu_core snesh ares ares-sa false
       ;;
   esac
   add_es_system snesh
 
   ### Nintendo Super Famicom
   add_emu_core sfc retroarch snes9x true
-  add_emu_core sfc retroarch snes9x2010 false
-  add_emu_core sfc retroarch snes9x2002 false
-  add_emu_core sfc retroarch snes9x2005_plus false
-  add_emu_core sfc retroarch supersnes9x false
-  add_emu_core sfc retroarch beetle_supafaust false
-  add_emu_core sfc retroarch bsnes_mercury_accuracy false
-  add_emu_core sfc retroarch bsnes_mercury_balanced false
-  add_emu_core sfc retroarch bsnes_mercury_performance false
-  add_emu_core sfc retroarch bsnes2014_accuracy false
-  add_emu_core sfc retroarch bsnes2014_balanced false
-  add_emu_core sfc retroarch bsnes2014_performance false
-  add_emu_core sfc retroarch mesen-s false
   case ${DEVICE} in
     RK3399|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
       add_emu_core sfc retroarch bsnes false
-      add_emu_core sfc retroarch bsnes_hd_beta false
-      ;;
-  esac
-  case ${DEVICE} in
-    H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core sfc mednafen snes_faust false
-      ;;
-  esac
-  case ${DEVICE} in
-    SM8550|SM8650|SM8750|AMD64)
-      add_emu_core sfc ares ares-sa false
       ;;
   esac
   add_es_system sfc
 
   ### Nintendo Stellaview
   add_emu_core satellaview retroarch snes9x true
-  add_emu_core satellaview retroarch snes9x2010 false
-  add_emu_core satellaview retroarch snes9x2002 false
-  add_emu_core satellaview retroarch snes9x2005_plus false
-  add_emu_core satellaview retroarch supersnes9x false
-  add_emu_core satellaview retroarch mesen-s false
-  case ${DEVICE} in
-    SM8550|SM8650|SM8750|AMD64)
-      add_emu_core satellaview ares ares-sa false
-      ;;
-  esac
   add_es_system satellaview
 
   ### Bandai SuFami Turbo
   add_emu_core sufami retroarch snes9x true
-  add_emu_core sufami retroarch supersnes9x false
-  case ${DEVICE} in
-    SM8550|SM8650|SM8750|AMD64)
-      add_emu_core sufami ares ares-sa false
-      ;;
-  esac
   add_es_system sufami
 
   ### GamePark GP32
