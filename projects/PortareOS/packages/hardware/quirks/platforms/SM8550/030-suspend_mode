@@ -5,7 +5,7 @@
 
 . /etc/profile.d/001-functions
 
-# Deep suspend is only enabled on devices where it has been validated.
+# Suspend is only enabled on devices where it has been validated.
 # Everything else keeps the previous behavior (suspend disabled) until
 # their remaining issues are resolved.
 case "${QUIRK_DEVICE}" in
@@ -16,6 +16,7 @@ case "${QUIRK_DEVICE}" in
 [Sleep]
 SuspendState=
 SuspendState=mem
+MemorySleepMode=s2idle
 EOF
 
     # bin/power-handler owns the power key here: it has to see the press
