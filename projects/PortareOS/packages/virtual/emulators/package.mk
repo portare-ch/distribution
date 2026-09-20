@@ -8,7 +8,7 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
-PKG_EMUS="duckstation-sa flycast-sa moonlight mupen64plus-sa ppsspp-sa scummvmsa wine"
+PKG_EMUS="duckstation-sa moonlight mupen64plus-sa ppsspp-sa scummvmsa wine"
 
 EMUS_32BIT=""
 
@@ -166,20 +166,16 @@ makeinstall_target() {
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115)
       add_emu_core atomiswave retroarch flycast2021 true
       add_emu_core atomiswave retroarch flycast false
-      add_emu_core atomiswave flycast flycast-sa false
       ;;
     SM8250|SM8550|SM8650|SM8750|S922X)
-      add_emu_core atomiswave flycast flycast-sa true
-      add_emu_core atomiswave retroarch flycast false
+      add_emu_core atomiswave retroarch flycast true
       add_emu_core atomiswave retroarch flycast2021 false
       ;;
     AMD64)
-      add_emu_core atomiswave flycast flycast-sa true
-      add_emu_core atomiswave retroarch flycast false
+      add_emu_core atomiswave retroarch flycast true
       ;;
     *)
       add_emu_core atomiswave retroarch flycast true
-      add_emu_core atomiswave flycast flycast-sa false
       ;;
   esac
   add_es_system atomiswave
@@ -213,23 +209,18 @@ makeinstall_target() {
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115)
       add_emu_core dreamcast retroarch flycast2021 true
       add_emu_core dreamcast retroarch flycast false
-      add_emu_core dreamcast flycast flycast-sa false
       ;;
     SM8250|SM8550|SM8650|SM8750|S922X)
-      add_emu_core dreamcast flycast flycast-sa true
-      add_emu_core dreamcast retroarch flycast false
+      add_emu_core dreamcast retroarch flycast true
       add_emu_core dreamcast retroarch flycast2021 false
       ;;
     AMD64)
-      add_emu_core dreamcast flycast flycast-sa true
-      add_emu_core dreamcast retroarch flycast false
+      add_emu_core dreamcast retroarch flycast true
       ;;
     *)
       add_emu_core dreamcast retroarch flycast true
-      add_emu_core dreamcast flycast flycast-sa false
       ;;
   esac
-  install_script "Start Flycast.sh"
   add_es_system dreamcast
 
   ### Final Burn Neo
@@ -525,20 +516,16 @@ makeinstall_target() {
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115)
       add_emu_core naomi retroarch flycast2021 true
       add_emu_core naomi retroarch flycast false
-      add_emu_core naomi flycast flycast-sa false
       ;;
     SM8250|SM8550|SM8650|SM8750|S922X)
-      add_emu_core naomi flycast flycast-sa true
-      add_emu_core naomi retroarch flycast false
+      add_emu_core naomi retroarch flycast true
       add_emu_core naomi retroarch flycast2021 false
       ;;
     AMD64)
-      add_emu_core naomi flycast flycast-sa true
-      add_emu_core naomi retroarch flycast false
+      add_emu_core naomi retroarch flycast true
       ;;
     *)
       add_emu_core naomi retroarch flycast true
-      add_emu_core naomi flycast flycast-sa false
       ;;
   esac
   add_es_system naomi
