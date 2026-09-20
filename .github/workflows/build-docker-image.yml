@@ -14,7 +14,11 @@ jobs:
       contents: read
       packages: write
 
-    runs-on: ubuntu-24.04
+    # Built where it is used. Every stage that pulls this image now runs on
+    # arm64, and an image built here for the runner's own architecture needs
+    # no buildx platforms, no qemu and no manifest list - it is one
+    # architecture, just not the one GitHub hands out by default.
+    runs-on: ubuntu-24.04-arm
 
     steps:
       - name: Checkout code
@@ -30,9 +34,19 @@ jobs:
       # changes, every ccache hash changes with it and the entire build
       # recompiles from scratch. Freezing the image until the Dockerfile actually
       # changes is what keeps the toolchain, and therefore the cache, stable.
+      #
+      # The architecture has to be in the tag as well as the hash. The
+      # Dockerfile does not change when the runner does - its aarch64 branch
+      # is selected at build time by uname - so without this the amd64 image
+      # already in the registry answers to the same tag, the build below is
+      # skipped as "already built", and :latest keeps pointing at an amd64
+      # manifest. Pulling that on an arm64 runner does not fail: the container
+      # installs qemu-user-binfmt, so every compile in a five-hour build would
+      # quietly run under emulation.
       - name: Derive the image tag from the Dockerfile
         id: tag
-        run: echo "tag=df-$(sha256sum Dockerfile | cut -c1-16)" >> "${GITHUB_OUTPUT}"
+        run: |
+          echo "tag=df-$(sha256sum Dockerfile | cut -c1-16)-$(uname -m)" >> "${GITHUB_OUTPUT}"
 
       - name: Login to GHCR
         uses: docker/login-action@v4
