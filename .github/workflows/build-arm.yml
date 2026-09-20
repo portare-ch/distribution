@@ -48,7 +48,7 @@ jobs:
       - name: Retrieve ccache
         run: |
           URL="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache/ccache-arm-${{ inputs.DEVICE }}.tar"
-          curl -L --fail --silent --show-error "$URL" | tar -xvf - || echo "Cache archive not found, skipping."       
+          .github/scripts/retrieve-ccache.sh "$URL" "arm"
 
       # A root stage like the toolchain: nothing upstream to gate on, so the
       # gate is the recipes this stage built last time.
