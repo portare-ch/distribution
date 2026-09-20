@@ -519,6 +519,7 @@
 
 		vdd-supply = <&vreg_s5g_0p8>;
 		vddio-supply = <&vreg_l15b_1p8>;
+		vddio1p2-supply = <&vreg_l3g_1p2>;
 		vddaon-supply = <&vreg_s2g_0p8>;
 		vdddig-supply = <&vreg_s4e_0p95>;
 		vddrfa1p2-supply = <&vreg_s4g_1p3>;
