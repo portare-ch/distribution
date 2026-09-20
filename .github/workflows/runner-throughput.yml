@@ -1,97 +1,88 @@
 name: Runner throughput
 
-# Is an arm64 runner worth moving the build onto?
+# Can the build actually move to arm64 runners?
 #
-# The usual argument - "native aarch64 means no cross-compiling" - does not
-# survive contact with this tree. The toolchain stage builds LLVM and a
-# toolchain, and compiling LLVM costs the same whether the host is x86_64 or
-# aarch64. Nothing here runs under qemu today, so there is no emulation
-# overhead to remove either. Going native, on its own, saves nothing.
+# The throughput question this workflow started life asking is answered. On
+# identical 4-core/15GiB runners, arm64 (Neoverse-V2) compiled ffmpeg in 173s
+# against x86_64's 228s, and abseil in 30s against 42s - about 30% less wall
+# clock, with the better of the two figures being the C++ one, which is the
+# kind of work our critical path is made of.
 #
-# The question worth asking is narrower and purely empirical: for the kind of
-# work this build actually does - parallel C and C++ compilation - is a
-# GitHub arm64 runner faster per wall-clock second than the x86_64 one? If it
-# is, that applies to every stage, not just the toolchain, and would justify
-# the arm64 build container that moving would require. If it is not, the idea
-# dies here having cost twenty minutes.
+# amd64 was never a requirement, only the default runner: nothing we ship is
+# amd64, and the one place a prebuilt host binary is fetched - the three rust
+# snapshots - already has pinned aarch64 checksums upstream, verified against
+# static.rust-lang.org for our pinned 1.97.1. So this is not a port to a
+# second architecture, it is a move to a different single one.
 #
-# The first pass compiled xz, which finished in four and five seconds - far
-# inside the noise, and no answer at all. This one uses two workloads that
-# each run for minutes: ffmpeg for C and abseil for C++, the latter because
-# the stages that dominate our critical path (LLVM, RetroArch, the emulators)
-# are template-heavy C++ and need not scale like C does.
+# What is still unknown is mechanical, and none of it is answered by a
+# compile benchmark:
 #
-# Deliberately does not use our build container: that image is amd64 only, so
-# on an arm64 runner it would run under qemu and measure emulation instead of
-# the machine. This compiles fixed upstream tarballs with the distro toolchain
-# on both runners, which is the closest honest comparison available without
-# porting the container first. ffmpeg is configured with --disable-x86asm so
-# that both runners compile the same C and neither gets a hand-written-assembly
-# advantage the other cannot have.
+#   1. maximize-github-runner-space. Every build stage runs it first. It
+#      deletes preinstalled toolsets by path and the arm64 runner image ships
+#      a different set, so it may fail outright or free far less. A stage
+#      that runs out of disk four hours in is the expensive way to find out.
+#   2. The build container. Dockerfile already has an aarch64 branch
+#      (libc6-amd64-cross, qemu-user-binfmt) inherited from upstream, but it
+#      has never been built for arm64 here - the workflow passes no platforms,
+#      so :latest is an amd64-only manifest. Pulling that on an arm64 runner
+#      does not fail loudly; it runs every compile under emulation.
+#   3. Whether gcc-12 and the rest of that package set resolve on arm64 noble
+#      at all, and whether checkdeps is satisfied inside the result.
+#
+# All three are cheap to answer in one job, and expensive to discover inside
+# a five-hour build.
 
 on:
   workflow_dispatch:
 
 jobs:
-  bench:
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90
+  probe:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
     steps:
-      - name: What are we standing on
-        run: |
-          echo "fact runner ${{ matrix.runner }}"
-          echo "fact arch $(uname -m)"
-          echo "fact nproc $(nproc)"
-          echo "fact memory $(free -g | awk '/^Mem:/{print $2}')GiB"
-          # model name is absent on arm64; the implementer/part pair is the
-          # equivalent and says which Neoverse core this is
-          echo "fact cpu $(grep -m1 -E 'model name|CPU part' /proc/cpuinfo | cut -d: -f2-)"
-          echo "fact gcc $(gcc -dumpfullversion)"
+      - uses: actions/checkout@v6
 
-      - name: Fetch workloads
-        run: |
-          curl -sSfL --max-time 600 \
-            https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n7.1.tar.gz \
-            -o ffmpeg.tar.gz
-          curl -sSfL --max-time 600 \
-            https://github.com/abseil/abseil-cpp/releases/download/20240722.0/abseil-cpp-20240722.0.tar.gz \
-            -o abseil.tar.gz
-          sha256sum ffmpeg.tar.gz abseil.tar.gz
-          tar xf ffmpeg.tar.gz
-          tar xf abseil.tar.gz
+      - name: Disk before
+        run: df -h / /mnt 2>/dev/null || df -h /
 
-      - name: Configure (not timed)
-        run: |
-          cd FFmpeg-n7.1
-          ./configure --disable-doc --disable-x86asm --disable-autodetect >/dev/null
-          cd ../abseil-cpp-20240722.0
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_STANDARD=17 -DABSL_BUILD_TESTING=OFF >/dev/null
+      # Not allowed to take the job down. Finding out that it fails here is
+      # the point, and everything after it still needs to run.
+      - name: Maximize build space
+        id: maximize
+        continue-on-error: true
+        uses: justinthelaw/maximize-github-runner-space@v0.9.0
+        with:
+          skip-components: docker-engine
 
-      - name: Compile C (ffmpeg), timed
-        id: c
+      - name: Disk after
         run: |
-          cd FFmpeg-n7.1
+          echo "maximize outcome: ${{ steps.maximize.outcome }}"
+          df -h / /mnt 2>/dev/null || df -h /
+
+      - name: Build the container natively for arm64
+        run: |
           start=$(date +%s)
-          make -j"$(nproc)" >/dev/null
-          echo "seconds=$(( $(date +%s) - start ))" >> "${GITHUB_OUTPUT}"
+          docker build -t portareos-build:probe -f Dockerfile . 2>&1 | tail -30
+          echo "::notice title=container::built in $(( $(date +%s) - start ))s"
 
-      - name: Compile C++ (abseil), timed
-        id: cxx
+      - name: Does it work
         run: |
-          cd abseil-cpp-20240722.0
-          start=$(date +%s)
-          cmake --build build -j"$(nproc)" >/dev/null
-          echo "seconds=$(( $(date +%s) - start ))" >> "${GITHUB_OUTPUT}"
+          docker run --rm portareos-build:probe bash -c '
+            echo "uname:       $(uname -m)"
+            echo "gcc:         $(gcc --version | head -1)"
+            echo "g++:         $(g++ --version | head -1)"
+            echo "go:          $(go version)"
+            echo "multiarch:   $(gcc -print-multiarch)"
+            echo "qemu-x86_64: $(command -v qemu-x86_64 || echo absent)"
+          '
 
-      - name: Report
+      # scripts/checkdeps is what every build stage runs before anything else,
+      # and it is the file that carries the native-aarch64 host special cases.
+      # If the container satisfies it, the stages have what they need.
+      - name: Would checkdeps pass inside it
         run: |
-          line="${{ matrix.runner }} $(uname -m) cores=$(nproc)"
-          line="${line} c=${{ steps.c.outputs.seconds }}s"
-          line="${line} cxx=${{ steps.cxx.outputs.seconds }}s"
-          echo "::notice title=throughput::${line}"
-          echo "${line}" >> "${GITHUB_STEP_SUMMARY}"
+          docker run --rm -v "${PWD}:${PWD}" -w "${PWD}" -u "$(id -u):$(id -g)" \
+            -e PROJECT=PortareOS -e DEVICE=SM8550 -e ARCH=aarch64 \
+            portareos-build:probe ./scripts/checkdeps \
+            && echo "::notice title=checkdeps::ok" \
+            || echo "::warning title=checkdeps::failed - see output above"
