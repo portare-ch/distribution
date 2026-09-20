@@ -78,7 +78,7 @@ jobs:
   set-envs:
     environment:
       name: ${{ github.event_name == 'pull_request' && 'pr-approval' || 'auto' }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     outputs:
       NIGHTLY: ${{ steps.set-release-type.outputs.NIGHTLY }}
       OFFICIAL: ${{ steps.set-release-type.outputs.OFFICIAL }}
@@ -256,7 +256,7 @@ jobs:
   rerun-failed-jobs:
     if: always() && !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && fromJSON(github.run_attempt) < 3 && github.ref_name == 'next'
     needs: build-devices
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     # The repository's default token is read-only, and dispatching a
     # workflow needs actions: write.
     permissions:
@@ -286,7 +286,7 @@ jobs:
     needs:
       - set-envs
       - build-devices
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: write
     steps:

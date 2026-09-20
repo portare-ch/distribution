@@ -287,13 +287,25 @@ recipe_digest() {
     return 0
   fi
 
+  # The host architecture belongs in the digest even though it is not a
+  # recipe. A root stage's archive carries build.../toolchain, which is host
+  # binaries - the compiler this build runs, not the one it produces. Restored
+  # onto a host of a different architecture those cannot execute, and because
+  # the build container installs qemu-user-binfmt on aarch64 hosts they would
+  # not even fail cleanly: they would run under emulation, correctly and
+  # perhaps a hundred times too slowly, with nothing in the log to say why.
+  #
+  # Folding uname -m in makes state saved on one host architecture refuse
+  # itself on another, which is the whole safety property needed to move
+  # between runner architectures. No asset renaming, and no way to forget it.
+  #
   # sort -zu collapses the duplicates that fall out of resolving both the local
   # and the global copy of a recipe.
-  find -L "${paths[@]}" -type f -not -name '.*' -print0 2>/dev/null \
-    | LC_ALL=C sort -zu \
-    | xargs -0 -r sha256sum \
-    | sha256sum \
-    | cut -d' ' -f1
+  { printf 'host-arch %s\n' "$(uname -m)"
+    find -L "${paths[@]}" -type f -not -name '.*' -print0 2>/dev/null \
+      | LC_ALL=C sort -zu \
+      | xargs -0 -r sha256sum
+  } | sha256sum | cut -d' ' -f1
 }
 
 cmd_restore_root() {

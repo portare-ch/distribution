@@ -7,7 +7,7 @@ on:
         required: true
 jobs:
   rerun:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     permissions:
       actions: write
     steps:
