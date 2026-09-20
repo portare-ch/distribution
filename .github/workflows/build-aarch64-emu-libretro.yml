@@ -105,22 +105,6 @@ jobs:
         if: ${{ inputs.DEVICE == 'RK3399' || inputs.DEVICE == 'RK3566' || inputs.DEVICE == 'RK3576' || inputs.DEVICE == 'RK3588' || inputs.DEVICE == 'S922X' || inputs.DEVICE == 'SM8250' || inputs.DEVICE == 'SM8550' }}
         run: rm build.qt6.tar.zst
 
-      - name: Download mame-lr (${{ inputs.DEVICE }})
-        uses: actions/download-artifact@v8
-        with:
-          name: mame-lr (${{ inputs.DEVICE }})
-
-      - name: Extract artifact mame-lr
-        run: |
-          tar --zstd -xf build.mame-lr.tar.zst
-
-      - name: Clean up compressed mame-lr file
-        run: rm build.mame-lr.tar.zst
-
-      # Record what the upstream stage artifacts just delivered: a digest of
-      # their stamps (the dependency recipes this stage is about to build
-      # against) and the list of packages they installed. Both are needed
-      # whether or not we restore, because the save step below uses them.
       - name: Snapshot the upstream build state
         id: upstream
         run: |

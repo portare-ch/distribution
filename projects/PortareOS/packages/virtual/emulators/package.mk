@@ -14,15 +14,12 @@ EMUS_32BIT=""
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays retropie-shaders slang-shaders"
 
-LIBRETRO_CORES="beetle-gba-lr doublecherrygb-lr fbalpha2012-lr fbalpha2019-lr fbneo-lr flycast-lr gambatte-lr gearboy-lr gearsystem-lr geolith-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr mame-lr mame2003-plus-lr mame2010-lr mame2015-lr mgba-lr neocd_lr parallel-n64-lr picodrive-lr sameboy-lr scummvm-lr skyemu-lr smsplus-gx-lr snes9x-lr swanstation-lr tgbdual-lr vba-next-lr vbam-lr"
+LIBRETRO_CORES=" fbneo-lr flycast-lr gambatte-lr genesis-plus-gx-lr mgba-lr neocd_lr parallel-n64-lr picodrive-lr snes9x-lr swanstation-lr"
 
-### aarch64 libretro and sa cores
 if [ "${ARCH}" = "aarch64" ]; then
-  LIBRETRO_CORES+=" ppsspp-lr"
   PKG_EMUS+=" box64 portmaster"
 fi
 
-### Emulators or cores for specific devices
 case "${DEVICE}" in
   H700|RK3326)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
@@ -94,56 +91,29 @@ install_script() {
 }
 
 makeinstall_target() {
-  ### README BEFORE EDITING
-  ###
-  ### is now automatically generated when this package is built.
-  ###
-  ### system is generated and added to ES the cores need to already be defined.
-  ###
-  ### will result in a build failure.
-  ###
-  ### add_emu_core schema:
-  ###
-  ### 3do      retroarch  opera  true
-  ###
 
-  ### Flush cache from previous builds
   clean_es_cache
   clean_doc_cache
 
-  ### Add bezels directory
   add_system_dir /storage/roms/bezels
 
-  ### Add BIOS directory
   add_system_dir /storage/roms/bios
 
-  ### Add music directory
   add_system_dir /storage/roms/music
 
-  ### Add save states directory
   add_system_dir /storage/roms/savestates
 
-  ### Add themes directory
   add_system_dir /storage/roms/themes
 
-  ### Apply documentation header
   start_system_doc
 
   ### Arcade
-  add_emu_core arcade retroarch mame2003_plus true
-  add_emu_core arcade retroarch mame2010 false
-  add_emu_core arcade retroarch mame2015 false
-  add_emu_core arcade retroarch fbneo false
-  add_emu_core arcade retroarch fbalpha2012 false
-  add_emu_core arcade retroarch fbalpha2019 false
-  add_emu_core arcade retroarch mame false
+  add_emu_core arcade retroarch fbneo true
   case ${DEVICE} in
     SM8550|SM8650|SM8750|AMD64)
       ;;
   esac
   add_es_system arcade
-
-  ### Atari 7800
 
   ## Atari 800
 
@@ -153,53 +123,14 @@ makeinstall_target() {
   add_emu_core atomiswave retroarch flycast true
   add_es_system atomiswave
 
-  ### Capcom Playsystem 1
-  add_emu_core cps1 retroarch fbneo true
-  add_emu_core cps1 retroarch mame2003_plus false
-  add_emu_core cps1 retroarch mame2010 false
-  add_emu_core cps1 retroarch fbalpha2012 false
-  add_es_system cps1
-
-  ### Capcom Playsystem 2
-  add_emu_core cps2 retroarch fbneo true
-  add_emu_core cps2 retroarch mame2003_plus false
-  add_emu_core cps2 retroarch mame2010 false
-  add_emu_core cps2 retroarch fbalpha2012 false
-  add_es_system cps2
-
-  ### Capcom Playsystem 3
-  add_emu_core cps3 retroarch fbneo true
-  add_emu_core cps3 retroarch mame2003_plus false
-  add_emu_core cps3 retroarch mame2010 false
-  add_emu_core cps3 retroarch fbalpha2012 false
-  add_es_system cps3
-
   ### Sega Dreamcast
   add_emu_core dreamcast retroarch flycast true
   add_es_system dreamcast
 
-  ### Final Burn Neo
-  add_emu_core fbn retroarch fbneo true
-  add_emu_core fbn retroarch mame2003_plus false
-  add_emu_core fbn retroarch mame2010 false
-  add_emu_core fbn retroarch mame2015 false
-  add_emu_core fbn retroarch mame false
-  add_emu_core fbn retroarch fbalpha2012 false
-  add_emu_core fbn retroarch fbalpha2019 false
-  add_es_system fbn
-
   ### Nintendo GameBoy
   add_emu_core gb retroarch gambatte true
-  add_emu_core gb retroarch sameboy false
-  add_emu_core gb retroarch gearboy false
-  add_emu_core gb retroarch tgbdual false
-  add_emu_core gb retroarch mgba false
-  add_emu_core gb retroarch vbam false
-  add_emu_core gb retroarch DoubleCherryGB false
-  add_emu_core gb retroarch skyemu false
   case ${DEVICE} in
     RK3399|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
-      add_emu_core gb retroarch bsnes false
       ;;
   esac
   case ${DEVICE} in
@@ -214,16 +145,8 @@ makeinstall_target() {
 
   ### Nintendo GameBoy Hacks
   add_emu_core gbh retroarch gambatte true
-  add_emu_core gbh retroarch sameboy false
-  add_emu_core gbh retroarch gearboy false
-  add_emu_core gbh retroarch tgbdual false
-  add_emu_core gbh retroarch mgba false
-  add_emu_core gbh retroarch vbam false
-  add_emu_core gbh retroarch DoubleCherryGB false
-  add_emu_core gbh retroarch skyemu false
   case ${DEVICE} in
     RK3399|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
-      add_emu_core gbh retroarch bsnes false
       ;;
   esac
   case ${DEVICE} in
@@ -238,10 +161,6 @@ makeinstall_target() {
 
   ### Nintendo GameBoy Advance
   add_emu_core gba retroarch mgba true
-  add_emu_core gba retroarch vbam false
-  add_emu_core gba retroarch vba_next false
-  add_emu_core gba retroarch beetle_gba false
-  add_emu_core gba retroarch skyemu false
   case ${DEVICE} in
     H700|RK3326|RK3576|RK3566|S922X)
       ;;
@@ -262,10 +181,6 @@ makeinstall_target() {
 
   ### Nintendo GameBoy Advance Hacks
   add_emu_core gbah retroarch mgba true
-  add_emu_core gbah retroarch vbam false
-  add_emu_core gbah retroarch vba_next false
-  add_emu_core gbah retroarch beetle_gba false
-  add_emu_core gbah retroarch skyemu false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550)
       ;;
@@ -280,10 +195,6 @@ makeinstall_target() {
 
   ### Nintendo GameBoy Advance Video
   add_emu_core gbav retroarch mgba true
-  add_emu_core gbav retroarch vbam false
-  add_emu_core gbav retroarch vba_next false
-  add_emu_core gbav retroarch beetle_gba false
-  add_emu_core gbav retroarch skyemu false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550)
       ;;
@@ -294,13 +205,6 @@ makeinstall_target() {
 
   ### Nintendo GameBoy Color
   add_emu_core gbc retroarch gambatte true
-  add_emu_core gbc retroarch sameboy false
-  add_emu_core gbc retroarch gearboy false
-  add_emu_core gbc retroarch tgbdual false
-  add_emu_core gbc retroarch mgba false
-  add_emu_core gbc retroarch vbam false
-  add_emu_core gbc retroarch DoubleCherryGB false
-  add_emu_core gbc retroarch skyemu false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -313,13 +217,6 @@ makeinstall_target() {
 
   ### Nintendo GameBoy Color Hacks
   add_emu_core gbch retroarch gambatte true
-  add_emu_core gbch retroarch sameboy false
-  add_emu_core gbch retroarch gearboy false
-  add_emu_core gbch retroarch tgbdual false
-  add_emu_core gbch retroarch mgba false
-  add_emu_core gbch retroarch vbam false
-  add_emu_core gbch retroarch DoubleCherryGB false
-  add_emu_core gbch retroarch skyemu false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -330,7 +227,6 @@ makeinstall_target() {
   esac
   add_es_system gbch
 
-  ### Nintendo GameCube
   case ${DEVICE} in
     RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
       add_emu_core gamecube retroarch dolphin true
@@ -338,7 +234,6 @@ makeinstall_target() {
       ;;
   esac
 
-  ### Nintendo Triforce
   case ${DEVICE} in
     RK3399|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       add_emu_core triforce retroarch dolphin true
@@ -346,7 +241,6 @@ makeinstall_target() {
       ;;
   esac
 
-  ### Nintendo Wii/ware
   case ${DEVICE} in
     RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
       add_emu_core wii retroarch dolphin true
@@ -357,10 +251,7 @@ makeinstall_target() {
   esac
 
   ### Sega GameGear
-  add_emu_core gamegear retroarch gearsystem true
-  add_emu_core gamegear retroarch genesis_plus_gx false
-  add_emu_core gamegear retroarch picodrive false
-  add_emu_core gamegear retroarch smsplus false
+  add_emu_core gamegear retroarch genesis_plus_gx true
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -372,10 +263,7 @@ makeinstall_target() {
   add_es_system gamegear
 
   ### Sega GameGear Hacks
-  add_emu_core ggh retroarch gearsystem true
-  add_emu_core ggh retroarch genesis_plus_gx false
-  add_emu_core ggh retroarch picodrive false
-  add_emu_core ggh retroarch smsplus false
+  add_emu_core ggh retroarch genesis_plus_gx true
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -396,20 +284,8 @@ makeinstall_target() {
       ;;
   esac
 
-  ### Arcade (MAME)
-  add_emu_core mame retroarch mame2003_plus true
-  add_emu_core mame retroarch mame2010 false
-  add_emu_core mame retroarch mame2015 false
-  add_emu_core mame retroarch mame false
-  add_emu_core mame retroarch fbneo false
-  add_emu_core mame retroarch fbalpha2012 false
-  add_emu_core mame retroarch fbalpha2019 false
-  add_es_system mame
-
   ### Sega MegaDrive
   add_emu_core megadrive-japan retroarch genesis_plus_gx true
-  add_emu_core megadrive-japan retroarch genesis_plus_gx_wide false
-  add_emu_core megadrive-japan retroarch picodrive false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -426,13 +302,6 @@ makeinstall_target() {
 
   ### SNK NeoGeo
   add_emu_core neogeo retroarch fbneo true
-  add_emu_core neogeo retroarch mame2003_plus false
-  add_emu_core neogeo retroarch fbalpha2012 false
-  add_emu_core neogeo retroarch fbalpha2019 false
-  add_emu_core neogeo retroarch mame2010 false
-  add_emu_core neogeo retroarch mame2015 false
-  add_emu_core neogeo retroarch mame false
-  add_emu_core neogeo retroarch geolith false
   case ${DEVICE} in
     SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -442,8 +311,6 @@ makeinstall_target() {
 
   ### SNK NeoCD
   add_emu_core neocd retroarch neocd true
-  add_emu_core neocd retroarch fbneo false
-  add_emu_core neocd retroarch geolith false
   add_es_system neocd
 
   ### Nintendo 64
@@ -458,7 +325,6 @@ makeinstall_target() {
   add_emu_core psx retroarch swanstation true
   add_es_system psx
 
-  ### Sony Playstation 2
   # The RK boards carried aethersx2 and nothing else, so they lose PS2 with it.
   case ${DEVICE} in
   AMD64|S922X|SM6115|SM8250|SM8550|SM8650|SM8750)
@@ -468,7 +334,6 @@ makeinstall_target() {
     ;;
   esac
 
-  ### Sony Playstation 3
   case ${DEVICE} in
     SM8250|SM8550|SM8650|SM8750)
       add_emu_core ps3 rpcs3 rpcs3-sa true
@@ -479,18 +344,15 @@ makeinstall_target() {
 
   ### Sony Playstation Portable
   add_emu_core psp ppsspp ppsspp-sa true
-  add_emu_core psp retroarch ppsspp false
   add_es_system psp
   install_script "Start PPSSPP.sh"
 
   ### Sony Playstation Portable Minis
   add_emu_core pspminis ppsspp ppsspp-sa true
-  add_emu_core pspminis retroarch ppsspp false
   add_es_system pspminis
 
   ### ScummVM
   add_emu_core scummvm scummvmsa scummvm true
-  add_emu_core scummvm retroarch scummvm false
   add_es_system scummvm
   add_system_dir /storage/roms/scummvm
   install_script "Scan ScummVM Games.sh"
@@ -506,7 +368,6 @@ makeinstall_target() {
 
   ### Sega CD
   add_emu_core segacd retroarch genesis_plus_gx true
-  add_emu_core segacd retroarch picodrive false
   case ${DEVICE} in
     SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -515,7 +376,6 @@ makeinstall_target() {
 
   ### Sega Mega-CD
   add_emu_core megacd retroarch genesis_plus_gx true
-  add_emu_core megacd retroarch picodrive false
   case ${DEVICE} in
     SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -524,8 +384,6 @@ makeinstall_target() {
 
   ### Sega Genesis
   add_emu_core genesis retroarch genesis_plus_gx true
-  add_emu_core genesis retroarch genesis_plus_gx_wide false
-  add_emu_core genesis retroarch picodrive false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -538,8 +396,6 @@ makeinstall_target() {
 
   ### Sega Genesis Hacks
   add_emu_core genh retroarch genesis_plus_gx true
-  add_emu_core genh retroarch genesis_plus_gx_wide false
-  add_emu_core genh retroarch picodrive false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -551,10 +407,7 @@ makeinstall_target() {
   add_es_system genh
 
   ### Sega MasterSystem
-  add_emu_core mastersystem retroarch gearsystem true
-  add_emu_core mastersystem retroarch genesis_plus_gx false
-  add_emu_core mastersystem retroarch picodrive false
-  add_emu_core mastersystem retroarch smsplus false
+  add_emu_core mastersystem retroarch genesis_plus_gx true
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -567,8 +420,6 @@ makeinstall_target() {
 
   ### Sega MegaDrive
   add_emu_core megadrive retroarch genesis_plus_gx true
-  add_emu_core megadrive retroarch genesis_plus_gx_wide false
-  add_emu_core megadrive retroarch picodrive false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -577,8 +428,6 @@ makeinstall_target() {
 
   ### Sega MegaDrive Hacks
   add_emu_core megadriveh retroarch genesis_plus_gx true
-  add_emu_core megadriveh retroarch genesis_plus_gx_wide false
-  add_emu_core megadriveh retroarch picodrive false
   case ${DEVICE} in
     H700|RK3326|RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
       ;;
@@ -586,16 +435,13 @@ makeinstall_target() {
   add_es_system megadriveh
 
   ### Sega SG-1000
-  add_emu_core sg-1000 retroarch gearsystem true
-  add_emu_core sg-1000 retroarch genesis_plus_gx false
-  add_emu_core sg-1000 retroarch picodrive false
+  add_emu_core sg-1000 retroarch genesis_plus_gx true
   case ${DEVICE} in
     SM8550|SM8650|SM8750|AMD64)
       ;;
   esac
   add_es_system sg-1000
 
-  ### Microsoft XBox
   case ${DEVICE} in
     SM8250|SM8550|SM8650|SM8750|AMD64)
       add_emu_core xbox xemu xemu-sa true
@@ -639,10 +485,6 @@ makeinstall_target() {
   add_emu_core sufami retroarch snes9x true
   add_es_system sufami
 
-  ### GamePark GP32
-  add_emu_core gp32 retroarch mame true
-  add_es_system gp32
-
   ### PC Ports
   add_emu_core ports portmaster portmaster true
   add_es_system ports
@@ -651,7 +493,6 @@ makeinstall_target() {
   add_emu_core windows wine wine true
   add_es_system windows
 
-  ### Media Player
   # Note - there is actually no ffmpeg core, it is compiled into retroarch
   add_emu_core mplayer retroarch ffmpeg true
   add_es_system mplayer
@@ -670,10 +511,8 @@ makeinstall_target() {
   ### Screenshots
   add_es_system imageviewer
 
-  ### Create es_systems
   mk_es_systems
 
-  ### Generate document
   mk_system_doc
 
   mkdir -p ${INSTALL}/usr/config/emulationstation
@@ -685,7 +524,6 @@ makeinstall_target() {
     sed -i 's~%RUNCOMMAND%~/usr/bin/run %ROM%~g' ${INSTALL}/usr/config/emulationstation/es_systems.cfg
   fi
 
-  ### Automount should handle this.
   cp -f ${ESTMP}/system-dirs.conf ${INSTALL}/usr/config
 
   mkdir -p ${INSTALL}/usr/bin
