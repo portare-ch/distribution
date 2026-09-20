@@ -14,7 +14,7 @@ EMUS_32BIT=""
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays retropie-shaders slang-shaders"
 
-LIBRETRO_CORES="beetle-gba-lr bsnes2014-accuracy-lr bsnes2014-balanced-lr bsnes2014-performance-lr \ bsnes-mercury-accuracy-lr bsnes-mercury-balanced-lr bsnes-mercury-performance-lr \ beetle-supafaust-lr doublecherrygb-lr fbalpha2012-lr fbalpha2019-lr fbneo-lr flycast-lr \ gambatte-lr gearboy-lr gearsystem-lr geolith-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr \ mame-lr mame2003-plus-lr mame2010-lr mame2015-lr mesen-s-lr mgba-lr \ neocd_lr parallel-n64-lr picodrive-lr sameboy-lr scummvm-lr \ skyemu-lr smsplus-gx-lr snes9x-lr snes9x2002-lr snes9x2005_plus-lr snes9x2010-lr supersnes9x-lr \ swanstation-lr tgbdual-lr vba-next-lr vbam-lr"
+LIBRETRO_CORES="beetle-gba-lr bsnes2014-accuracy-lr bsnes2014-balanced-lr bsnes2014-performance-lr bsnes-mercury-accuracy-lr bsnes-mercury-balanced-lr bsnes-mercury-performance-lr beetle-supafaust-lr doublecherrygb-lr fbalpha2012-lr fbalpha2019-lr fbneo-lr flycast-lr gambatte-lr gearboy-lr gearsystem-lr geolith-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr mame-lr mame2003-plus-lr mame2010-lr mame2015-lr mesen-s-lr mgba-lr neocd_lr parallel-n64-lr picodrive-lr sameboy-lr scummvm-lr skyemu-lr smsplus-gx-lr snes9x-lr snes9x2002-lr snes9x2005_plus-lr snes9x2010-lr supersnes9x-lr swanstation-lr tgbdual-lr vba-next-lr vbam-lr"
 
 ### aarch64 libretro and sa cores
 if [ "${ARCH}" = "aarch64" ]; then
