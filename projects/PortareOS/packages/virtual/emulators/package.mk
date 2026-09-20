@@ -8,70 +8,70 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
-PKG_EMUS="duckstation-sa moonlight mupen64plus-sa ppsspp-sa scummvmsa wine"
+PKG_EMUS="moonlight mupen64plus-sa ppsspp-sa scummvmsa wine"
 
 EMUS_32BIT=""
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays retropie-shaders slang-shaders"
 
-LIBRETRO_CORES="beetle-gba-lr bsnes2014-accuracy-lr bsnes2014-balanced-lr bsnes2014-performance-lr \ bsnes-mercury-accuracy-lr bsnes-mercury-balanced-lr bsnes-mercury-performance-lr \ beetle-supafaust-lr doublecherrygb-lr fbalpha2012-lr fbalpha2019-lr fbneo-lr flycast-lr \ gambatte-lr gearboy-lr gearsystem-lr geolith-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr \ mame-lr mame2003-plus-lr mame2010-lr mame2015-lr mesen-s-lr mgba-lr mupen64plus-lr \ mupen64plus-nx-lr neocd_lr parallel-n64-lr pcsx_rearmed-lr picodrive-lr sameboy-lr scummvm-lr \ skyemu-lr smsplus-gx-lr snes9x-lr snes9x2002-lr snes9x2005_plus-lr snes9x2010-lr supersnes9x-lr \ swanstation-lr tgbdual-lr vba-next-lr vbam-lr"
+LIBRETRO_CORES="beetle-gba-lr bsnes2014-accuracy-lr bsnes2014-balanced-lr bsnes2014-performance-lr \ bsnes-mercury-accuracy-lr bsnes-mercury-balanced-lr bsnes-mercury-performance-lr \ beetle-supafaust-lr doublecherrygb-lr fbalpha2012-lr fbalpha2019-lr fbneo-lr flycast-lr \ gambatte-lr gearboy-lr gearsystem-lr geolith-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr \ mame-lr mame2003-plus-lr mame2010-lr mame2015-lr mesen-s-lr mgba-lr mupen64plus-lr \ mupen64plus-nx-lr neocd_lr parallel-n64-lr picodrive-lr sameboy-lr scummvm-lr \ skyemu-lr smsplus-gx-lr snes9x-lr snes9x2002-lr snes9x2005_plus-lr snes9x2010-lr supersnes9x-lr \ swanstation-lr tgbdual-lr vba-next-lr vbam-lr"
 
 ### aarch64 libretro and sa cores
 if [ "${ARCH}" = "aarch64" ]; then
-  LIBRETRO_CORES+=" duckstation-lr ppsspp-lr"
+  LIBRETRO_CORES+=" ppsspp-lr"
   PKG_EMUS+=" box64 portmaster"
 fi
 
 ### Emulators or cores for specific devices
 case "${DEVICE}" in
   H700|RK3326)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
     PKG_EMUS+=" mednafen"
     ;;
   RK3399)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" mednafen"
-    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   RK3566|RK3576)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
     PKG_EMUS+=" mednafen"
     LIBRETRO_CORES+=" dolphin-lr"
     ;;
   RK3588)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" mednafen"
-    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM6115)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" mednafen armsx2-sa"
-    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8250)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" mednafen rpcs3-sa xemu-sa steam armsx2-sa"
-    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8550)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
     PKG_EMUS+=" ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
-    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8650|SM8750)
     PKG_EMUS+=" ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
-    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   S922X)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 pcsx_rearmed-lr"
-    PKG_EMUS+=" duckstation-sa armsx2-sa"
-    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
+    PKG_EMUS+=" armsx2-sa"
+    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   AMD64)
     PKG_EMUS+=" ares-sa gopher64-sa mednafen xemu-sa armsx2-sa"
-    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
 esac
 
 # Split building emulators into 2 stages, needed to fit the jobs into the 6 hour GH runner time limit.
@@ -524,49 +524,7 @@ makeinstall_target() {
   add_es_system n64dd
 
   ### Sony Playstation
-  case ${DEVICE} in
-    H700|RK3326)
-      add_emu_core psx retroarch pcsx_rearmed32 true
-      add_emu_core psx retroarch pcsx_rearmed false
-      add_emu_core psx retroarch duckstation false
-      ;;
-    RK3399|RK3588|SM6115)
-      add_emu_core psx retroarch pcsx_rearmed true
-      add_emu_core psx retroarch pcsx_rearmed32 false
-      add_emu_core psx retroarch beetle_psx false
-      add_emu_core psx mednafen psx false
-      add_emu_core psx retroarch duckstation false
-      ;;
-    RK3576|RK3566)
-      add_emu_core psx retroarch pcsx_rearmed32 true
-      add_emu_core psx retroarch pcsx_rearmed false
-      add_emu_core psx retroarch duckstation false
-      ;;
-    SM8250|SM8550)
-      add_emu_core psx retroarch pcsx_rearmed32 true
-      add_emu_core psx retroarch pcsx_rearmed false
-      add_emu_core psx retroarch beetle_psx false
-      add_emu_core psx mednafen psx false
-     add_emu_core psx retroarch duckstation false
-      ;;
-    SM8650|SM8750)
-      add_emu_core psx retroarch pcsx_rearmed true
-      add_emu_core psx retroarch beetle_psx false
-      add_emu_core psx mednafen psx false
-     add_emu_core psx retroarch duckstation false
-      ;;
-    S922X)
-      add_emu_core psx retroarch pcsx_rearmed true
-      add_emu_core psx retroarch beetle_psx false
-      add_emu_core psx retroarch duckstation false
-      ;;
-    AMD64)
-      add_emu_core psx retroarch pcsx_rearmed true
-      add_emu_core psx retroarch beetle_psx false
-      add_emu_core psx mednafen psx false
-  esac
-  add_emu_core psx duckstation duckstation-sa false
-  add_emu_core psx retroarch swanstation false
+  add_emu_core psx retroarch swanstation true
   add_es_system psx
 
   ### Sony Playstation 2
