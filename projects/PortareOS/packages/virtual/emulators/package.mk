@@ -8,13 +8,13 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
-PKG_EMUS="moonlight mupen64plus-sa ppsspp-sa scummvmsa wine"
+PKG_EMUS="moonlight ppsspp-sa scummvmsa wine"
 
 EMUS_32BIT=""
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays retropie-shaders slang-shaders"
 
-LIBRETRO_CORES="beetle-gba-lr bsnes2014-accuracy-lr bsnes2014-balanced-lr bsnes2014-performance-lr \ bsnes-mercury-accuracy-lr bsnes-mercury-balanced-lr bsnes-mercury-performance-lr \ beetle-supafaust-lr doublecherrygb-lr fbalpha2012-lr fbalpha2019-lr fbneo-lr flycast-lr \ gambatte-lr gearboy-lr gearsystem-lr geolith-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr \ mame-lr mame2003-plus-lr mame2010-lr mame2015-lr mesen-s-lr mgba-lr mupen64plus-lr \ mupen64plus-nx-lr neocd_lr parallel-n64-lr picodrive-lr sameboy-lr scummvm-lr \ skyemu-lr smsplus-gx-lr snes9x-lr snes9x2002-lr snes9x2005_plus-lr snes9x2010-lr supersnes9x-lr \ swanstation-lr tgbdual-lr vba-next-lr vbam-lr"
+LIBRETRO_CORES="beetle-gba-lr bsnes2014-accuracy-lr bsnes2014-balanced-lr bsnes2014-performance-lr \ bsnes-mercury-accuracy-lr bsnes-mercury-balanced-lr bsnes-mercury-performance-lr \ beetle-supafaust-lr doublecherrygb-lr fbalpha2012-lr fbalpha2019-lr fbneo-lr flycast-lr \ gambatte-lr gearboy-lr gearsystem-lr geolith-lr genesis-plus-gx-lr genesis-plus-gx-wide-lr \ mame-lr mame2003-plus-lr mame2010-lr mame2015-lr mesen-s-lr mgba-lr \ neocd_lr parallel-n64-lr picodrive-lr sameboy-lr scummvm-lr \ skyemu-lr smsplus-gx-lr snes9x-lr snes9x2002-lr snes9x2005_plus-lr snes9x2010-lr supersnes9x-lr \ swanstation-lr tgbdual-lr vba-next-lr vbam-lr"
 
 ### aarch64 libretro and sa cores
 if [ "${ARCH}" = "aarch64" ]; then
@@ -57,11 +57,11 @@ case "${DEVICE}" in
     ;;
   SM8550)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr"
-    PKG_EMUS+=" ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
+    PKG_EMUS+=" ares-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8650|SM8750)
-    PKG_EMUS+=" ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
+    PKG_EMUS+=" ares-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   S922X)
@@ -70,7 +70,7 @@ case "${DEVICE}" in
     LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   AMD64)
-    PKG_EMUS+=" ares-sa gopher64-sa mednafen xemu-sa armsx2-sa"
+    PKG_EMUS+=" ares-sa mednafen xemu-sa armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr bsnes-hd-lr dolphin-lr"
 esac
 
@@ -493,34 +493,11 @@ makeinstall_target() {
   add_es_system neocd
 
   ### Nintendo 64
-  add_emu_core n64 retroarch mupen64plus_next true
-  if [ "${PREFER_GLES}" = "yes" ]; then
-    # This core only has gles renderer
-    add_emu_core n64 retroarch mupen64plus false
-  fi
-  add_emu_core n64 retroarch parallel_n64 false
-  add_emu_core n64 mupen64plus mupen64plus-sa false
-  case ${DEVICE} in
-    SM8550)
-      add_emu_core n64 gopher64 gopher64-sa false
-      add_emu_core n64 ares ares-sa false
-      ;;
-    SM8650|SM8750|AMD64)
-      add_emu_core n64 gopher64 gopher64-sa false
-      add_emu_core n64 ares ares-sa false
-      ;;
-  esac
+  add_emu_core n64 retroarch parallel_n64 true
   add_es_system n64
 
   ### Nintendo 64 Disk Drive
-  add_emu_core n64dd retroarch mupen64plus_next true
-  add_emu_core n64dd retroarch parallel_n64 false
-  add_emu_core n64dd mupen64plus mupen64plus-sa false
-  case ${DEVICE} in
-    SM8550|SM8650|SM8750|AMD64)
-      add_emu_core n64dd ares ares-sa false
-      ;;
-  esac
+  add_emu_core n64dd retroarch parallel_n64 true
   add_es_system n64dd
 
   ### Sony Playstation
