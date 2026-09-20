@@ -7,7 +7,7 @@ on:
     branches: [next]
 jobs:
   validate-commit:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     defaults:
       run:
         shell: bash
