@@ -18,8 +18,8 @@ LIBRETRO_CORES="beetle-gba-lr bsnes2014-accuracy-lr bsnes2014-balanced-lr bsnes2
 
 ### aarch64 libretro and sa cores
 if [ "${ARCH}" = "aarch64" ]; then
-  LIBRETRO_CORES+="duckstation-lr ppsspp-lr"
-  PKG_EMUS+="box64 portmaster"
+  LIBRETRO_CORES+=" duckstation-lr ppsspp-lr"
+  PKG_EMUS+=" box64 portmaster"
 fi
 
 ### Emulators or cores for specific devices
@@ -27,51 +27,51 @@ case "${DEVICE}" in
   H700|RK3326)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+="mednafen"
+    PKG_EMUS+=" mednafen"
     ;;
   RK3399)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+="mednafen"
-    LIBRETRO_CORES+="beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    PKG_EMUS+=" mednafen"
+    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   RK3566|RK3576)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+="mednafen"
-    LIBRETRO_CORES+="dolphin-lr"
+    PKG_EMUS+=" mednafen"
+    LIBRETRO_CORES+=" dolphin-lr"
     ;;
   RK3588)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+="mednafen"
-    LIBRETRO_CORES+="beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    PKG_EMUS+=" mednafen"
+    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM6115)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+="mednafen armsx2-sa"
-    LIBRETRO_CORES+="beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    PKG_EMUS+=" mednafen armsx2-sa"
+    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8250)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+="mednafen rpcs3-sa xemu-sa steam armsx2-sa"
-    LIBRETRO_CORES+="beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    PKG_EMUS+=" mednafen rpcs3-sa xemu-sa steam armsx2-sa"
+    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8550)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+="ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
-    LIBRETRO_CORES+="beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    PKG_EMUS+=" ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
+    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8650|SM8750)
-    PKG_EMUS+="ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
-    LIBRETRO_CORES+="beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    PKG_EMUS+=" ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
+    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   S922X)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 pcsx_rearmed-lr"
-    PKG_EMUS+="duckstation-sa armsx2-sa"
-    LIBRETRO_CORES+="beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    PKG_EMUS+=" duckstation-sa armsx2-sa"
+    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   AMD64)
-    PKG_EMUS+="ares-sa gopher64-sa mednafen xemu-sa armsx2-sa"
-    LIBRETRO_CORES+="beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
+    PKG_EMUS+=" ares-sa gopher64-sa mednafen xemu-sa armsx2-sa"
+    LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
 esac
 
 # Split building emulators into 2 stages, needed to fit the jobs into the 6 hour GH runner time limit.
