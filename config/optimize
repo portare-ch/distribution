@@ -9,7 +9,29 @@ TARGET_LIBDIR="$SYSROOT_PREFIX/lib $SYSROOT_PREFIX/usr/lib"
 TARGET_INCDIR="$SYSROOT_PREFIX/include $SYSROOT_PREFIX/usr/include"
 
 HOST_CPPFLAGS=""
-HOST_CFLAGS="-march=x86-64 -mtune=generic -O2 -DNDEBUG -Wall -pipe -I$TOOLCHAIN/include"
+
+# Host tools run on the build machine and never on the device, so these
+# flags only have to suit whatever we happen to be building on.
+#
+# "-march=x86-64" was hardcoded here. An aarch64 gcc rejects it outright,
+# and because it is in CFLAGS the rejection lands on the very first compile
+# configure attempts - surfacing as "C compiler cannot create executables",
+# which reads like a broken toolchain rather than a bad flag. It took the
+# first arm64 build down at make:host, the second package of fifty-three.
+#
+# MACHINE_HARDWARE_NAME is not usable here; it is exported further down this
+# same file.
+#
+# The x86_64 string is deliberately byte-identical to what was here before.
+# It forms part of every host ccache key, so rewriting it - even to
+# something equivalent - would throw away the host cache for no gain.
+# Anywhere else, pass no -march/-mtune at all and take the compiler's
+# default, which is correct by construction on any host we build on.
+case "$(uname -m)" in
+  x86_64) HOST_ARCH_FLAGS="-march=x86-64 -mtune=generic " ;;
+  *)      HOST_ARCH_FLAGS="" ;;
+esac
+HOST_CFLAGS="${HOST_ARCH_FLAGS}-O2 -DNDEBUG -Wall -pipe -I$TOOLCHAIN/include"
 HOST_CXXFLAGS="$HOST_CFLAGS"
 HOST_LDFLAGS="-Wl,-rpath,$TOOLCHAIN/lib -L$TOOLCHAIN/lib"
 HOST_INCDIR="$TOOLCHAIN/include /usr/include"
