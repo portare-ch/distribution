@@ -26,7 +26,7 @@ LIBRETRO_CORES="beetle-gba-lr bsnes2014-accuracy-lr bsnes2014-balanced-lr bsnes2
 ### aarch64 libretro and sa cores
 if [ "${ARCH}" = "aarch64" ]; then
   LIBRETRO_CORES+=" duckstation-lr flycast2021-lr ppsspp-lr"
-  PKG_EMUS+=" box64 portmaster"
+  PKG_EMUS+="box64 portmaster"
 fi
 
 ### Emulators or cores for specific devices
@@ -34,50 +34,50 @@ case "${DEVICE}" in
   H700|RK3326)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" mednafen"
+    PKG_EMUS+="mednafen"
     ;;
   RK3399)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" dolphin-sa mednafen"
+    PKG_EMUS+="mednafen"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   RK3566|RK3576)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    PKG_EMUS+=" dolphin-sa mednafen"
+    PKG_EMUS+="mednafen"
     LIBRETRO_CORES+=" dolphin-lr"
     ;;
   RK3588)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" dolphin-sa mednafen"
+    PKG_EMUS+="mednafen"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM6115)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" dolphin-sa mednafen armsx2-sa"
+    PKG_EMUS+="mednafen armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8250)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" dolphin-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
+    PKG_EMUS+="mednafen rpcs3-sa xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8550)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 gpsp-lr pcsx_rearmed-lr"
-    PKG_EMUS+=" ares-sa dolphin-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
+    PKG_EMUS+="ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   SM8650|SM8750)
-    PKG_EMUS+=" ares-sa dolphin-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
+    PKG_EMUS+="ares-sa gopher64-sa mednafen rpcs3-sa xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   S922X)
     [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86 pcsx_rearmed-lr"
-    PKG_EMUS+=" dolphin-sa duckstation-sa armsx2-sa"
+    PKG_EMUS+="duckstation-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
     ;;
   AMD64)
-    PKG_EMUS+=" ares-sa dolphin-sa gopher64-sa mednafen xemu-sa armsx2-sa"
+    PKG_EMUS+="ares-sa gopher64-sa mednafen xemu-sa armsx2-sa"
     LIBRETRO_CORES+=" beetle-psx-lr bsnes-lr bsnes-hd-lr dolphin-lr"
 esac
 
@@ -403,10 +403,7 @@ makeinstall_target() {
   ### Nintendo GameCube
   case ${DEVICE} in
     RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
-      add_emu_core gamecube dolphin dolphin-sa-gc true
-      add_emu_core gamecube dolphin dolphin-qt-gc false
-      add_emu_core gamecube retroarch dolphin false
-      install_script "Start Dolphin.sh"
+      add_emu_core gamecube retroarch dolphin true
       add_es_system gamecube
       ;;
   esac
@@ -414,9 +411,7 @@ makeinstall_target() {
   ### Nintendo Triforce
   case ${DEVICE} in
     RK3399|SM6115|SM8250|SM8550|SM8650|SM8750|AMD64)
-      add_emu_core triforce dolphin dolphin-sa-gc true
-      add_emu_core triforce dolphin dolphin-qt-gc false
-      install_script "Start Dolphin.sh"
+      add_emu_core triforce retroarch dolphin true
       add_es_system triforce
       ;;
   esac
@@ -424,12 +419,8 @@ makeinstall_target() {
   ### Nintendo Wii/ware
   case ${DEVICE} in
     RK3399|RK3576|RK3566|RK3588|SM6115|SM8250|SM8550|SM8650|SM8750|S922X|AMD64)
-      add_emu_core wii dolphin dolphin-sa-wii true
-      add_emu_core wiiware dolphin dolphin-sa-wii true
-      add_emu_core wii dolphin dolphin-qt-wii false
-      add_emu_core wiiware dolphin dolphin-qt-wii false
-      add_emu_core wii retroarch dolphin false
-      add_emu_core wiiware retroarch dolphin false
+      add_emu_core wii retroarch dolphin true
+      add_emu_core wiiware retroarch dolphin true
       add_es_system wii
       add_es_system wiiware
       ;;
