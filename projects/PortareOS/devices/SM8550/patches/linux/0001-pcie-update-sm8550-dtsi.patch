@@ -1,3 +1,19 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] pcie: bind the sm8550 pcie0 phy to the root port
+
+Move phys from the pcie0 controller node onto its root port and drop
+phy-names, so the controller driver does not claim the PHY itself.
+
+Only pcie0 is described here. pcie1 carried the same change plus a
+pcie1_port0 label, and both went with the AYANEO device trees: nothing
+this fork builds enables pcie1, and nothing refers to that label any
+more.
+
+On the Nova pcie0 is the WLAN link, so this is the half that matters -
+and the half to reach for first if PCIe or wifi misbehaves after a
+kernel bump, since dropping phy-names means the qcom-pcie driver looks
+up a PHY it will never find.
+
 diff --git a/arch/arm64/boot/dts/qcom/sm8550.dtsi b/arch/arm64/boot/dts/qcom/sm8550.dtsi
 index 912525e9bca6..a8eccaebcf2d 100644
 --- a/arch/arm64/boot/dts/qcom/sm8550.dtsi
@@ -21,34 +37,5 @@ index 912525e9bca6..a8eccaebcf2d 100644
  			};
  		};
  
-@@ -2213,9 +2212,6 @@ &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
- 
- 			power-domains = <&gcc PCIE_1_GDSC>;
- 
--			phys = <&pcie1_phy>;
--			phy-names = "pciephy";
--
- 			operating-points-v2 = <&pcie1_opp_table>;
- 
- 			status = "disabled";
-@@ -2288,7 +2284,7 @@ opp-32000000-4 {
- 				};
- 			};
- 
--			pcie@0 {
-+			pcie1_port0: pcie@0 {
- 				device_type = "pci";
- 				reg = <0x0 0x0 0x0 0x0 0x0>;
- 				bus-range = <0x01 0xff>;
-@@ -2296,6 +2292,8 @@ pcie@0 {
- 				#address-cells = <3>;
- 				#size-cells = <2>;
- 				ranges;
-+
-+				phys = <&pcie1_phy>;
- 			};
- 		};
- 
-
 -- 
 2.34.1
