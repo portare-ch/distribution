@@ -15,11 +15,19 @@ name: Runner throughput
 # the arm64 build container that moving would require. If it is not, the idea
 # dies here having cost twenty minutes.
 #
+# The first pass compiled xz, which finished in four and five seconds - far
+# inside the noise, and no answer at all. This one uses two workloads that
+# each run for minutes: ffmpeg for C and abseil for C++, the latter because
+# the stages that dominate our critical path (LLVM, RetroArch, the emulators)
+# are template-heavy C++ and need not scale like C does.
+#
 # Deliberately does not use our build container: that image is amd64 only, so
 # on an arm64 runner it would run under qemu and measure emulation instead of
-# the machine. This compiles a fixed upstream tarball with the distro
-# toolchain on both runners, which is the closest honest comparison available
-# without porting the container first.
+# the machine. This compiles fixed upstream tarballs with the distro toolchain
+# on both runners, which is the closest honest comparison available without
+# porting the container first. ffmpeg is configured with --disable-x86asm so
+# that both runners compile the same C and neither gets a hand-written-assembly
+# advantage the other cannot have.
 
 on:
   workflow_dispatch:
@@ -31,40 +39,59 @@ jobs:
       matrix:
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - name: What are we standing on
         run: |
-          echo "runner:  ${{ matrix.runner }}"
-          echo "arch:    $(uname -m)"
-          echo "nproc:   $(nproc)"
-          echo "memory:  $(free -g | awk '/^Mem:/{print $2}') GiB"
+          echo "fact runner ${{ matrix.runner }}"
+          echo "fact arch $(uname -m)"
+          echo "fact nproc $(nproc)"
+          echo "fact memory $(free -g | awk '/^Mem:/{print $2}')GiB"
           # model name is absent on arm64; the implementer/part pair is the
           # equivalent and says which Neoverse core this is
-          grep -m1 -E 'model name|Model|CPU implementer' /proc/cpuinfo || true
-          grep -m1 -E 'CPU part' /proc/cpuinfo || true
-          gcc --version | head -1
+          echo "fact cpu $(grep -m1 -E 'model name|CPU part' /proc/cpuinfo | cut -d: -f2-)"
+          echo "fact gcc $(gcc -dumpfullversion)"
 
-      - name: Fetch a fixed workload
+      - name: Fetch workloads
         run: |
-          # xz: small enough to finish quickly, real autotools C, and pinned so
-          # both runners compile byte-identical source
-          curl -sSfL --max-time 300 \
-            https://github.com/tukaani-project/xz/releases/download/v5.6.3/xz-5.6.3.tar.gz \
-            -o xz.tar.gz
-          sha256sum xz.tar.gz
-          tar xf xz.tar.gz
+          curl -sSfL --max-time 600 \
+            https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n7.1.tar.gz \
+            -o ffmpeg.tar.gz
+          curl -sSfL --max-time 600 \
+            https://github.com/abseil/abseil-cpp/releases/download/20240722.0/abseil-cpp-20240722.0.tar.gz \
+            -o abseil.tar.gz
+          sha256sum ffmpeg.tar.gz abseil.tar.gz
+          tar xf ffmpeg.tar.gz
+          tar xf abseil.tar.gz
 
       - name: Configure (not timed)
-        working-directory: xz-5.6.3
-        run: ./configure --disable-shared >/dev/null
-
-      - name: Compile, timed
-        working-directory: xz-5.6.3
         run: |
-          make clean >/dev/null 2>&1 || true
+          cd FFmpeg-n7.1
+          ./configure --disable-doc --disable-x86asm --disable-autodetect >/dev/null
+          cd ../abseil-cpp-20240722.0
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=17 -DABSL_BUILD_TESTING=OFF >/dev/null
+
+      - name: Compile C (ffmpeg), timed
+        id: c
+        run: |
+          cd FFmpeg-n7.1
           start=$(date +%s)
           make -j"$(nproc)" >/dev/null
-          end=$(date +%s)
-          echo "::notice title=${{ matrix.runner }}::compile $((end-start))s on $(nproc) cores, $(uname -m)"
-          echo "RESULT ${{ matrix.runner }} $(uname -m) cores=$(nproc) seconds=$((end-start))"
+          echo "seconds=$(( $(date +%s) - start ))" >> "${GITHUB_OUTPUT}"
+
+      - name: Compile C++ (abseil), timed
+        id: cxx
+        run: |
+          cd abseil-cpp-20240722.0
+          start=$(date +%s)
+          cmake --build build -j"$(nproc)" >/dev/null
+          echo "seconds=$(( $(date +%s) - start ))" >> "${GITHUB_OUTPUT}"
+
+      - name: Report
+        run: |
+          line="${{ matrix.runner }} $(uname -m) cores=$(nproc)"
+          line="${line} c=${{ steps.c.outputs.seconds }}s"
+          line="${line} cxx=${{ steps.cxx.outputs.seconds }}s"
+          echo "::notice title=throughput::${line}"
+          echo "${line}" >> "${GITHUB_STEP_SUMMARY}"
