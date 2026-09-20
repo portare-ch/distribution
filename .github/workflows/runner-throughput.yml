@@ -1,0 +1,70 @@
+name: Runner throughput
+
+# Is an arm64 runner worth moving the build onto?
+#
+# The usual argument - "native aarch64 means no cross-compiling" - does not
+# survive contact with this tree. The toolchain stage builds LLVM and a
+# toolchain, and compiling LLVM costs the same whether the host is x86_64 or
+# aarch64. Nothing here runs under qemu today, so there is no emulation
+# overhead to remove either. Going native, on its own, saves nothing.
+#
+# The question worth asking is narrower and purely empirical: for the kind of
+# work this build actually does - parallel C and C++ compilation - is a
+# GitHub arm64 runner faster per wall-clock second than the x86_64 one? If it
+# is, that applies to every stage, not just the toolchain, and would justify
+# the arm64 build container that moving would require. If it is not, the idea
+# dies here having cost twenty minutes.
+#
+# Deliberately does not use our build container: that image is amd64 only, so
+# on an arm64 runner it would run under qemu and measure emulation instead of
+# the machine. This compiles a fixed upstream tarball with the distro
+# toolchain on both runners, which is the closest honest comparison available
+# without porting the container first.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bench:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    steps:
+      - name: What are we standing on
+        run: |
+          echo "runner:  ${{ matrix.runner }}"
+          echo "arch:    $(uname -m)"
+          echo "nproc:   $(nproc)"
+          echo "memory:  $(free -g | awk '/^Mem:/{print $2}') GiB"
+          # model name is absent on arm64; the implementer/part pair is the
+          # equivalent and says which Neoverse core this is
+          grep -m1 -E 'model name|Model|CPU implementer' /proc/cpuinfo || true
+          grep -m1 -E 'CPU part' /proc/cpuinfo || true
+          gcc --version | head -1
+
+      - name: Fetch a fixed workload
+        run: |
+          # xz: small enough to finish quickly, real autotools C, and pinned so
+          # both runners compile byte-identical source
+          curl -sSfL --max-time 300 \
+            https://github.com/tukaani-project/xz/releases/download/v5.6.3/xz-5.6.3.tar.gz \
+            -o xz.tar.gz
+          sha256sum xz.tar.gz
+          tar xf xz.tar.gz
+
+      - name: Configure (not timed)
+        working-directory: xz-5.6.3
+        run: ./configure --disable-shared >/dev/null
+
+      - name: Compile, timed
+        working-directory: xz-5.6.3
+        run: |
+          make clean >/dev/null 2>&1 || true
+          start=$(date +%s)
+          make -j"$(nproc)" >/dev/null
+          end=$(date +%s)
+          echo "::notice title=${{ matrix.runner }}::compile $((end-start))s on $(nproc) cores, $(uname -m)"
+          echo "RESULT ${{ matrix.runner }} $(uname -m) cores=$(nproc) seconds=$((end-start))"
