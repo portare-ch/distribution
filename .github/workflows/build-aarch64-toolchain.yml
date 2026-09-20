@@ -50,7 +50,7 @@ jobs:
       - name: Retrieve ccache
         run: |
           URL="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache/ccache-aarch64-${{ inputs.DEVICE }}-toolchain.tar"
-          curl -L --fail --silent --show-error "$URL" | tar -xvf - || echo "Cache archive not found, skipping."            
+          .github/scripts/retrieve-ccache.sh "$URL" "aarch64-toolchain"
 
       # This stage has no upstream artifact to gate on, so it gates on the
       # recipes instead: the archive records which packages it built and a

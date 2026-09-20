@@ -50,7 +50,7 @@ jobs:
       - name: Retrieve ccache
         run: |
           URL="https://github.com/${{ github.repository_owner }}/${{ vars.CACHE_REPO || 'distribution-cache' }}/releases/download/ccache/ccache-aarch64-${{ inputs.DEVICE }}-mame.tar"
-          curl -L --fail --silent --show-error "$URL" | tar -xvf - || echo "Cache archive not found, skipping."
+          .github/scripts/retrieve-ccache.sh "$URL" "aarch64-mame-lr"
 
       - name: Download aarch64-toolchain (${{ inputs.DEVICE }})
         uses: actions/download-artifact@v8
