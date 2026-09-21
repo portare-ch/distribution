@@ -12,8 +12,16 @@
 
 # TARGET_CPU:
 # generic cortex-a35 cortex-a53 cortex-a55 cortex-a57 cortex-a72
-# cortex-a76 exynos-m1 qdf24xx thunderx xgene1 cortex-a57.cortex-a53
-# cortex-a72.cortex-a53 cortex-a76.cortex-a55
+# cortex-a76 cortex-a77 cortex-a710 cortex-x3 cortex-x4 exynos-m1
+# qdf24xx thunderx xgene1 cortex-a57.cortex-a53 cortex-a72.cortex-a53
+# cortex-a75.cortex-a55 cortex-a76.cortex-a55
+#
+# SM8550 sets cortex-x3, which selects armv9-a below. The SoC is
+# heterogeneous - one X3, two A715, two A710, three A510 - and there is no
+# GCC tuning pair for that shape, so -mtune names the prime core while
+# -march has to stay inside what the *smallest* core implements. The A510
+# is ARMv9.0-A, so armv9-a is right; the optional feature list the device
+# appends to it is the part worth checking against real hardware.
 
 # determine architecture's family
   case $TARGET_CPU in
@@ -41,6 +49,14 @@
 # setup ARCH specific *FLAGS
   TARGET_CFLAGS="-march=${TARGET_VARIANT}${TARGET_CPU_FLAGS} -mabi=lp64 -Wno-psabi -mtune=$TARGET_CPU"
 # Disable runtime checking support of ARMv8.0's optional LSE feature. Breaks gdb and mesa compile.
+# Inert on anything armv8.1-a or later, where LSE is architectural and gcc
+# emits it directly - so it does nothing at all for SM8550's armv9-a. Kept
+# for the armv8-a devices, where it is the flag its comment describes.
   TARGET_CFLAGS="${TARGET_CFLAGS} -mno-outline-atomics"
   TARGET_LDFLAGS=""
-  TARGET_ARCH_GCC_OPTS="--with-abi=lp64 --with-arch=${TARGET_VARIANT}${TARGET_CPU_FLAGS}"
+  # --with-tune as well as --with-arch, so the compiler's *built-in* default
+  # matches the device rather than "generic". TARGET_CFLAGS already carries
+  # -mtune, but a package whose build system replaces CFLAGS rather than
+  # appending to them loses it, and those fall back on whatever gcc was
+  # configured with. This costs nothing and removes that cliff.
+  TARGET_ARCH_GCC_OPTS="--with-abi=lp64 --with-arch=${TARGET_VARIANT}${TARGET_CPU_FLAGS} --with-tune=${TARGET_CPU}"
