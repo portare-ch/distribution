@@ -2,16 +2,18 @@
 # Copyright (C) 2009-2016 Stephan Raue (stephan@openelec.tv)
 # Copyright (C) 2018-present Team LibreELEC (https://libreelec.tv)
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
-PKG_NAME="xz"
-PKG_VERSION="5.8.1"
-PKG_SHA256="0b54f79df85912504de0b14aec7971e3f964491af1812d83447005807513cd9e"
-PKG_LICENSE="GPL"
-PKG_SITE="https://tukaani.org/xz/"
-PKG_URL="https://github.com/tukaani-project/xz/releases/download/v${PKG_VERSION}/${PKG_NAME}-${PKG_VERSION}.tar.xz"
+# Inherit PKG_VERSION, PKG_SHA256 and PKG_URL rather than restating them.
+# This override sat on 5.8.1 while the global recipe carried 5.8.3, which
+# is a poor place to be behind: xz unpacks every source tarball in the
+# build, and is the most scrutinised supply-chain package in the tree.
+. ${ROOT}/packages/compress/xz/package.mk
+
+# What follows is this fork's build configuration, which differs from the
+# global recipe's and is the reason this override exists at all.
 PKG_DEPENDS_HOST="ccache:host"
 PKG_DEPENDS_TARGET="toolchain"
-PKG_LONGDESC="A free general-purpose data compression software with high compression ratio."
 PKG_BUILD_FLAGS="+pic +pic:host"
 PKG_TOOLCHAIN="configure"
 
