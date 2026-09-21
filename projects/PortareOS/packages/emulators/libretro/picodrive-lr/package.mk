@@ -2,7 +2,7 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="picodrive-lr"
-PKG_VERSION="733c711a477a642fd2006d5a7a581b2790ec36b4"
+PKG_VERSION="ab021146b70eef7ec0ac2afe06a94e9b4c16ef74"
 PKG_LICENSE="MAME"
 PKG_SITE="https://github.com/libretro/picodrive"
 PKG_URL="${PKG_SITE}.git"
