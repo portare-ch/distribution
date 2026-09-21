@@ -2,12 +2,20 @@
 # Copyright (C) 2009-2016 Stephan Raue (stephan@openelec.tv)
 # Copyright (C) 2018-present Team LibreELEC (https://libreelec.tv)
 
+# Inherit PKG_VERSION, PKG_SHA256 and PKG_URL from the global recipe
+# rather than restating them, so this cannot drift behind it again.
+# This override exists for daemons/001-ssh, which reads the ssh.enabled
+setting and seeds authorized_keys, and for an sshd.service that creates
+/storage/.cache/ssh and fixes key permissions before start. The global
+recipe already passes --with-keydir=/storage/.cache/ssh and carries the
+patch that makes it work, so the build configuration is inherited whole.
+
+--with-ssl-engine is gone with the rest: the global recipe builds
+--without, OpenSSL is 3.6 here, and the ENGINE API it enables is
+deprecated with nothing on this device using it.
+. ${ROOT}/packages/network/openssh/package.mk
 PKG_NAME="openssh"
-PKG_VERSION="9.8p1"
-PKG_SHA256="dd8bd002a379b5d499dfb050dd1fa9af8029e80461f4bb6c523c49973f5a39f3"
-PKG_LICENSE="OSS"
 PKG_SITE="https://www.openssh.com/"
-PKG_URL="https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/${PKG_NAME}-${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain openssl zlib"
 PKG_LONGDESC="An open re-implementation of the SSH package."
 PKG_TOOLCHAIN="autotools"
