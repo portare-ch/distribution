@@ -1,14 +1,22 @@
+Ozone draws its notification widgets at the scale the display DPI suggests,
+which on a 1280x960 four-inch panel is too small to read at arm's length.
+
+This cannot move to menu_widget_scale_factor: that setting is applied inside
+gfx_display_get_dpi_scale() for every menu driver at once, and the call site
+below is now shared by every driver that is not XMB. The multiplier has to be
+gated on the driver, and there is no per-driver widget scale setting upstream.
+
 diff --git a/gfx/gfx_widgets.c b/gfx/gfx_widgets.c
-index 29e956763e..3caec1f48d 100644
 --- a/gfx/gfx_widgets.c
 +++ b/gfx/gfx_widgets.c
-@@ -931,6 +931,9 @@ void gfx_widgets_iterate(
+@@ -1224,7 +1224,10 @@ static void gfx_widgets_update_layout(
+       scale_factor                  = gfx_display_get_dpi_scale(
              p_disp,
              settings, width, height, fullscreen, true);
- 
-+      if (p_disp->menu_driver_id == MENU_DRIVER_ID_OZONE)
-+         scale_factor = scale_factor * 1.500f;
+
++   if (p_disp->menu_driver_id == MENU_DRIVER_ID_OZONE)
++      scale_factor                  = scale_factor * 1.500f;
 +
-    /* Check whether screen dimensions or menu scale
-     * factor have changed */
-    if ((scale_factor != p_dispwidget->last_scale_factor) ||
+    /* Check whether screen dimensions, menu scale factor or the
+     * notification font have changed. The font is watched here rather
+     * than from a settings callback because the rebuild needs the
