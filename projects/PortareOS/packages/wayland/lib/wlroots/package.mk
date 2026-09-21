@@ -4,9 +4,12 @@
 PKG_NAME="wlroots"
 PKG_LICENSE="MIT"
 PKG_SITE="https://gitlab.freedesktop.org/wlroots/wlroots/"
-PKG_DEPENDS_TARGET="toolchain libinput libxkbcommon pixman libdrm wayland wayland-protocols seatd xwayland hwdata:host libxcb xcb-util-wm"
+PKG_DEPENDS_TARGET="toolchain libinput libxkbcommon pixman libdrm wayland wayland-protocols seatd xwayland hwdata:host libxcb xcb-util-wm lcms2"
 PKG_LONGDESC="A modular Wayland compositor library"
 PKG_TOOLCHAIN="meson"
+
+# Set only by the branch whose wlroots is new enough to know the option.
+WLROOTS_COLOR_OPTS=""
 
 case ${DEVICE} in
   RK3326|RK3566|RK3576|S922X)
@@ -22,9 +25,18 @@ case ${DEVICE} in
     PKG_URL="https://github.com/rocknix/rockchip-wlroots/archive/refs/tags/${PKG_VERSION}.tar.gz"
     ;;
   *)
-    PKG_VERSION="0.19.3"
-    PKG_SHA256="a6ff89b64ea15e424d1b0db4a22145fccf5ec2ff2e7b8af0fa35e2ac8975986f"
+    PKG_VERSION="0.20.2"
+    PKG_SHA256="972c7ac44b17828f4702bfae7cd8347346a3fb5b2c1076cfa2c3fcedac5ec343"
     PKG_URL="${PKG_SITE}/-/archive/${PKG_VERSION}/wlroots-${PKG_VERSION}.tar.gz"
+    # Colour management arrived as a meson option in 0.20 and is backed by
+    # lcms2. Its default is "auto", which quietly compiles color_fallback.c
+    # instead when lcms2 is missing - a build that succeeds and advertises
+    # the protocol while doing nothing with it. Ask for it explicitly so a
+    # missing lcms2 is a build failure rather than a silent downgrade.
+    #
+    # Only in this branch: the two -rk forks above are 0.17 and 0.19, where
+    # the option does not exist and passing it would fail configure.
+    WLROOTS_COLOR_OPTS="-Dcolor-management=enabled"
     ;;
 esac
 
@@ -40,7 +52,8 @@ PKG_MESON_OPTS_TARGET="-Dxcb-errors=disabled \
                        -Dxwayland=enabled \
                        -Dexamples=false \
                        -Drenderers=gles2 \
-                       -Dbackends=drm,libinput"
+                       -Dbackends=drm,libinput \
+                       ${WLROOTS_COLOR_OPTS}"
 
 unpack() {
   mkdir -p ${PKG_BUILD}
