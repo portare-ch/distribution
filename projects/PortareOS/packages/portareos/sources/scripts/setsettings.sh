@@ -700,6 +700,21 @@ function set_ra_refresh_rate() {
             RATE=$(echo "${MODE}" | tr -cd '[[:digit:]].')
         ;;
     esac
+
+    # Leaving the rate unstated is not a neutral outcome. add_setting deletes
+    # the key from the persistent config and supplies the value through the
+    # appendconfig instead, so the first run that answers strips
+    # video_refresh_rate from retroarch.cfg for good. A later run that cannot
+    # answer -- wlr-randr with no compositor to ask, or a display_mode with no
+    # digits in it -- then writes nothing over a key that is already gone, and
+    # RetroArch falls back to its own default of 60 Hz on a 120 Hz panel. With
+    # black frame insertion on that is the flicker. Fall back to the rate the
+    # image shipped rather than say nothing.
+    if [ -z "${RATE}" ]; then
+        RATE=$(awk -F'"' '/^video_refresh_rate/ { print $2; exit }' \
+               /usr/config/retroarch/retroarch.cfg 2>/dev/null)
+    fi
+
     if [ -n "${RATE}" ]; then
         add_setting "none" "video_refresh_rate" "${RATE}"
 
