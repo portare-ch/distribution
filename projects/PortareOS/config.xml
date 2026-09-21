@@ -1,11 +1,17 @@
 <portareos>
+  <!--
+    One entry, because there is one device. Each <file> here becomes a dtb
+    make target, a GRUB menu entry, a matching RECOVERY entry, and a line in
+    the fdtdump model-detection block, so seven entries meant seven device
+    trees built and fourteen boot menu entries shipped on a handheld that can
+    only be a Nova.
+
+    qcs8550-retroidpocket-rp6.dts and qcs8550-ayn-common.dtsi stay in
+    devices/SM8550/linux/dts/qcom even though neither is listed here: the Nova
+    tree is a thin override that includes rp6.dts, which in turn includes
+    ayn-common.dtsi. They are the base of our device tree, not other devices'.
+  -->
   <SM8550 mkimage_options="abl" dtb_prefix="qcom">
-    <file short="odin2" full="AYN Odin2">qcs8550-ayn-odin2</file>
-    <file short="odin2portal" full="AYN Odin2 Portal">qcs8550-ayn-odin2portal</file>
-    <file short="odin2mini" full="AYN Odin2 Mini">qcs8550-ayn-odin2mini</file>
-    <file short="thor" full="AYN Thor">qcs8550-ayn-thor</file>
-    <file short="rp6" full="Retroid Pocket 6">qcs8550-retroidpocket-rp6</file>
-    <file short="rp6dpad" full="Retroid Pocket 6 TOP-DPAD">qcs8550-retroidpocket-rp6-top-dpad</file>
     <file short="rpnova" full="Retroid Pocket Nova">qcs8550-retroidpocket-rpnova</file>
   </SM8550>
 </portareos>
