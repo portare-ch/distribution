@@ -67,4 +67,17 @@ pre_configure_target() {
 makeinstall_target() {
   mkdir -p ${INSTALL}/usr/lib/libretro
     cp -a ${PKG_BUILD}/.${TARGET_NAME}/dolphin_libretro.so ${INSTALL}/usr/lib/libretro
+
+  # Dolphin's Sys tree - codehandler.bin, the GC and Wii data, GameSettings,
+  # Profiles, Resources and Shaders. The core cannot start a game without it
+  # and says so as "core file codehandler.bin missing!".
+  #
+  # The standalone package used to install this and was dropped in favour of
+  # this core, which never did, so it went missing with it.
+  #
+  # Boot.cpp looks for it at <system_directory>/dolphin-emu/Sys, which is on
+  # /storage and therefore not something a read-only rootfs can populate -
+  # tmpfiles.d/z_06_dolphin.conf links it there at boot.
+  mkdir -p ${INSTALL}/usr/share/dolphin-emu
+    cp -a ${PKG_BUILD}/Data/Sys ${INSTALL}/usr/share/dolphin-emu/Sys
 }
