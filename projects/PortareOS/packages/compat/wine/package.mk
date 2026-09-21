@@ -2,8 +2,8 @@
 # Copyright (C) 2024-present JELOS (https://github.com/JustEnoughLinuxOS)
 
 PKG_NAME="wine"
-PKG_VERSION="11.0"
-PKG_SHA256="632f2c8e9150841c26d277000e76b82c425cd4564bfb050780705b9d37b2567f"
+PKG_VERSION="11.18"
+PKG_SHA256="5717663b0541afe99efee507e1eac88d452b8adff0d3a5065abeed527890a3e8"
 PKG_LICENSE="MIT"
 PKG_SITE="https://github.com/Kron4ek/Wine-Builds"
 PKG_URL="${PKG_SITE}/releases/download/${PKG_VERSION}/wine-${PKG_VERSION}-amd64.tar.xz"

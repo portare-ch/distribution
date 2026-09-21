@@ -6,8 +6,8 @@ PKG_NAME="retroarch"
 # Tracks master. Upstream's newest tag is still v1.22.2 from November 2025
 # and this commit is 2009 commits past it, so "v1.22.2 + fixes" - what this
 # line used to say - understated it by about two thousand commits.
-PKG_VERSION="bdba046fa6766380bc2457532f38e589df769aaf"
-PKG_SHA256="ba14ddf6fd6712185334cce15d1fa7d36f3419195a34ae6fd6f1ade42095e94f"
+PKG_VERSION="6aa1b1b779db6f4a280ebd0b68d5c1770549660a"
+PKG_SHA256="6ef40d693241c31e1e16a551e656d95e319e5a6f25989082d027916c39776d7c"
 PKG_SITE="https://github.com/libretro/RetroArch"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
 PKG_LICENSE="GPL-3.0-or-later"

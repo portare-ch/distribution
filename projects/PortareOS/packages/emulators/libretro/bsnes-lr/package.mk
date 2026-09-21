@@ -2,8 +2,8 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="bsnes-lr"
-PKG_VERSION="b102d6d5817b25aa059b573cd3b7675f2e375fa4"
-PKG_SHA256="14b2dfe099d0456f1f9ecb1f5e0b925d55f898df0000f329339be2b84bf84bf1"
+PKG_VERSION="05439f96121d2b9d7ad7a5fc1f29d7eebdcc8c43"
+PKG_SHA256="c32b646544eae0ec2fd467f32ee9b05d0b19d9af4fc8df9c73fa43f1f915812f"
 PKG_LICENSE="GPL-3.0-or-later"
 PKG_SITE="https://github.com/libretro/bsnes-libretro"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"

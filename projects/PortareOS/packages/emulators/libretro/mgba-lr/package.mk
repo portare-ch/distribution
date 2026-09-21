@@ -2,8 +2,8 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="mgba-lr"
-PKG_VERSION="e31759b24e7a4e3899285ff720d7b573ac328ae7"
-PKG_SHA256="396d749cce8fe3358b29cbb1db479b1816a151bd688ee45b1d241503cbc40243"
+PKG_VERSION="7a12d6d4b9acb14c0ae62c9166b6a2f3d08007f6"
+PKG_SHA256="5cbf639e527fb586bf33e14d59037eab35f78f45154e0b79c784fff474c3bc37"
 PKG_LICENSE="MPL-2.0"
 PKG_SITE="https://github.com/libretro/mgba"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"

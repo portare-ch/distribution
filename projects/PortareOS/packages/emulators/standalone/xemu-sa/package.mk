@@ -2,8 +2,8 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="xemu-sa"
-PKG_VERSION="cbffb57d084c70351a596e99e32a8b73e0c5eabf"
-PKG_SHA256="fe6bfb3f1e2e3b4ed4cb028e637a530f0e813440dd4fa39c1f597c3ec08407d3"
+PKG_VERSION="f9b14039e5bb56ae2d8f028e31e7cc19f13f7e12"
+PKG_SHA256="aa37828a047fc251f66af25da00fe5300dd6235650d8cd17d218a18a551f7487"
 PKG_LICENSE="GPLv3"
 PKG_SITE="https://github.com/xemu-project/xemu"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
