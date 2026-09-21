@@ -702,7 +702,22 @@ function set_ra_refresh_rate() {
     esac
     if [ -n "${RATE}" ]; then
         add_setting "none" "video_refresh_rate" "${RATE}"
-        add_setting "none" "video_swap_interval" "0"
+
+        # Swap interval 0 means "work it out from the core's rate", which for
+        # 60 fps content on the 120 Hz panel means holding each frame for two
+        # refreshes. That is right until black frame insertion is on, and
+        # then it is exactly wrong: BFI wants to put a black frame in the
+        # gap, so it needs a frame presented on every refresh. With interval
+        # 2 the real frame occupies two refreshes and the black frame two
+        # more, which halves the real frame rate to 30 and flickers.
+        local BFI
+        BFI="$(grep -m1 '^video_black_frame_insertion' "${RETROARCH_CONFIG}" 2>/dev/null | tr -cd '[[:digit:]]')"
+        if [ -n "${BFI}" ] && [ "${BFI}" != "0" ]
+        then
+            add_setting "none" "video_swap_interval" "1"
+        else
+            add_setting "none" "video_swap_interval" "0"
+        fi
     fi
 }
 
