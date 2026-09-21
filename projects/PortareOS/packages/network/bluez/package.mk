@@ -5,8 +5,16 @@
 # Inherit PKG_VERSION, PKG_SHA256 and PKG_URL from the global recipe
 # rather than restating them, so this cannot drift behind it again.
 # Kept for the feature set below. A handheld needs a2dp, avrcp, hid and
-midi, and the global recipe builds none of them.
+# midi, and the global recipe builds none of them.
 . ${ROOT}/packages/network/bluez/package.mk
+
+# Sourcing the global recipe also brings in its post_install, which enables
+# bluetooth-defaults.service and obex.service. Neither is ours: the image
+# ships bluetooth.service alone, brought up on demand by autostart's
+# portareos-bluetooth rather than enabled at build time, and obexd is not
+# built at all because the recipe passes --disable-obex. Inheriting the
+# function only makes enable_service die on units that are not there.
+unset -f post_install
 PKG_NAME="bluez"
 PKG_SITE="http://www.bluez.org/"
 PKG_DEPENDS_TARGET="toolchain dbus glib readline systemd json-c alsa-lib ncurses"

@@ -6,8 +6,16 @@
 # Inherit PKG_VERSION, PKG_SHA256 and PKG_URL from the global recipe
 # rather than restating them, so this cannot drift behind it again.
 # Kept for the program selection below - blkdiscard and schedutils are ours,
-and the global recipe builds a different set.
+# and the global recipe builds a different set.
 . ${ROOT}/packages/sysutils/util-linux/package.mk
+
+# Sourcing the global recipe also brings in its post_install, which enables
+# swap.service. That unit is LibreELEC's swapfile mount and lives in the
+# global recipe's system.d, not ours. PortareOS does swap through
+# portareos-memory-manager, which reads the /etc/swap.conf written below, so
+# the unit is neither shipped nor wanted, and enable_service dies on a file
+# that is not there.
+unset -f post_install
 PKG_NAME="util-linux"
 PKG_DEPENDS_HOST="ccache:host autoconf:host automake:host intltool:host libtool:host pkg-config:host"
 PKG_DEPENDS_TARGET="toolchain"
