@@ -8,7 +8,7 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
-PKG_EMUS="moonlight scummvmsa wine"
+PKG_EMUS="moonlight scummvmsa"
 
 EMUS_32BIT=""
 
@@ -490,9 +490,6 @@ makeinstall_target() {
   add_emu_core ports portmaster portmaster true
   add_es_system ports
 
-  ### Windows
-  add_emu_core windows wine wine true
-  add_es_system windows
 
   # Note - there is actually no ffmpeg core, it is compiled into retroarch
   add_emu_core mplayer retroarch ffmpeg true
