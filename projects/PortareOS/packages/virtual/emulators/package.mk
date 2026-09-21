@@ -8,7 +8,7 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
-PKG_EMUS="moonlight ppsspp-sa scummvmsa wine"
+PKG_EMUS="moonlight scummvmsa wine"
 
 EMUS_32BIT=""
 
@@ -17,6 +17,7 @@ PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-
 LIBRETRO_CORES=" fbneo-lr flycast-lr gambatte-lr genesis-plus-gx-lr mgba-lr neocd_lr parallel-n64-lr picodrive-lr snes9x-lr swanstation-lr"
 
 if [ "${ARCH}" = "aarch64" ]; then
+  LIBRETRO_CORES+=" ppsspp-lr"
   PKG_EMUS+=" box64 portmaster"
 fi
 
@@ -343,12 +344,12 @@ makeinstall_target() {
   esac
 
   ### Sony Playstation Portable
-  add_emu_core psp ppsspp ppsspp-sa true
+  add_emu_core psp retroarch ppsspp true
   add_es_system psp
   install_script "Start PPSSPP.sh"
 
   ### Sony Playstation Portable Minis
-  add_emu_core pspminis ppsspp ppsspp-sa true
+  add_emu_core pspminis retroarch ppsspp true
   add_es_system pspminis
 
   ### ScummVM
