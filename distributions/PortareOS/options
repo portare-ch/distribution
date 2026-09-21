@@ -133,7 +133,12 @@
   GRAPHIC_DRIVERS=""
 
 # build and install remote support (yes / no)
-  REMOTE_SUPPORT="yes"
+# Off: this is infrared remote control and Video4Linux tooling - lirc,
+# libirman, v4l-utils and evrepeat. The Nova has no IR receiver, no IR
+# blaster, no camera and no tuner, and nothing in the tree drives any of
+# them. Game input is evdev through SDL and inputplumber, which is
+# unrelated.
+  REMOTE_SUPPORT="no"
 
 # build and install Joystick support (yes / no)
   JOYSTICK_SUPPORT="yes"
