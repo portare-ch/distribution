@@ -31,7 +31,7 @@ about performance, with the tests to tell whether it worked, is in
 
 This fork has diverged deliberately and does not track upstream closely.
 
-Everything that is not SM8550 has been removed from the tree: the other twelve device projects, the per-device configuration, patches and hardware quirks that packages carried for every other handheld, the weston compositor path, the nine non-ROCKNIX hardware projects inherited from the LibreELEC lineage, the LEIoT and LibreELEC distributions, Kodi, and the unbuilt addon set. Two things are deliberately still there: `case ${DEVICE}` branches inside recipes shared with upstream, because they are inert with only one device and editing them would conflict on every import, and the other SM8550 device trees, which are tracked in [#9](https://github.com/portare-ch/distribution/issues/9). The in-tree identifiers are renamed to PortareOS, and [emulationstation-next](https://github.com/portare-ch/emulationstation-next) is built from a fork rather than from ROCKNIX's copy.
+Everything that is not SM8550 has been removed from the tree: the other twelve device projects, the per-device configuration, patches and hardware quirks that packages carried for every other handheld, the weston compositor path, the nine non-ROCKNIX hardware projects inherited from the LibreELEC lineage, the LEIoT and LibreELEC distributions, Kodi, and the unbuilt addon set. Two things are deliberately still there: `case ${DEVICE}` branches inside recipes shared with upstream, because they are inert with only one device and editing them would conflict on every import, and the other SM8550 device trees, which are tracked in [#9](https://github.com/portare-ch/distribution/issues/9). The in-tree identifiers are renamed to PortareOS, and [emulationstation-sdl3](https://github.com/portare-ch/emulationstation-sdl3) is built from a fork rather than from ROCKNIX's copy.
 
 The practical consequence is that merging from upstream now takes real work, and that is an accepted trade. Individual fixes here may still be worth offering upstream on their own; the tree as a whole is not.
 
@@ -70,11 +70,20 @@ frames (20ms) this fork inherited.
 
 ### EmulationStation rewritten for it
 
-[emulationstation-next](https://github.com/portare-ch/emulationstation-next) is
-built from a fork. `VolumeControl` was ALSA and PulseAudio side by side, wrapped
-in `__APPLE__` and `WIN32` branches for platforms this will never run on. It is
-now one native libpipewire implementation that binds the default sink through
-the registry and sets `channelVolumes` directly.
+[emulationstation-sdl3](https://github.com/portare-ch/emulationstation-sdl3) is
+built from a fork, and the name says what the fork is for: it runs on SDL3
+rather than SDL2, and it talks to PipeWire directly.
+
+The SDL3 half is not a version bump. SDL3 inverted the return convention of
+most of its API — `SDL_Init` and friends return true on success where SDL2
+returned zero — so every call site had to be read rather than recompiled. A
+missed one is not a compile error, it is a black screen on a device that still
+answers SSH.
+
+The PipeWire half replaced `VolumeControl`, which was ALSA and PulseAudio side
+by side, wrapped in `__APPLE__` and `WIN32` branches for platforms this will
+never run on. It is now one native libpipewire implementation that binds the
+default sink through the registry and sets `channelVolumes` directly.
 
 Video playback moved from VLC to libmpv's software render API, and the gettext
 translation layer is gone.
