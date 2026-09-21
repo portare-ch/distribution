@@ -78,6 +78,13 @@ then
 fi
 cp -f /usr/config/retroarch/retroarch.cfg /storage/.config/retroarch/retroarch.cfg
 
+# The per-core overrides have the same problem: nothing copied them either,
+# so an override added to the image - PPSSPP's, most recently - never
+# reached a device that already had a config directory. No --delete: these
+# are keyed by core name, so anything here for a core we no longer ship is
+# inert, and deleting would take a user's own overrides with it.
+rsync -a /usr/config/retroarch/config/ /storage/.config/retroarch/config/ 2>/dev/null
+
 ### Apply developer ssh keys if they exist
 echo "Apply dev keys if available..." >>${LOG}
 if [ -e /usr/config/ssh/authorized_keys ]
