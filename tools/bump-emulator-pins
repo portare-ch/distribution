@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
-"""Move emulator packages forward to their upstream HEAD.
+"""Move emulator packages forward to their upstreams.
 
 Most of our emulator recipes pin a bare git commit - RetroArch, every
 libretro core, and the standalone emulators that have no useful releases -
@@ -10,17 +10,24 @@ so keeping them current is a mechanical job: read the upstream default
 branch, fetch the tarball that the new commit would produce, hash it, and
 rewrite the two lines that say so. That is what this does.
 
-It is deliberately narrow in three ways.
+Recipes pinned to a release tag move too, to the newest non-prerelease.
+That distinction is the whole reason for using /releases/latest rather
+than the tag list: ARMSX2 publishes a nightly-* prerelease most days
+alongside its real ones, and only the release endpoint knows which is
+which. Each recipe's own convention is preserved - scummvm's tag is
+v2026.3.0 while its PKG_VERSION is 2026.3.0 with the "v" in PKG_URL,
+where armsx2 uses its tag verbatim - and a tag that is not numerically
+newer than the current pin is refused, so a re-tag upstream cannot walk
+a package backwards.
 
-It only touches commit pins. A recipe pinned to a tag (armsx2 2.6.9,
-scummvm 2026.3.0) is left alone, because moving a tag can cross a major
-version and bring build-system changes with it - a decision for a person,
-not a cron job. Non-GitHub sources are skipped for want of an API.
+Non-GitHub sources are skipped for want of an API. Steam is the only one.
 
 It never writes a checksum it did not compute. The new tarball is
 downloaded and hashed here; if the download fails or the archive is
 empty, that package is reported as skipped and left untouched rather
-than being pinned to a checksum nobody verified.
+than being pinned to a checksum nobody verified. That is also what makes
+following release tags safe: if a guessed URL does not exist, the result
+is a skip line, never a bad pin.
 
 And it is opt-out: put
 
@@ -105,6 +112,16 @@ def repin(text, key, old, new):
     return out if n == 1 else None
 
 
+def vtuple(s):
+    """The numbers in a version string, for ordering releases.
+
+    "2.7" sorts above "2.6.9" because 7 > 6 at the second position, which
+    is the comparison a human makes and the one a plain string compare
+    gets wrong.
+    """
+    return tuple(int(x) for x in re.findall(r"\d+", s))
+
+
 def expand(url, name, site, version):
     for k, v in (("PKG_NAME", name), ("PKG_SITE", site), ("PKG_VERSION", version)):
         url = url.replace("${" + k + "}", v).replace("$" + k, v)
@@ -150,9 +167,6 @@ def main():
             # than one that is loudly left alone.
             skipped.append((name, "could not read PKG_VERSION/PKG_SITE/PKG_URL"))
             continue
-        if not SHA1.match(version):
-            skipped.append((name, f"pinned to a tag ({version}), left for a human"))
-            continue
         if "github.com/" not in site:
             skipped.append((name, "not a GitHub source"))
             continue
@@ -167,11 +181,24 @@ def main():
             continue
 
         repo = site.split("github.com/", 1)[1].strip("/")
+        pinned_to_tag = not SHA1.match(version)
+
         try:
-            info = api(f"https://api.github.com/repos/{repo}")
-            head = api(f"https://api.github.com/repos/{repo}/commits/"
-                       f"{info['default_branch']}")
-            new = head["sha"]
+            if pinned_to_tag:
+                # The newest non-prerelease. ARMSX2 publishes nightly-* as
+                # prereleases alongside real ones, and /releases/latest is
+                # the endpoint that already knows the difference.
+                tag = api(f"https://api.github.com/repos/{repo}"
+                          f"/releases/latest")["tag_name"]
+                # Keep the recipe's own convention. scummvm's tag is
+                # v2026.3.0 while its PKG_VERSION is 2026.3.0, and the "v"
+                # lives in PKG_URL; armsx2 uses the tag verbatim.
+                new = tag[1:] if ("v${PKG_VERSION}" in url_t
+                                  and tag.startswith("v")) else tag
+            else:
+                info = api(f"https://api.github.com/repos/{repo}")
+                new = api(f"https://api.github.com/repos/{repo}/commits/"
+                          f"{info['default_branch']}")["sha"]
         except (urllib.error.URLError, KeyError, json.JSONDecodeError) as e:
             skipped.append((name, f"upstream lookup failed: {e}"))
             continue
@@ -179,6 +206,15 @@ def main():
         if new == version:
             current += 1
             continue
+
+        # Releases can be re-tagged or published out of order, and a
+        # bump that silently walks backwards is worse than none.
+        if pinned_to_tag:
+            old_v, new_v = vtuple(version), vtuple(new)
+            if old_v and new_v and new_v <= old_v:
+                skipped.append((name, f"upstream latest ({new}) is not newer "
+                                      f"than the pin ({version})"))
+                continue
 
         digest, size = None, 0
         if tarball:
@@ -189,11 +225,15 @@ def main():
                 skipped.append((name, f"tarball not usable: {e}"))
                 continue
 
-        try:
-            cmp_ = api(f"https://api.github.com/repos/{repo}/compare/{version}...{new}")
-            ahead = cmp_.get("ahead_by", "?")
-        except Exception:                           # noqa: BLE001 - cosmetic only
-            ahead = "?"
+        if pinned_to_tag:
+            ahead = "release"
+        else:
+            try:
+                cmp_ = api(f"https://api.github.com/repos/{repo}"
+                           f"/compare/{version}...{new}")
+                ahead = cmp_.get("ahead_by", "?")
+            except Exception:                       # noqa: BLE001 - cosmetic only
+                ahead = "?"
 
         if not args.dry_run:
             out = repin(text, "PKG_VERSION", version, new)
@@ -214,12 +254,17 @@ def main():
 
     lines = []
     if bumped:
-        lines.append("| package | upstream | commits | change |")
+        lines.append("| package | upstream | advance | change |")
         lines.append("|---|---|---|---|")
         for b in bumped:
-            lines.append(
-                f"| `{b['name']}` | {b['repo']} | +{b['ahead']} | "
-                f"[`{b['old'][:8]}` → `{b['new'][:8]}`]({b['compare']}) |")
+            if b["ahead"] == "release":
+                lines.append(
+                    f"| `{b['name']}` | {b['repo']} | release | "
+                    f"[`{b['old']}` → `{b['new']}`]({b['compare']}) |")
+            else:
+                lines.append(
+                    f"| `{b['name']}` | {b['repo']} | +{b['ahead']} | "
+                    f"[`{b['old'][:8]}` → `{b['new'][:8]}`]({b['compare']}) |")
     else:
         lines.append("No pin moved. Every commit-pinned package is already at "
                      "its upstream default branch.")
