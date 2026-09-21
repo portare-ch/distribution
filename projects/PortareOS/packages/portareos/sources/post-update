@@ -60,6 +60,31 @@ tocon "Update tool modules..."
 rsync -a /usr/config/modules/* /storage/.config/modules/
 cp -f /usr/config/retroarch/retroarch-core-options.cfg /storage/.config/retroarch/retroarch-core-options.cfg
 
+# ...and retroarch.cfg itself, which was not refreshed here and so froze at
+# whatever first boot wrote. Every change the image makes to it - the video
+# driver, black frame insertion, the swap interval, run-ahead, the panel's
+# own 1280x960 geometry - reached nobody who already had a config. A device
+# updated from an older build was still on glcore at 1920x1080 with BFI off
+# while the image had shipped vulkan, 1280x960 and BFI on for weeks.
+#
+# Safe to overwrite: retroarch never writes this file back, because
+# config_save_on_exit is false, and setsettings.sh rewrites every input
+# binding in it at each launch. One copy of whatever was there is kept the
+# first time, for anyone who had hand-edited it.
+if [ -f /storage/.config/retroarch/retroarch.cfg ] && \
+   [ ! -f /storage/.config/retroarch/retroarch.cfg.pre-refresh ]
+then
+  cp /storage/.config/retroarch/retroarch.cfg /storage/.config/retroarch/retroarch.cfg.pre-refresh
+fi
+cp -f /usr/config/retroarch/retroarch.cfg /storage/.config/retroarch/retroarch.cfg
+
+# The per-core overrides have the same problem: nothing copied them either,
+# so an override added to the image - PPSSPP's, most recently - never
+# reached a device that already had a config directory. No --delete: these
+# are keyed by core name, so anything here for a core we no longer ship is
+# inert, and deleting would take a user's own overrides with it.
+rsync -a /usr/config/retroarch/config/ /storage/.config/retroarch/config/ 2>/dev/null
+
 ### Apply developer ssh keys if they exist
 echo "Apply dev keys if available..." >>${LOG}
 if [ -e /usr/config/ssh/authorized_keys ]
