@@ -1,19 +1,19 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2021-present Team LibreELEC (https://libreelec.tv)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
-PKG_NAME="sway"
-PKG_LICENSE="MIT"
-PKG_SITE="https://swaywm.org/"
-PKG_DEPENDS_TARGET="toolchain glib wayland wayland-protocols libdrm libxkbcommon libinput cairo pango libjpeg-turbo dbus json-c wlroots gdk-pixbuf swaybg foot bemenu xcb-util-wm xwayland xkbcomp xterm libthai"
-PKG_LONGDESC="i3-compatible Wayland compositor"
+# Inherit PKG_VERSION, PKG_SHA256 and PKG_URL from the global recipe rather
+# than restating them. This override sat on 1.11 while the global recipe
+# carried 1.12, which held the whole image a release behind for no reason
+# anyone had decided on - the same drift that kept iwd on 3.10 and wlroots
+# on 0.19.3.
+. ${ROOT}/packages/wayland/compositor/sway/package.mk
+
+# xwayland and the toolkit bits the global recipe leaves out, plus xkbcomp
+# and xterm, which sway expects to find at runtime.
+PKG_DEPENDS_TARGET+=" glib xwayland xkbcomp xterm libthai xcb-util-wm"
 PKG_TOOLCHAIN="meson"
 PKG_PATCH_DIRS+="${DEVICE}"
-
-PKG_VERSION="1.12"
-PKG_SHA256="a7b1becc217433c11c6284d36bcea0687b87b77b0ed26a384565292ec321f2b1"
-PKG_URL="https://github.com/swaywm/sway/releases/download/${PKG_VERSION}/sway-${PKG_VERSION}.tar.gz"
-
-# to enable xwayland package: https://gitlab.freedesktop.org/xorg/lib/libxcb-wm/-/tree/master/icccm?ref_type=heads
 
 PKG_MESON_OPTS_TARGET="-Ddefault-wallpaper=false \
                        -Dzsh-completions=false \
@@ -28,14 +28,14 @@ PKG_MESON_OPTS_TARGET="-Ddefault-wallpaper=false \
                        -Dwerror=false"
 
 # sway carries werror=true in its own meson default_options, so any warning
-# the toolchain raises is a build failure. This used to be met with an
-# exported -Wno-unused-variable, which only ever covered the warning of the
-# day; 1.12 under gcc 15.2 raised different ones and the bump had to be
-# reverted. -Dwerror=false addresses the reason rather than one symptom.
-#
-# It plausibly explains the install-side failure of that attempt too: meson
-# install rebuilds install targets, so a warning in a target outside the
-# default ninja set would only ever surface there.
+# the toolchain raises is a build failure. The global recipe meets that with
+# an exported -Wno-unused-variable, which only ever covers the warning of
+# the day. -Dwerror=false addresses the reason instead, and overrides the
+# global pre_configure_target below.
+
+pre_configure_target() {
+  :
+}
 
 post_makeinstall_target() {
   mkdir -p ${INSTALL}/usr/lib/sway
