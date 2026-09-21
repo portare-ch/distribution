@@ -5,14 +5,14 @@
 # Inherit PKG_VERSION, PKG_SHA256 and PKG_URL from the global recipe
 # rather than restating them, so this cannot drift behind it again.
 # This override exists for daemons/001-ssh, which reads the ssh.enabled
-setting and seeds authorized_keys, and for an sshd.service that creates
-/storage/.cache/ssh and fixes key permissions before start. The global
-recipe already passes --with-keydir=/storage/.cache/ssh and carries the
-patch that makes it work, so the build configuration is inherited whole.
-
---with-ssl-engine is gone with the rest: the global recipe builds
---without, OpenSSL is 3.6 here, and the ENGINE API it enables is
-deprecated with nothing on this device using it.
+# setting and seeds authorized_keys, and for an sshd.service that creates
+# /storage/.cache/ssh and fixes key permissions before start. The global
+# recipe already passes --with-keydir=/storage/.cache/ssh and carries the
+# patch that makes it work, so the build configuration is inherited whole.
+#
+# --with-ssl-engine is gone with the rest: the global recipe builds
+# --without, OpenSSL is 3.6 here, and the ENGINE API it enables is
+# deprecated with nothing on this device using it.
 . ${ROOT}/packages/network/openssh/package.mk
 PKG_NAME="openssh"
 PKG_SITE="https://www.openssh.com/"
