@@ -30,7 +30,7 @@ on:
         default: 'SM8550'
         type: string
       es_ref:
-        description: 'emulationstation-next commit or branch to build (blank = the pin in the recipe)'
+        description: 'emulationstation-sdl3 commit or branch to build (blank = the pin in the recipe)'
         required: false
         default: ''
         type: string

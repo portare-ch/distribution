@@ -54,7 +54,7 @@ screen and the buttons under a thumb can disagree about both symbol and
 position. Wanted: a configurator recording which set is fitted, covering glyph
 style (PlayStation, GameCube, Xbox, Nintendo) and layout, applied system-wide.
 
-The work is in `portare-ch/emulationstation-next`, not in a driver. ES resolves
+The work is in `portare-ch/emulationstation-sdl3`, not in a driver. ES resolves
 help glyphs through a flat table in
 `es-core/src/components/HelpComponent.cpp` mapping names to a single set of
 SVGs under `resources/help/`. There is no style switch today. RetroArch draws

@@ -318,7 +318,7 @@ is a large piece of work.
 
 ### isAvailable() is gone
 
-Removed in `emulationstation-next#12` because its only caller hid the whole
+Removed in `emulationstation-sdl3#12` because its only caller hid the whole
 VOLUME group, including two settings that have nothing to do with PipeWire.
 Noted here in case a future import expects it.
 
@@ -453,7 +453,7 @@ Three separate faults wearing one symptom, which is why it took three goes.
 3. **ES could not reach PipeWire.** `PipeWireControl` was a file-scope static,
    so its constructor ran before `main()` and before the log existed: every
    error went nowhere and a single failed connect was permanent. Fixed in
-   `emulationstation-next#12` by constructing on first use and retrying.
+   `emulationstation-sdl3#12` by constructing on first use and retrying.
 
 **Confirmed on hardware.** The overlay now appears on a hardware volume press,
 which exercises the entire chain in one go: `input_sense` to `/usr/bin/volume`
