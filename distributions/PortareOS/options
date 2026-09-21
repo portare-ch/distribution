@@ -71,7 +71,11 @@
   AVAHI_DAEMON="yes"
 
 # build with NFS support (mounting nfs shares via the OS) (yes / no)
-  NFS_SUPPORT="yes"
+# Off: the package installs mount.nfs and nothing in the image ever calls it.
+# Nothing under packages/portareos/sources mounts an NFS share, the front-end
+# has no UI for one, and there is no fstab entry. Turning this back on is one
+# word here, and brings back nfs-utils, rpcbind and libevent with it.
+  NFS_SUPPORT="no"
 
 # build with Samba Client support (mounting samba shares via the OS) (yes / no)
   SAMBA_SUPPORT="no"
