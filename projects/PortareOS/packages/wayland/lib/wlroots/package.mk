@@ -1,66 +1,38 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2021-present Team LibreELEC (https://libreelec.tv)
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
-PKG_NAME="wlroots"
-PKG_LICENSE="MIT"
-PKG_SITE="https://gitlab.freedesktop.org/wlroots/wlroots/"
-PKG_DEPENDS_TARGET="toolchain libinput libxkbcommon pixman libdrm wayland wayland-protocols seatd xwayland hwdata:host libxcb xcb-util-wm lcms2"
-PKG_LONGDESC="A modular Wayland compositor library"
-PKG_TOOLCHAIN="meson"
+# Inherit PKG_VERSION, PKG_SHA256 and PKG_URL from the global recipe rather
+# than restating them. An override that restates a version stops tracking
+# the tree it forked from, silently and forever: this one sat on 0.19.3
+# while the global recipe moved to 0.20.2, which is how sway 1.12 came to
+# fail with "Run-time dependency wlroots-0.20 found: NO" twice.
+#
+# This fork builds one device, so the three-way DEVICE case that used to
+# live here - two Rockchip vendor forks at 0.17 and 0.19 for boards we do
+# not build - is gone with it.
+. ${ROOT}/packages/wayland/lib/wlroots/package.mk
 
-# Set only by the branch whose wlroots is new enough to know the option.
-WLROOTS_COLOR_OPTS=""
+# xwayland, which the global recipe disables, and the xcb bits it needs.
+# lcms2 is what backs colour management; see the meson options below.
+PKG_DEPENDS_TARGET+=" xwayland libxcb xcb-util-wm lcms2"
 
-case ${DEVICE} in
-  RK3326|RK3566|RK3576|S922X)
-    # despite the '-rk' indication this is a wlroots version with libmali hacks
-    PKG_VERSION="0.19.3-rk"
-    PKG_SHA256="5385dc105f2c4c5fe3157e0b0299d6508765086d605fe4efe3ae437d4f18a5d9"
-    PKG_PATCH_DIRS+=" libmali"
-    PKG_URL="https://github.com/rocknix/rockchip-wlroots/archive/refs/tags/${PKG_VERSION}.tar.gz"
-    ;;
-  RK3588)
-    PKG_VERSION="0.17.4-rk"
-    PKG_SHA256="e9e1e14966c6272ca595307fa817fd0fefae96b13fe36c8084b3a7a55fed20d1"
-    PKG_URL="https://github.com/rocknix/rockchip-wlroots/archive/refs/tags/${PKG_VERSION}.tar.gz"
-    ;;
-  *)
-    PKG_VERSION="0.20.2"
-    PKG_SHA256="972c7ac44b17828f4702bfae7cd8347346a3fb5b2c1076cfa2c3fcedac5ec343"
-    PKG_URL="${PKG_SITE}/-/archive/${PKG_VERSION}/wlroots-${PKG_VERSION}.tar.gz"
-    # Colour management arrived as a meson option in 0.20 and is backed by
-    # lcms2. Its default is "auto", which quietly compiles color_fallback.c
-    # instead when lcms2 is missing - a build that succeeds and advertises
-    # the protocol while doing nothing with it. Ask for it explicitly so a
-    # missing lcms2 is a build failure rather than a silent downgrade.
-    #
-    # Only in this branch: the two -rk forks above are 0.17 and 0.19, where
-    # the option does not exist and passing it would fail configure.
-    WLROOTS_COLOR_OPTS="-Dcolor-management=enabled"
-    ;;
-esac
-
-
-configure_package() {
-  # OpenGLES Support
-  if [ "${OPENGLES_SUPPORT}" = "yes" ]; then
-    PKG_DEPENDS_TARGET+=" ${OPENGLES}"
-  fi
-}
-# to enable xwayland package: https://gitlab.freedesktop.org/xorg/lib/libxcb-wm/-/tree/master/icccm?ref_type=heads
 PKG_MESON_OPTS_TARGET="-Dxcb-errors=disabled \
                        -Dxwayland=enabled \
                        -Dexamples=false \
                        -Drenderers=gles2 \
                        -Dbackends=drm,libinput \
-                       ${WLROOTS_COLOR_OPTS}"
+                       -Dcolor-management=enabled"
 
-unpack() {
-  mkdir -p ${PKG_BUILD}
-  tar --strip-components=1 -xf ${SOURCES}/${PKG_NAME}/${PKG_NAME}-${PKG_VERSION}.tar.gz -C ${PKG_BUILD}
-}
+# Colour management arrived as an option in 0.20 and defaults to "auto",
+# which quietly compiles color_fallback.c when lcms2 is missing - a build
+# that succeeds and a compositor that advertises the protocol while doing
+# nothing with it. sway 1.12's colour management is the reason issue #161
+# is possible, so ask for it explicitly and let a missing lcms2 fail the
+# build instead of silently removing the feature.
 
 pre_configure_target() {
-  # wlroots does not build without -Wno flags as all warnings being treated as errors
+  # As the global recipe, plus -Wno-return-type, which this toolchain needs
+  # and upstream's CI does not see.
   export TARGET_CFLAGS=$(echo "${TARGET_CFLAGS} -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function -Wno-return-type")
 }
