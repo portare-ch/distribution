@@ -3,11 +3,12 @@
 # Copyright (C) 2018-present Team LibreELEC (https://libreelec.tv)
 # Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
 
+# Inherit PKG_VERSION, PKG_SHA256 and PKG_URL from the global recipe
+# rather than restating them, so this cannot drift behind it again.
+# Kept for the program selection below - blkdiscard and schedutils are ours,
+and the global recipe builds a different set.
+. ${ROOT}/packages/sysutils/util-linux/package.mk
 PKG_NAME="util-linux"
-PKG_VERSION="2.39.2"
-PKG_SHA256="87abdfaa8e490f8be6dde976f7c80b9b5ff9f301e1b67e3899e1f05a59a1531f"
-PKG_LICENSE="GPL"
-PKG_URL="https://www.kernel.org/pub/linux/utils/util-linux/v$(get_pkg_version_maj_min)/${PKG_NAME}-${PKG_VERSION}.tar.xz"
 PKG_DEPENDS_HOST="ccache:host autoconf:host automake:host intltool:host libtool:host pkg-config:host"
 PKG_DEPENDS_TARGET="toolchain"
 PKG_DEPENDS_INIT="toolchain"

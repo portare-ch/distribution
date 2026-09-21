@@ -2,12 +2,13 @@
 # Copyright (C) 2009-2016 Stephan Raue (stephan@openelec.tv)
 # Copyright (C) 2019-present Team LibreELEC (https://libreelec.tv)
 
+# Inherit PKG_VERSION, PKG_SHA256 and PKG_URL from the global recipe
+# rather than restating them, so this cannot drift behind it again.
+# Kept for the feature set below. A handheld needs a2dp, avrcp, hid and
+midi, and the global recipe builds none of them.
+. ${ROOT}/packages/network/bluez/package.mk
 PKG_NAME="bluez"
-PKG_VERSION="5.83"
-PKG_SHA256="108522d909d220581399bfec93daab62035539ceef3dda3e79970785c63bd24c"
-PKG_LICENSE="GPL"
 PKG_SITE="http://www.bluez.org/"
-PKG_URL="https://www.kernel.org/pub/linux/bluetooth/${PKG_NAME}-${PKG_VERSION}.tar.xz"
 PKG_DEPENDS_TARGET="toolchain dbus glib readline systemd json-c alsa-lib ncurses"
 PKG_LONGDESC="Bluetooth Tools and System Daemons for Linux."
 PKG_TOOLCHAIN="autotools"
