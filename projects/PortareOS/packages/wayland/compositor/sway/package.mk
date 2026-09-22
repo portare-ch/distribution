@@ -9,9 +9,11 @@
 # on 0.19.3.
 . ${ROOT}/packages/wayland/compositor/sway/package.mk
 
-# xwayland and the toolkit bits the global recipe leaves out, plus xkbcomp
-# and xterm, which sway expects to find at runtime.
-PKG_DEPENDS_TARGET+=" glib xwayland xkbcomp xterm libthai xcb-util-wm"
+# xwayland and the toolkit bits the global recipe leaves out, plus xkbcomp,
+# which sway expects to find at runtime. Not xterm: the terminal here is
+# foot, which the global recipe already depends on, and config.desktop
+# binds with "set $term foot.sh".
+PKG_DEPENDS_TARGET+=" glib xwayland xkbcomp libthai xcb-util-wm"
 PKG_TOOLCHAIN="meson"
 PKG_PATCH_DIRS+="${DEVICE}"
 
