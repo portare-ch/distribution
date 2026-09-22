@@ -241,8 +241,30 @@ fi
 #Graphic driver fixes
 @GRAPHICS@
 
-#Set QT enviornment to wayland
-  export QT_QPA_PLATFORM=wayland
+#Display path.
+#
+#Under a compositor Qt is a wayland client and the renderer draws into a
+#wayland surface. With KMS there is no compositor, so neither is available:
+#Qt runs offscreen and the renderer takes the panel itself through
+#VK_KHR_display, which is what ARMSX2_VULKAN_DIRECT asks for.
+#
+#Offscreen rather than eglfs or vkkhrdisplay, both of which were tried.
+#eglfs gives an EGL surface and this renderer is Vulkan; vkkhrdisplay gives
+#a Vulkan surface but rejects every window that is not one - "vkkhrdisplay
+#platform plugin only supports QWindow with surfaceType == VulkanSurface" -
+#and the big picture UI is Qt Widgets. Offscreen sidesteps both: Qt still
+#builds its windows and runs its event loop, they are simply never shown.
+#Nothing is lost by that here, because everything is configured from files
+#and the on-screen display is drawn by the GS rather than by Qt.
+#
+#runemu.sh only sets KMSMODE for this emulator when the renderer is Vulkan.
+  if [ "${KMSMODE}" = "1" ]
+  then
+    export QT_QPA_PLATFORM=offscreen
+    export ARMSX2_VULKAN_DIRECT=1
+  else
+    export QT_QPA_PLATFORM=wayland
+  fi
 
 #Run ARMSX2 emulator
   export SDL_AUDIODRIVER=pipewire

@@ -48,9 +48,29 @@ KMSMODE=$(get_setting "kmsmode" "${PLATFORM}" "${BASEROMNAME}")
 ### Keyed on the emulator rather than the platform: the standalone
 ### emulators have their own display handling and several of them do
 ### want a compositor.
-if [ -z "${KMSMODE}" ] && [ "${EMULATOR}" = "retroarch" ]; then
-  KMSMODE=1
-fi
+###
+### ArmSX2 joins it on the same reasoning but by a different mechanism: it
+### is a Qt6 application, so there is no SDL or RetroArch context to name.
+### Its renderer takes the panel itself through VK_KHR_display and Qt runs
+### offscreen - see start_armsx2.sh. That only works with the Vulkan
+### renderer, so the default is conditional on it; with OpenGL or the
+### software renderer there is nothing to drive the panel and stopping the
+### compositor would leave a black screen.
+case "${EMULATOR}" in
+  retroarch)
+    [ -z "${KMSMODE}" ] && KMSMODE=1
+    ;;
+  armsx2)
+    if [ -z "${KMSMODE}" ] &&
+       [ "$(get_setting graphics_backend "${PLATFORM}" "${BASEROMNAME}")" = "2" ]
+    then
+      KMSMODE=1
+    fi
+    ;;
+esac
+
+### start_armsx2.sh needs to know, and it runs after sway is already gone.
+export KMSMODE
 if [ "${KMSMODE}" = "1" ] && [ -z "${RUNEMU_KMS_SCOPE}" ]; then
   systemctl stop runemu-kms.scope 2>/dev/null || true
   exec systemd-run \

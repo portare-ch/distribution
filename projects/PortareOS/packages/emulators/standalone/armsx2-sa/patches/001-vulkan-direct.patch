@@ -1,0 +1,42 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] qt: let the frontend ask for VK_KHR_display direct output
+
+The Vulkan renderer already implements WindowInfo::Type::VulkanDirect
+end to end. Nothing in the Qt frontend ever produced that type, so the
+path was unreachable. Add the one branch that does.
+
+--- a/pcsx2-qt/QtUtils.h
++++ b/pcsx2-qt/QtUtils.h
+@@ -128,6 +128,32 @@
+ 		QPlatformNativeInterface* pni = QGuiApplication::platformNativeInterface();
+ 		const QString platform_name = QGuiApplication::platformName();
+ 
++		// Direct-to-display through VK_KHR_display, for a handheld that boots
++		// straight into a game and is configured from files rather than from a
++		// settings UI. The renderer already implements this end to end -
++		// instance extension selection in GSDeviceVK::SelectInstanceExtensions(),
++		// surface creation through vkCreateDisplayPlaneSurfaceKHR() in
++		// VKSwapChain::CreateSurface() - but nothing in the frontend ever
++		// produced the window type that reaches it, so the whole path was
++		// unreachable.
++		//
++		// No native handle is supplied and none is needed: the renderer
++		// enumerates displays itself. Passing 0x0 asks it for the display's
++		// preferred mode, and it writes the real width, height and refresh rate
++		// back into this structure. Returning here rather than falling through
++		// to the Qt geometry and refresh-rate queries below is deliberate - the
++		// QPA platform is offscreen in this mode, so those would describe a
++		// window that is not on the panel.
++		if (qEnvironmentVariableIntValue("ARMSX2_VULKAN_DIRECT") != 0)
++		{
++			wi.type = WindowInfo::Type::VulkanDirect;
++			wi.surface_width = 0;
++			wi.surface_height = 0;
++			wi.surface_scale = 1.0f;
++			INFO_LOG("Using VK_KHR_display direct-to-monitor; no compositor.");
++			return wi;
++		}
++
+ 		QWindow* windowHandle;
+ 		if constexpr (std::is_base_of_v<QWidget, T>)
+ 			windowHandle = window->windowHandle();
