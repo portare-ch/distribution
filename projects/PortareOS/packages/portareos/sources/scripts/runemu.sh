@@ -49,6 +49,55 @@ if [ "${KMSMODE}" = "1" ] && [ -z "${RUNEMU_KMS_SCOPE}" ]; then
     -- "${0}" "${@}"
 fi
 
+### One emulator at a time.
+###
+### Nothing stopped a second launch while the first was still up. An
+### emulator that wedges rather than exits - which Dolphin does here -
+### leaves this script in wait() forever, the front-end comes back, and
+### the next launch starts a whole second emulator on top of the first.
+### Three were found running at once, each holding its own address space
+### and its own GPU context, which is enough by itself to make Dolphin's
+### mprotect fail and to put two renderers on one panel.
+###
+### The pid file is the record rather than a pgrep pattern, because every
+### wrapper the front-end puts around this script carries "runemu.sh" in
+### its command line, this one included, and a pattern wide enough to
+### find the old run is wide enough to kill the new one.
+RUNEMU_PID_FILE="/tmp/.runemu.pid"
+
+kill_tree() {
+  local pid="${1}" sig="${2}" child
+  for child in $(pgrep -P "${pid}" 2>/dev/null); do
+    kill_tree "${child}" "${sig}"
+  done
+  kill "-${sig}" "${pid}" 2>/dev/null
+}
+
+reap_previous_run() {
+  local previous
+  [ -f "${RUNEMU_PID_FILE}" ] || return 0
+  previous="$(cat "${RUNEMU_PID_FILE}" 2>/dev/null)"
+  rm -f "${RUNEMU_PID_FILE}"
+  case "${previous}" in ''|*[!0-9]*) return 0 ;; esac
+  [ "${previous}" = "$$" ] && return 0
+  [ -d "/proc/${previous}" ] || return 0
+  grep -q "runemu" "/proc/${previous}/cmdline" 2>/dev/null || return 0
+
+  log $0 "A previous run (${previous}) is still up, taking it down"
+  ### TERM first: a healthy emulator writes its saves on the way out.
+  kill_tree "${previous}" TERM
+  local waited=0
+  while [ -d "/proc/${previous}" ] && [ "${waited}" -lt 5 ]; do
+    sleep 1
+    waited=$((waited + 1))
+  done
+  if [ -d "/proc/${previous}" ]; then
+    log $0 "Previous run ignored TERM, killing"
+    kill_tree "${previous}" KILL
+    sleep 1
+  fi
+}
+
 ### Define the variables used throughout the script
 BLUETOOTH_STATE=$(get_setting controllers.bluetooth.enabled)
 ES_CONFIG="/storage/.emulationstation/es_settings.cfg"
@@ -116,6 +165,7 @@ EOF
 
 function quit() {
         ${VERBOSE} && log $0 "Cleaning up and exiting"
+        rm -f "${RUNEMU_PID_FILE}" 2>/dev/null
         bluetooth enable
         set_kill set "emulationstation"
         clear_screen
@@ -166,6 +216,13 @@ esac
 
 ### Prepare to load our emulator and game.
 loginit "$1" "$2" "$3" "$4"
+
+### Take down anything still running from a previous launch before this
+### one starts. Placed here rather than at the top because it logs, and
+### log() is not defined until loginit has run.
+reap_previous_run
+echo "$$" >"${RUNEMU_PID_FILE}"
+
 clear_screen
 bluetooth disable
 set_kill stop
