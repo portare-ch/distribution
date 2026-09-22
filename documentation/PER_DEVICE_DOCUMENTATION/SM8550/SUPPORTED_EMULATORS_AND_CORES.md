@@ -8,7 +8,6 @@
 |&#xf013; System|Tools (tools)|System|`modules`|.sh||
 |Arcade|Arcade (arcade)|0000|`arcade`|.zip .7z|**retroarch:** fbneo (default)<br>|
 |Bandai|SuFami Turbo (sufami)|1996|`sufami`|.st .zip .7z|**retroarch:** snes9x (default)<br>|
-|Microsoft|Windows (windows)|System|`windows`|.sh|**wine:** wine (default)<br>|
 |Microsoft|Xbox (xbox)|2001|`xbox`|.iso|**xemu:** xemu-sa (default)<br>|
 |Nintendo|Game Boy (gb)|1989|`gb`|.gb .gbc .zip .7z|**retroarch:** gambatte (default)<br>|
 |Nintendo|Game Boy (Hacks) (gbh)|1989|`gbh`|.gb .zip .7z|**retroarch:** gambatte (default)<br>|
