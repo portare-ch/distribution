@@ -14,7 +14,7 @@ keeping, especially where the first few explanations were wrong.
 
 ### Suspend power draw
 
-Tracked in [#62](https://github.com/portare-ch/distribution/issues/62). The
+Tracked in [#62](https://github.com/portare-ch/portareos/issues/62). The
 device loses meaningful charge overnight and the cause is not known.
 
 Three hypotheses were tested on hardware and all three were wrong:
@@ -367,9 +367,9 @@ can receive it - and for these paths the answer is now yes, by overwriting.
 
 ### Do not reuse a merged branch
 
-Three pull requests, [#59](https://github.com/portare-ch/distribution/pull/59),
-[#61](https://github.com/portare-ch/distribution/pull/61) and
-[#73](https://github.com/portare-ch/distribution/pull/73), arrived as conflicts
+Three pull requests, [#59](https://github.com/portare-ch/portareos/pull/59),
+[#61](https://github.com/portare-ch/portareos/pull/61) and
+[#73](https://github.com/portare-ch/portareos/pull/73), arrived as conflicts
 that were really reverts: a branch whose PR had already merged, still carrying
 old copies of merged work and a base predating later merges. Merging any of
 them would have undone real changes.

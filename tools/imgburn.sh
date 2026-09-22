@@ -40,7 +40,11 @@ removables(){
 }
 
 if [[ "${NIGHTLY}" == "1" ]]; then
-  NIGHTLY_URLS="$(curl -s --max-time 10 'https://github.com/portare-ch/distribution/releases' |\
+  # -L matters: renaming the repository leaves a permanent redirect, and
+  # curl without it prints the redirect body rather than following it. The
+  # scrape then finds no hrefs and --nightly silently offers nothing, which
+  # reads as "no nightlies published" rather than as a broken URL.
+  NIGHTLY_URLS="$(curl -sL --max-time 10 'https://github.com/portare-ch/portareos/releases' |\
     sed -n 's|^.*<a href="\([^"]*\)"|\1|;s|^\(http[^ >]*nightly-[0-9]*/PortareOS[^ >]*\)[ >].*$|\1|p')"
 fi
 

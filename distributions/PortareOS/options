@@ -29,7 +29,7 @@
   WIKI_URL="https://os.portare.org"
 
 # Where to report bugs
-  BUG_REPORT_URL="https://github.com/portare-ch/distribution/issues"
+  BUG_REPORT_URL="https://github.com/portare-ch/portareos/issues"
 
 # Root password to integrate in the target system
   ROOT_PASSWORD="portareos"
