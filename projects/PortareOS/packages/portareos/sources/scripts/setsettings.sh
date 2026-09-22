@@ -689,12 +689,51 @@ function set_filtering() {
 # 60 Hz output. video_swap_interval 0 lets RetroArch pick the interval from
 # the core's own rate, so 60 fps content at 120 Hz swaps every second
 # refresh instead of running against the audio clock.
+### The exact refresh rate of the mode the compositor is driving.
+###
+### wlr-randr answers from the Wayland protocol, which carries refresh as
+### integer millihertz. A panel running 2 x NTSC - 120000/1001, or
+### 119.88011988Hz - therefore reports as a flat 119.880, and RetroArch paces
+### against a rate 1.2e-4Hz away from the one the panel is actually running.
+### With black frame insertion on, that is a corrected frame, and so a visible
+### flash, every 4.6 hours.
+###
+### The DRM modeline carries the pixel clock and both totals as integers, so
+### the rational the kernel is driving can be recovered exactly rather than
+### read back rounded. modetest is a query here, not a modeset: it needs no
+### DRM master and leaves the compositor alone.
+###
+### The reported rate is still what says which mode is current, so it is
+### passed in and used to pick the matching modeline. The tolerance is 0.002,
+### comfortably above the 0.001 the millihertz rounding can move a rate and
+### far below the gap between any two modes this panel would expose.
+function exact_refresh_from_drm() {
+    local REPORTED="${1}"
+    /usr/bin/modetest -M msm -c 2>/dev/null | awk -v want="${REPORTED}" '
+        /^[[:space:]]*#[0-9]+[[:space:]]/ {
+            htot = $7 + 0; vtot = $11 + 0; clk = $12 + 0
+            if (htot <= 0 || vtot <= 0 || clk <= 0) next
+            rate = (clk * 1000.0) / (htot * vtot)
+            if (want == "") { printf "%.6f", rate; exit }
+            diff = rate - want
+            if (diff < 0) diff = -diff
+            if (diff < 0.002) { printf "%.6f", rate; exit }
+        }'
+}
+
 function set_ra_refresh_rate() {
     local MODE="$(game_setting display_mode)"
     local RATE
+    local EXACT
     case "${MODE}" in
         ""|default)
             RATE=$(/usr/bin/wlr-randr 2>/dev/null | awk '/current/ { for (i = 1; i <= NF; i++) if ($i == "Hz") { print $(i - 1); exit } }')
+            EXACT="$(exact_refresh_from_drm "${RATE}")"
+            if [ -n "${EXACT}" ]
+            then
+                log "Refresh rate ${RATE} refined to ${EXACT} from the DRM modeline"
+                RATE="${EXACT}"
+            fi
         ;;
         *)
             RATE=$(echo "${MODE}" | tr -cd '[[:digit:]].')
