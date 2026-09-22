@@ -152,10 +152,6 @@ declare -a NO_ANALOG=(  dreamcast
                         wonderswancolor
 )
 
-declare -a IS_32BIT=(   gpsp
-                        pcsx_rearmed
-)
-
 declare -a CORE_RATIOS=(    4/3
                             16/9
                             16/10
@@ -768,16 +764,9 @@ function set_filter() {
         *)
             local FILTER_PATH="/usr/share/retroarch/filters"
             add_setting "none" "video_ctx_scaling" "false"
-            local CHECK_BITNESS="$(match ${CORE} ${IS_32BIT[@]})"
-            if [ "${CHECK_BITNESS}" = 1 ]
-            then
-                BITS="32"
-            else
-                BITS="64"
-            fi
-                add_setting "none" "video_filter" "${FILTER_PATH}/${BITS}bit/video/${FILTER}"
-                add_setting "none" "video_filter_dir" "${FILTER_PATH}/${BITS}bit/video/"
-                add_setting "none" "audio_filter_dir" "${FILTER_PATH}/${BITS}bit/audio"
+                add_setting "none" "video_filter" "${FILTER_PATH}/64bit/video/${FILTER}"
+                add_setting "none" "video_filter_dir" "${FILTER_PATH}/64bit/video/"
+                add_setting "none" "audio_filter_dir" "${FILTER_PATH}/64bit/audio"
         ;;
     esac
 }

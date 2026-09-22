@@ -10,47 +10,38 @@ PKG_TOOLCHAIN="manual"
 
 PKG_EMUS="moonlight scummvmsa"
 
-EMUS_32BIT=""
-
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays retropie-shaders slang-shaders"
 
 LIBRETRO_CORES=" fbneo-lr flycast-lr gambatte-lr genesis-plus-gx-lr mgba-lr neocd_lr parallel-n64-lr picodrive-lr snes9x-lr swanstation-lr"
 
 if [ "${ARCH}" = "aarch64" ]; then
   LIBRETRO_CORES+=" ppsspp-lr"
-  PKG_EMUS+=" box64 portmaster"
+  PKG_EMUS+=" portmaster"
 fi
 
 case "${DEVICE}" in
   H700|RK3326)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
     ;;
   RK3399)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   RK3566|RK3576)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
     PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
     LIBRETRO_CORES+=" dolphin-lr"
     ;;
   RK3588)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM6115)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
     PKG_EMUS+=" armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM8250)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
     PKG_EMUS+=" rpcs3-sa xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM8550)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
     PKG_EMUS+=" rpcs3-sa xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
@@ -59,7 +50,6 @@ case "${DEVICE}" in
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   S922X)
-    [ "${ENABLE_32BIT}" == "true" ] && EMUS_32BIT="box86"
     PKG_EMUS+=" armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
@@ -74,12 +64,12 @@ case "${TARGET_TYPE}" in
     PKG_DEPENDS_TARGET+=" ${LIBRETRO_CORES}"
     ;;
   emus_only)
-    PKG_DEPENDS_TARGET+=" ${PKG_EMUS} ${EMUS_32BIT} ${PKG_RETROARCH}"
+    PKG_DEPENDS_TARGET+=" ${PKG_EMUS} ${PKG_RETROARCH}"
     ;;
   none)
     ;;
   *)
-    PKG_DEPENDS_TARGET+=" ${PKG_EMUS} ${EMUS_32BIT} ${PKG_RETROARCH} ${LIBRETRO_CORES}"
+    PKG_DEPENDS_TARGET+=" ${PKG_EMUS} ${PKG_RETROARCH} ${LIBRETRO_CORES}"
     ;;
 esac
 

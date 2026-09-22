@@ -203,23 +203,9 @@ case ${EMULATOR} in
     esac
 
     ### Set set_kill to kill the appropriate retroarch
-    set_kill set "retroarch retroarch32"
+    set_kill set "retroarch"
 
-    ### Assume we're running 64bit Retroarch
     RABIN="retroarch"
-
-    case ${HW_ARCH} in
-      aarch64)
-        if [[ "${CORE}" =~ pcsx_rearmed32 ]] || \
-           [[ "${CORE}" =~ gpsp ]] || \
-           [[ "${CORE}" =~ desmume ]]
-        then
-          ### Configure for 32bit Retroarch
-          ${VERBOSE} && log $0 "Configuring for 32bit cores."
-          export RABIN="retroarch32"
-        fi
-      ;;
-    esac
 
 
     ### Configure specific emulator requirements

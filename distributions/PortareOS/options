@@ -44,7 +44,7 @@
 # This should be updated to be more dynamic in the future.
   CLEAN_OS_BASE="emulators system-utils modules quirks autostart portareos kernel-firmware"
   CLEAN_NETWORK=""
-  CLEAN_EMU_32BIT="lib32 box86 pcsx_rearmed-lr arm"
+  CLEAN_EMU_32BIT=""
 
 
 # additional drivers to install:
@@ -60,9 +60,6 @@
 # for a list of additinoal drivers see packages/linux-driver-addons
 # Space separated list is supported,
   DRIVER_ADDONS=""
-
-# Disable 32BIT support
-  ENABLE_32BIT="${ENABLE_32BIT-true}"
 
 # build and install bluetooth support (yes / no)
   BLUETOOTH_SUPPORT="yes"
