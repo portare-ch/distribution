@@ -54,11 +54,11 @@ index 6b202341b0..ef831dc1fb 100644
 --- a/configuration.c
 +++ b/configuration.c
 @@ -1568,6 +1568,7 @@ static struct config_array_setting *populate_settings_array(
-    SETTING_ARRAY("cheevos_username",             settings->arrays.cheevos_username, false, NULL, true);
-    SETTING_ARRAY("cheevos_password",             settings->arrays.cheevos_password, false, NULL, true);
-    SETTING_ARRAY("cheevos_token",                settings->arrays.cheevos_token, false, NULL, true);
-+   SETTING_ARRAY("cheevos_unlock_sound",         settings->arrays.cheevos_unlock_sound, false, NULL, true);
-    SETTING_ARRAY("cheevos_leaderboards_enable",  settings->arrays.cheevos_leaderboards_enable, true, "", true); /* deprecated */
+    SETTING_ARRAY_SENSITIVE("cheevos_username",            settings->arrays.cheevos_username, false, NULL, true);
+    SETTING_ARRAY_SENSITIVE("cheevos_password",            settings->arrays.cheevos_password, false, NULL, true);
+    SETTING_ARRAY_SENSITIVE("cheevos_token",               settings->arrays.cheevos_token, false, NULL, true);
++   SETTING_ARRAY("cheevos_unlock_sound",                  settings->arrays.cheevos_unlock_sound, false, NULL, true);
+    SETTING_ARRAY("cheevos_leaderboards_enable",           settings->arrays.cheevos_leaderboards_enable, true, "", true); /* deprecated */
  #endif
  
 @@ -2957,6 +2958,7 @@ void config_set_defaults(void *data)

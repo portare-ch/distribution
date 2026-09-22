@@ -3,14 +3,12 @@
 # Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="retroarch"
-# bump-ignore: upstream HEAD is +4512 commits and breaks five of the nine
-# patches here (quit-not-restart, drm-resolution, no-screen-brightness and
-# both cheevos ones). Needs a staged bump with those rebased, not a jump.
-# Tracks master. Upstream's newest tag is still v1.22.2 from November 2025
-# and this commit is 2009 commits past it, so "v1.22.2 + fixes" - what this
-# line used to say - understated it by about two thousand commits.
-PKG_VERSION="bdba046fa6766380bc2457532f38e589df769aaf"
-PKG_SHA256="ba14ddf6fd6712185334cce15d1fa7d36f3419195a34ae6fd6f1ade42095e94f"
+# bump-ignore: this tracks master, and the bumper follows /releases/latest.
+# Upstream's newest tag is still v1.22.2 from November 2025, which is 2009
+# commits behind the commit below, so the bumper would file a downgrade and
+# call it an update. Re-pin by hand.
+PKG_VERSION="9705e03a59145bc33aa79fe6b52a92005703f74e"
+PKG_SHA256="bd747f84a239e72195cb5c155d1b888739853c03feedfa2e83ac8924c5b539ab"
 PKG_SITE="https://github.com/libretro/RetroArch"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
 PKG_LICENSE="GPL-3.0-or-later"

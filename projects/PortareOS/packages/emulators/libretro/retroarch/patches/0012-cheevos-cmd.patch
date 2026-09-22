@@ -23,11 +23,11 @@ index 0458404..3119b97 100644
 @@ -1523,6 +1523,7 @@ static struct config_array_setting *populate_settings_array(
  
  #ifdef HAVE_CHEEVOS
-    SETTING_ARRAY("cheevos_custom_host",          settings->arrays.cheevos_custom_host, false, NULL, true);
-+   SETTING_ARRAY("cheevos_cmd",                  settings->arrays.cheevos_cmd, false, NULL, true);
-    SETTING_ARRAY("cheevos_username",             settings->arrays.cheevos_username, false, NULL, true);
-    SETTING_ARRAY("cheevos_password",             settings->arrays.cheevos_password, false, NULL, true);
-    SETTING_ARRAY("cheevos_token",                settings->arrays.cheevos_token, false, NULL, true);
+    SETTING_ARRAY("cheevos_custom_host",                   settings->arrays.cheevos_custom_host, false, NULL, true);
++   SETTING_ARRAY("cheevos_cmd",                           settings->arrays.cheevos_cmd, false, NULL, true);
+    SETTING_ARRAY_SENSITIVE("cheevos_username",            settings->arrays.cheevos_username, false, NULL, true);
+    SETTING_ARRAY_SENSITIVE("cheevos_password",            settings->arrays.cheevos_password, false, NULL, true);
+    SETTING_ARRAY_SENSITIVE("cheevos_token",               settings->arrays.cheevos_token, false, NULL, true);
 diff --git a/configuration.h b/configuration.h
 index a7eae74..47a8376 100644
 --- a/configuration.h
