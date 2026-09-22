@@ -350,6 +350,14 @@ update. Two exist, for `system.cpugovernor` and `FpsLimit`.
 The trap to remember: shipping a new default in a config file is not enough on
 its own. Ask whether an existing device can receive it.
 
+And the trap facing the other way, which `post-update` now guards against for
+`.opt`: ask whether an existing device would receive it *too hard*. Parts of
+`/usr/config` are copied over the top on every update, not merged, so shipping
+a file into one of those paths hands the image ownership of it. That is right
+for a `.cfg` override the image wrote and wrong for a `.opt`, which is where
+RetroArch stores the core options the user chose in the menu - the same
+directory, opposite owners.
+
 ### Do not reuse a merged branch
 
 Three pull requests, [#59](https://github.com/portare-ch/distribution/pull/59),

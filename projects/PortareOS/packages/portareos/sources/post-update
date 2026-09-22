@@ -83,7 +83,18 @@ cp -f /usr/config/retroarch/retroarch.cfg /storage/.config/retroarch/retroarch.c
 # reached a device that already had a config directory. No --delete: these
 # are keyed by core name, so anything here for a core we no longer ship is
 # inert, and deleting would take a user's own overrides with it.
-rsync -a /usr/config/retroarch/config/ /storage/.config/retroarch/config/ 2>/dev/null
+#
+# .opt is excluded because that half of the directory is not ours. A .cfg
+# here is an override the image ships; a .opt is where RetroArch writes the
+# core options the user picked in the menu. Without the exclude, the moment
+# the image ships a .opt seed for a core this line would overwrite every
+# choice that user had made for it, on every single update.
+#
+# A .opt seed still reaches a device that has none, through the
+# --ignore-existing pass earlier in this script. Changing a value inside one
+# that already exists is a migration, at the bottom of this file.
+rsync -a --exclude='*.opt' \
+      /usr/config/retroarch/config/ /storage/.config/retroarch/config/ 2>/dev/null
 
 ### Apply developer ssh keys if they exist
 echo "Apply dev keys if available..." >>${LOG}
@@ -254,5 +265,29 @@ migrate_es_fpslimit() {
   sed -i "s|</config>|    <int name=\"FpsLimit\" value=\"${value}\" />\n</config>|" "${cfg}"
 }
 
+# dolphin_call_back_audio_method defaulted to "0", PUSH_SAMPLES, which makes
+# the core report Audio.h's LEGACY_DEFAULT_SAMPLE_RATE - 32029 Hz - and be
+# resampled to 48000 the whole way. "1" asks the frontend instead. The image
+# now seeds this, but a device that has already launched Dolphin owns its own
+# .opt and the seed cannot reach it.
+#
+# Only "0" is moved. "2" is ASYNC_CALLBACK and a deliberate choice, and the
+# marker keeps a later move back to "0" from being undone next update.
+migrate_dolphin_audio_callback() {
+  local opt="/storage/.config/retroarch/config/dolphin-emu/dolphin-emu.opt"
+  local key="dolphin_call_back_audio_method"
+
+  [ -f "${opt}" ] || return 0
+
+  if grep -q "^${key} = " "${opt}"
+  then
+    [ "$(sed -n "s/^${key} = \"\(.*\)\"$/\1/p" "${opt}")" = "0" ] || return 0
+    sed -i "s|^${key} = .*|${key} = \"1\"|" "${opt}"
+  else
+    echo "${key} = \"1\"" >>"${opt}"
+  fi
+}
+
 migrate cpugovernor-schedutil migrate_cpugovernor
 migrate es-fpslimit migrate_es_fpslimit
+migrate dolphin-audio-callback migrate_dolphin_audio_callback
