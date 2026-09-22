@@ -27,11 +27,28 @@ case ${DEVICE} in
     PKG_PATCH_DIRS="${LINUX} ${DEVICE} default"
     ;;
   H700|SM6115|SM8250|SM8550|SM8650|SM8750)
-    # EXPERIMENT: back to 7.2.5 with the 7.2.6 patch set held constant, to
-    # find out whether wifi broke because of the kernel or because of one of
-    # our patches. All 93 patches were test-applied to 7.2.5 first and every
-    # one of them applies, so this changes exactly one variable. Revert once
-    # the answer is known - see the pull request.
+    # Pinned to 7.2.5 because 7.2.6 breaks wifi. Not provisional - this is
+    # the answer, and reverting it takes wifi out again.
+    #
+    # The experiment: hold the 7.2.6 patch set constant and move only the
+    # kernel. All 93 patches were test-applied to 7.2.5 first and every one
+    # applied, so exactly one variable changed. On 7.2.6 the WCN7850 never
+    # finished its MHI BHI firmware load, failing with -5, and no networks
+    # were ever found. On 7.2.5, from the same tree, on build
+    # aaf9017125d123624044953afdf662b5762b4bce:
+    #
+    #   mhi mhi0: Requested to power ON
+    #   mhi mhi0: Power on setup success
+    #   mhi mhi0: Wait for device to enter SBL or Mission mode
+    #   ath12k_wifi7_pci 0000:01:00.0: fw_version 0x110cffff
+    #     WLAN.HMT.1.1.c5-00302-QCAHMTSWPL_V1.0_V2.0_SILICONZ-1.115823.3
+    #   ath12k_wifi7_pci 0000:01:00.0: MAC_ADDR set to 00:03:7f:38:32:49
+    #
+    # and wlan0 associated. So the regression is upstream, between 7.2.5 and
+    # 7.2.6, and none of our patches cause it.
+    #
+    # Moving to 7.2.6 or later needs the offending upstream commit found and
+    # carried as a revert or a fix. Tracked in #194.
     PKG_VERSION="7.2.5"
     PKG_SHA256="55ddf0df8325d9dad96fcff7bd93977d22e3f50af06527572af59b77c7632b78"
     PKG_URL="https://www.kernel.org/pub/linux/kernel/v${PKG_VERSION/.*/}.x/${PKG_NAME}-${PKG_VERSION}.tar.xz"
