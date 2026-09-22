@@ -44,7 +44,7 @@ if [[ "${NIGHTLY}" == "1" ]]; then
   # curl without it prints the redirect body rather than following it. The
   # scrape then finds no hrefs and --nightly silently offers nothing, which
   # reads as "no nightlies published" rather than as a broken URL.
-  NIGHTLY_URLS="$(curl -sL --max-time 10 'https://github.com/portare-ch/distribution/releases' |\
+  NIGHTLY_URLS="$(curl -sL --max-time 10 'https://github.com/portare-ch/portareos/releases' |\
     sed -n 's|^.*<a href="\([^"]*\)"|\1|;s|^\(http[^ >]*nightly-[0-9]*/PortareOS[^ >]*\)[ >].*$|\1|p')"
 fi
 
