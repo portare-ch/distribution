@@ -35,7 +35,7 @@ new file mode 100644
 index 000000000000..1c8ed849edbf
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-ilitek-il97680a.c
-@@ -0,0 +1,439 @@
+@@ -0,0 +1,472 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Ilitek IL97680A panels driver
@@ -200,8 +200,41 @@ index 000000000000..1c8ed849edbf
 +		.vtotal = 960 + 12 + 2 + 27,
 +	},
 +	{
-+		/* 60Hz */
-+		.clock = (1280 + 12 + 2 + 8) * (960 + 12 + 2 + 24) * 60 / 1000,
++		/*
++		 * 119.63459Hz, which is 2 x 59.817295 - the rate SwanStation
++		 * reports for NTSC PlayStation content, and not 59.94. The
++		 * PlayStation was never a 59.94 machine: on a CRT the console
++		 * drove the set, so "the display's refresh rate" was whatever
++		 * the console emitted, and nothing had to agree with anything.
++		 * A fixed panel has no such freedom.
++		 *
++		 *   119.880120 / 59.8173 = 2.0041   <- the mode above
++		 *   119.634590 / 59.8173 = 2.0000   <- this one
++		 *
++		 * At 2.0041 a frame is repeated or dropped roughly every 245,
++		 * about every four seconds. That is not a rounding error to be
++		 * lived with, it is a visible hitch, and no amount of fixing
++		 * the audio clock removes it.
++		 *
++		 *   155920000 / (1302 * 1001) = 119.63459...
++		 *
++		 * which is -0.1ppm from 2 x 59.8173: one frame in about 46
++		 * hours.
++		 *
++		 * Same totals as the mode above, so only the pixel clock
++		 * moves, by 0.2%. That matters more than it looks:
++		 * drm_mode_vrefresh() rounds this to 120 exactly as it rounds
++		 * 119.88, so the panel's frame-rate register (0x60) is still
++		 * programmed 0x00 and the panel is not asked to do anything it
++		 * is not already doing. The 60Hz mode this replaces was a
++		 * different proposition - it rounds to 60, changes that
++		 * register, and the manufacturer's implementation of that mode
++		 * is broken, which is why it was dropped. It had stayed in the
++		 * array after that, counted by num_modes and never surviving
++		 * to the connector; DRM advertised one mode while this listed
++		 * two.
++		 */
++		.clock = 155920,
 +		.hdisplay = 1280,
 +		.hsync_start = 1280 + 12,
 +		.hsync_end = 1280 + 12 + 2,
@@ -209,7 +242,7 @@ index 000000000000..1c8ed849edbf
 +		.vdisplay = 960,
 +		.vsync_start = 960 + 12,
 +		.vsync_end = 960 + 12 + 2,
-+		.vtotal = 960 + 12 + 2 + 24,
++		.vtotal = 960 + 12 + 2 + 27,
 +	}
 +};
 +

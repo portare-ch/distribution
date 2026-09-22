@@ -730,6 +730,28 @@ function set_ra_refresh_rate() {
                 log "Refresh rate ${RATE} refined to ${EXACT} from the DRM modeline"
                 RATE="${EXACT}"
             fi
+
+            ### The PlayStation is not a 59.94 machine. SwanStation reports
+            ### 59.8173, and the panel's usual mode is 2 x 59.94:
+            ###
+            ###   119.880120 / 59.8173 = 2.0041
+            ###
+            ### which repeats or drops a frame every 245 or so, about every
+            ### four seconds. The panel carries a second mode at 119.634590,
+            ### exactly twice 59.8173, purely for this. Ask for it by rate
+            ### and let the DRM modeline answer, so this does nothing at all
+            ### on a panel that does not have it rather than naming a rate
+            ### the display cannot produce.
+            if [ "${CORE}" = "swanstation" ]
+            then
+                local PSX_RATE
+                PSX_RATE="$(exact_refresh_from_drm 119.6346)"
+                if [ -n "${PSX_RATE}" ]
+                then
+                    log "SwanStation: ${PSX_RATE} is exactly 2 x 59.8173, using it over ${RATE}"
+                    RATE="${PSX_RATE}"
+                fi
+            fi
         ;;
         *)
             RATE=$(echo "${MODE}" | tr -cd '[[:digit:]].')
