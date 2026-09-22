@@ -30,15 +30,6 @@ on:
         default: "no"
 
 jobs:
-  build-arm:
-    uses: ./.github/workflows/build-arm.yml
-    secrets: inherit
-    with:
-      PROJECT: ${{ inputs.PROJECT }}
-      DEVICE: ${{ inputs.DEVICE }}
-      OWNER_LC: ${{ inputs.OWNER_LC }}
-      INCREMENTAL: ${{ inputs.INCREMENTAL }}
-
   build-aarch64-toolchain:
     uses: ./.github/workflows/build-aarch64-toolchain.yml
     secrets: inherit
@@ -109,7 +100,6 @@ jobs:
     needs:
       - build-aarch64-emu-libretro
       - build-aarch64-emu-standalone
-      - build-arm
     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure')  }}
     uses: ./.github/workflows/build-aarch64-image.yml
     secrets: inherit
@@ -135,7 +125,6 @@ jobs:
             aarch64 build (${{ inputs.DEVICE }})
             aarch64-rust (${{ inputs.DEVICE }})
             aarch64-toolchain (${{ inputs.DEVICE }})
-            arm (${{ inputs.DEVICE }})
             emu-libretro (${{ inputs.DEVICE }})
             emu-standalone (${{ inputs.DEVICE }})
             qt6 (${{ inputs.DEVICE }})
