@@ -1,0 +1,27 @@
+# Ask the frontend for the output rate instead of using Dolphin's own.
+#
+# Source/Core/DolphinLibretro/Audio.cpp:
+#
+#   unsigned int GetActiveSampleRate() {
+#     if (g_use_call_back_audio == CallBackMode::PUSH_SAMPLES)
+#       return GetCoreSampleRate();      // LEGACY_DEFAULT_SAMPLE_RATE, 32029
+#     return GetRetroSampleRate();
+#   }
+#
+# The core's default is PUSH_SAMPLES ("0"), which reports 32029 Hz - a rate
+# Audio.h itself calls LEGACY_DEFAULT_SAMPLE_RATE. Nothing downstream runs
+# at 32029, so every sample was resampled to 48000 on the way out for no
+# reason other than the core option's age.
+#
+# "1" is SYNC_PER_FRAME: the core asks the frontend via
+# RETRO_ENVIRONMENT_GET_TARGET_SAMPLE_RATE and lets the frame time callback
+# set the pace. RetroArch then logs
+#
+#   [Core] Geometry: 1280x1056, Aspect: 1.3333, FPS: 59.9401,
+#          Sample rate: 48000 Hz.
+#
+# and the resampler drops out of the GameCube path, the same way
+# SwanStation.cfg drops it out of the PlayStation path by asking for 44100.
+# Opposite settings, one goal: whatever the console's rate is, do not
+# convert it twice on the way to the speaker.
+dolphin_call_back_audio_method = "1"
