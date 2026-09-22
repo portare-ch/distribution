@@ -35,7 +35,7 @@ new file mode 100644
 index 000000000000..1c8ed849edbf
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-ilitek-il97680a.c
-@@ -0,0 +1,415 @@
+@@ -0,0 +1,439 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Ilitek IL97680A panels driver
@@ -164,8 +164,32 @@ index 000000000000..1c8ed849edbf
 +
 +static const struct drm_display_mode il97680a_rpnova_modes[] = {
 +	{
-+		/* 120Hz */
-+		.clock = (1280 + 12 + 2 + 8) * (960 + 12 + 2 + 24) * 120 / 1000,
++		/*
++		 * 119.88011988Hz exactly, which is 2 x NTSC (120000/1001).
++		 * Almost everything this device emulates is 59.94 fps content.
++		 * At a flat 120Hz the panel's half-rate is 59.9998, so the
++		 * frontend drops or repeats a frame every 16.7s to stay with
++		 * the content, and black frame insertion turns that correction
++		 * into a visible flash.
++		 *
++		 * The rate is exact rather than near. refresh is
++		 * clock * 1000 / (htotal * vtotal), so if htotal * vtotal is a
++		 * multiple of 1001 then 120 * htotal * vtotal / 1001 is a whole
++		 * number of kHz and the division comes back to 120000/1001 with
++		 * nothing left over. 1001 is 7 x 11 x 13; htotal 1302 already
++		 * carries the 7, and vtotal 1001 supplies the rest, which costs
++		 * three extra lines of vertical back porch.
++		 *
++		 *   156240000 / (1302 * 1001) = 119.88011988...
++		 *
++		 * so the frontend never has a correction to make for 59.94
++		 * content and the BFI cadence holds indefinitely.
++		 *
++		 * drm_mode_vrefresh() still rounds this to 120, so the panel's
++		 * frame-rate register (0x60) is programmed 0x00 exactly as
++		 * before - see il97680a_rpnova_init_sequence().
++		 */
++		.clock = 156240,
 +		.hdisplay = 1280,
 +		.hsync_start = 1280 + 12,
 +		.hsync_end = 1280 + 12 + 2,
@@ -173,7 +197,7 @@ index 000000000000..1c8ed849edbf
 +		.vdisplay = 960,
 +		.vsync_start = 960 + 12,
 +		.vsync_end = 960 + 12 + 2,
-+		.vtotal = 960 + 12 + 2 + 24,
++		.vtotal = 960 + 12 + 2 + 27,
 +	},
 +	{
 +		/* 60Hz */
