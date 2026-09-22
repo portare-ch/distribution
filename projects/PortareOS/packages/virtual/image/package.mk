@@ -44,7 +44,6 @@ PKG_DEBUG="debug"
 if [ "${BASE_ONLY}" = "true" ]
 then
   EMULATION_DEVICE=no
-  ENABLE_32BIT=no
   PKG_DEPENDS_TARGET+=" ${PKG_TOOLS} ${PKG_FONTS} misc-packages"
 else
   PKG_DEPENDS_TARGET+=" ${PKG_TOOLS} ${PKG_FONTS} ${PKG_SOUND} ${PKG_SYNC} ${PKG_GRAPHICS} ${PKG_UI} ${PKG_UI_TOOLS} ${PKG_MULTIMEDIA} misc-packages"
@@ -69,7 +68,6 @@ fi
 [ "${DEBUG_PACKAGES}" = "yes" ] && PKG_DEPENDS_TARGET+=" ${PKG_DEBUG}"
 
 # 32Bit package support
-[ "${ENABLE_32BIT}" == true ] && PKG_DEPENDS_TARGET+=" lib32"
 
 
 # Automounter support

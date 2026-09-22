@@ -108,16 +108,6 @@ makeinstall_target() {
   cp ${PKG_BUILD}/retroarch ${INSTALL}/usr/bin
   mkdir -p ${INSTALL}/usr/share/retroarch/filters
 
-  case ${ARCH} in
-    aarch64)
-      if [ -f ${ROOT}/build.${DISTRO}-${DEVICE}.arm/install_pkg/retroarch-*/usr/bin/retroarch ]; then
-        cp -vP ${ROOT}/build.${DISTRO}-${DEVICE}.arm/install_pkg/retroarch-*/usr/bin/retroarch ${INSTALL}/usr/bin/retroarch32
-        mkdir -p ${INSTALL}/usr/share/retroarch/filters/32bit
-        cp -rvP ${ROOT}/build.${DISTRO}-${DEVICE}.arm/install_pkg/retroarch-*/usr/share/retroarch/filters/64bit/* ${INSTALL}/usr/share/retroarch/filters/32bit/
-      fi
-      ;;
-  esac
-
   mkdir -p ${INSTALL}/etc
     cp -a ${PKG_BUILD}/retroarch.cfg ${INSTALL}/etc
 
