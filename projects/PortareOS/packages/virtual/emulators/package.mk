@@ -38,15 +38,15 @@ case "${DEVICE}" in
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM8250)
-    PKG_EMUS+=" rpcs3-sa xemu-sa steam armsx2-sa"
+    PKG_EMUS+=" xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM8550)
-    PKG_EMUS+=" rpcs3-sa xemu-sa steam armsx2-sa"
+    PKG_EMUS+=" xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   SM8650|SM8750)
-    PKG_EMUS+=" rpcs3-sa xemu-sa steam armsx2-sa"
+    PKG_EMUS+=" xemu-sa steam armsx2-sa"
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   S922X)
@@ -323,14 +323,6 @@ makeinstall_target() {
     install_script "Start ARMSX2.sh"
     add_es_system ps2
     ;;
-  esac
-
-  case ${DEVICE} in
-    SM8250|SM8550|SM8650|SM8750)
-      add_emu_core ps3 rpcs3 rpcs3-sa true
-      add_es_system ps3
-      install_script "Start RPCS3.sh"
-      ;;
   esac
 
   ### Sony Playstation Portable
