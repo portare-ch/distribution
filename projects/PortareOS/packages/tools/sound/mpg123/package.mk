@@ -14,7 +14,7 @@ PKG_BUILD_FLAGS="+pic"
 # -Dpipewire-jack=disabled, and alsa would work but only through pcm_pipewire.
 # SDL2 here is built with SDL_PIPEWIRE=ON and SDL_PULSEAUDIO=OFF, with
 # SDL_AUDIODRIVER=pipewire pinned in /etc/profile, which is the route ARMSX2
-# and RPCS3 already take.
+# already takes.
 #
 # Four things link libmpg123 to decode with, and none of them runs the binary:
 # SDL2_mixer, gmu, amiberry and easyrpg-lr. Building no output module at all
