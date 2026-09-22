@@ -36,6 +36,21 @@ GAMEFOLDER="${ROMNAME//${BASEROMNAME}}"
 ### start_steam.sh does, so the run and the cleanup at the bottom
 ### survive the front-end going away.
 KMSMODE=$(get_setting "kmsmode" "${PLATFORM}" "${BASEROMNAME}")
+
+### RetroArch runs on KMS unless something says otherwise. It was built
+### with --enable-kms, it page flips straight to the panel, and under a
+### compositor it is a wayland client whose frame callbacks are not a
+### vblank lock. The setting is still read first, so a platform or a
+### single game can still turn it off; this only supplies the default
+### that was previously missing, which left the whole KMS path built,
+### wired and never once taken.
+###
+### Keyed on the emulator rather than the platform: the standalone
+### emulators have their own display handling and several of them do
+### want a compositor.
+if [ -z "${KMSMODE}" ] && [ "${EMULATOR}" = "retroarch" ]; then
+  KMSMODE=1
+fi
 if [ "${KMSMODE}" = "1" ] && [ -z "${RUNEMU_KMS_SCOPE}" ]; then
   systemctl stop runemu-kms.scope 2>/dev/null || true
   exec systemd-run \
