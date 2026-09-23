@@ -35,7 +35,7 @@ new file mode 100644
 index 000000000000..1c8ed849edbf
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-ilitek-il97680a.c
-@@ -0,0 +1,472 @@
+@@ -0,0 +1,496 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Ilitek IL97680A panels driver
@@ -229,10 +229,13 @@ index 000000000000..1c8ed849edbf
 +		 * is not already doing. The 60Hz mode this replaces was a
 +		 * different proposition - it rounds to 60, changes that
 +		 * register, and the manufacturer's implementation of that mode
-+		 * is broken, which is why it was dropped. It had stayed in the
-+		 * array after that, counted by num_modes and never surviving
-+		 * to the connector; DRM advertised one mode while this listed
-+		 * two.
++		 * is broken, which is why it was dropped.
++		 *
++		 * This mode is only reachable because get_modes() exposes the
++		 * whole table. Patch 1022 used to cut it to the first entry,
++		 * which is why the 60Hz entry never reached the connector - and
++		 * why, for as long as 1022 was carried, neither did this one:
++		 * DRM advertised 119.88Hz alone and SwanStation ran on it.
 +		 */
 +		.clock = 155920,
 +		.hdisplay = 1280,
@@ -336,11 +339,31 @@ index 000000000000..1c8ed849edbf
 +			      struct drm_connector *connector)
 +{
 +	struct panel_info *pinfo = to_panel_info(panel);
-+	int i;
++	int first_vrefresh = drm_mode_vrefresh(&pinfo->desc->modes[0]);
++	int i, count = 0;
 +
 +	for (i = 0; i < pinfo->desc->num_modes; i++) {
 +		const struct drm_display_mode *m = &pinfo->desc->modes[i];
 +		struct drm_display_mode *mode;
++
++		/*
++		 * init_sequence() programs the frame-rate register (0x60) from
++		 * il97680a_get_current_mode(), which guesses the active mode at
++		 * prepare() time and can guess wrong. That is harmless only
++		 * while every exposed mode rounds to the same vrefresh, because
++		 * then every guess programs the same value. A mode that rounds
++		 * differently - the old 60Hz entry was one - reopens the race
++		 * that left the panel at 60Hz under 120Hz timings, so it is not
++		 * exposed. This replaces cutting the table to one entry, which
++		 * closed the race by also hiding 119.63459Hz.
++		 */
++		if (drm_mode_vrefresh(m) != first_vrefresh) {
++			dev_warn(panel->dev,
++				 "not exposing %ux%u@%d: it rounds to a different vrefresh than %d\n",
++				 m->hdisplay, m->vdisplay, drm_mode_vrefresh(m),
++				 first_vrefresh);
++			continue;
++		}
 +
 +		mode = drm_mode_duplicate(connector->dev, m);
 +		if (!mode) {
@@ -355,6 +378,7 @@ index 000000000000..1c8ed849edbf
 +
 +		drm_mode_set_name(mode);
 +		drm_mode_probed_add(connector, mode);
++		count++;
 +	}
 +
 +	connector->display_info.width_mm = pinfo->desc->width_mm;
@@ -362,7 +386,7 @@ index 000000000000..1c8ed849edbf
 +	connector->display_info.bpc = pinfo->desc->bpc;
 +	pinfo->connector = connector;
 +
-+	return pinfo->desc->num_modes;
++	return count;
 +}
 +
 +static enum drm_panel_orientation il97680a_get_orientation(struct drm_panel *panel)
