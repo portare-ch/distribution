@@ -2,202 +2,112 @@
 
 # PortareOS
 
-**A minimalist Linux distribution for the Retroid Pocket Nova, built around its
-4:3 panel and nothing else.**
+**A Linux distribution for one handheld: the Retroid Pocket Nova, and its
+4:3, 120 Hz OLED panel.**
 
 Home: **[os.portare.org](https://os.portare.org)**
 
 > Black coffee. No milk, no sugar, the right amount of beans.
 
-## What it is
+## What makes it different
 
-The Nova has a **1280x960 (4:3) 120Hz panel**. That is an unusual shape for a
-modern handheld and an excellent one for almost everything made before
-widescreen: the NES, the SNES, the Mega Drive, the arcade boards they were
-copying, the first three Sony consoles. PortareOS is a distribution for that
-panel and that library, on that one device.
+Most handheld distributions support dozens of devices, and every setting has
+to suit all of them. PortareOS supports exactly one device, so it can make
+choices nobody else can:
 
-Write the card, copy the games across, and the systems worth playing on this
-handheld are already configured — for this screen, this gamepad and this SoC,
-rather than for generic defaults averaged over a dozen handhelds.
+- **Nothing between the game and the screen.** There is no compositor and no
+  desktop. The launcher draws straight to the panel through KMS. PlayStation 2
+  and movies render straight to it through Vulkan.
+- **A panel timed for the games.** The display runs at exactly 119.88 Hz,
+  twice NTSC's 59.94. A 60 Hz game shows every frame for exactly two refreshes
+  and a 24 fps film for five, so there is no judder to smooth over. A second
+  mode at 119.63 Hz covers PlayStation's 240p rate.
+- **One emulator per system.** Each system has one emulator, chosen on
+  evidence and tuned for this screen and this pad, not a menu of alternatives
+  nobody configured. Super Nintendo is the only exception: bsnes is there
+  beside snes9x.
+- **Everything else is gone.** No desktop, no media centre, no EmulationStation,
+  no Samba. What is left boots straight into a list of your games.
 
-Everything else comes out. Each thing removed is one less package to build,
-one less setting to get wrong, and one less menu entry between a cold device
-and a game.
+## Features
 
-## The rules
+**Picture and timing**
 
-**One device.** The Retroid Pocket Nova (SM8550). Not a family, not a
-platform. Every other device tree, project and distribution has been deleted
-from the source tree rather than left switched off.
+- 1280×960 at 119.88 Hz. NTSC games and films land on whole refreshes.
+- PlayStation on exact 4× integer scaling: 320×240 fills the panel with no
+  resampling and no borders.
+- Black frame insertion, per system, for motion clarity on the OLED.
+- Run-ahead on for software-rendered systems, to take latency out.
+- Vulkan everywhere it helps: RetroArch, PlayStation 2 and movies.
 
-**4:3, natively.** Render resolutions, integer scaling and refresh rate are
-chosen against 1280x960 and 119.88Hz, not adapted to them afterwards.
+**Front-end**
 
-**One emulator per system.** A second emulator nobody has configured is a
-worse experience one menu-tap away, and it dilutes the per-core tuning that
-only ever gets written for the default. SNES keeps both snes9x and bsnes, and
-arcade is genuinely hard because romset compatibility varies by core version.
-Everywhere else, one.
+- A text-mode launcher that owns the panel directly. It uses no GPU in the
+  menu, and between button presses it only wakes once a minute, for the clock.
+- Wi-Fi with multiple saved networks. Switching between home and away is one
+  press, and new networks are joined with an on-screen keyboard.
+- Bluetooth: scan, pair and connect in one press, and auto-connect for your
+  headphones.
+- USB networking to a computer.
+- Button labels for either printing: Retroid (B/A/X/Y) or PlayStation
+  (✕/○/△/□).
+- Volume, brightness, battery and clock always in the header.
+- Tools: file manager, gamepad tester, PortMaster.
 
-**Latency before everything except correctness.** Input lag is what Android on
-this device is worst at. Frame pacing, the compositor path and the emulator
-frame queue are treated as latency problems first and throughput problems
-second.
+**Systems**
 
-**If it is not retro gaming on this handheld, it is not in the image.** No
-media centre, no desktop, no general-purpose Linux. A feature has to earn its
-build time.
+- **Nintendo:** Game Boy and Game Boy Color (Gambatte), Game Boy Advance
+  (mGBA), Super Nintendo (snes9x, or bsnes), Nintendo 64 (ParaLLEl N64),
+  GameCube and Wii (Dolphin).
+- **Sega:** Master System, Game Gear, SG-1000, Mega Drive and Mega CD
+  (Genesis Plus GX), 32X (PicoDrive), Dreamcast, Naomi and Atomiswave
+  (Flycast).
+- **Sony:** PlayStation (SwanStation), PlayStation 2 (ARMSX2), PSP (PPSSPP).
+- **Arcade and SNK:** FBNeo for arcade and Neo Geo, NeoCD for Neo Geo CD.
+- **Also:** Xbox (xemu), ScummVM, PC ports through PortMaster, Steam through
+  FEX-Emu and gamescope, and Moonlight for streaming from a PC.
 
-## Where it came from, and where it is not going
+**Movies and music**
 
-PortareOS began as a fork of [ROCKNIX](https://github.com/ROCKNIX/distribution),
-which is itself a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution).
-Nearly all of the engineering that makes this possible is theirs, and the
-credit and the licences stay with them.
+- Movies in mpv, straight to the panel: H.264 and HEVC decoded in hardware,
+  pad controls, and every film resumes where you left it.
+- Music in gmu.
 
-**It no longer tracks ROCKNIX.** There is no merge from upstream and there
-will not be one. The trees have diverged past the point where rebasing is
-cheaper than rewriting. Upstream package updates come in selectively, one at a
-time, through `tools/import-upstream-packages`, which maps their paths onto
-ours and skips what has been removed here.
+**Sound**
 
-That is a deliberate trade. ROCKNIX serves many devices well; this serves one
-device narrowly. Individual fixes made here may still be worth offering
-upstream on their own. The tree as a whole is not.
+- PipeWire, and nothing else. PulseAudio is not in the image, and CI fails the
+  build if it comes back.
+- A 5.3 ms audio quantum, down from the 20 ms this fork inherited.
+- Bluetooth audio, HDMI and USB audio.
 
-**Please do not raise PortareOS problems with the ROCKNIX maintainers.** For
-the upstream project, its community and its documentation, go to
-**[rocknix.org](https://rocknix.org)** and the
-[ROCKNIX Discord](https://discord.gg/seTxckZjJy).
+**Under the hood**
 
-Sources are still fetched from ROCKNIX's `distribution-sources` mirror, and
-several components are still built from ROCKNIX repositories. Those are
-dependencies, not branding, and they keep their names.
+- Mainline Linux 7.2, with the Nova's own set of 89 patches.
+- `sched_ext` with `scx_lavd`, a latency-aware scheduler, for frame pacing
+  across the big and little cores.
+- microSD at UHS-I SDR104, not legacy High Speed.
+- RetroArch netplay and RetroAchievements.
+- SSH, SFTP, Tailscale, WireGuard and ZeroTier. SSH is off until you turn it on.
 
-## Built for the panel
+## Status
 
-* Panel driven at **119.88011988Hz**, exactly twice 59.94Hz, so NTSC-rate
-  content lands on an even frame boundary instead of beating against a nominal
-  120.
-* RetroArch takes its refresh rate from DRM rather than from the compositor,
-  which is the only place the exact figure survives.
-* A 1280x960 viewport and integer scaling for the systems whose native height
-  divides cleanly into 960.
-* Black frame insertion, which a 120Hz panel showing 60Hz content can afford.
+PortareOS is **pre-release**. There are nightly builds and no stable release
+yet. What stands between it and a public beta is tracked in the
+[beta milestone](https://github.com/portare-ch/portareos/milestone/1). The
+biggest item: **suspend does not yet save much power**, because memory never
+powers down while asleep ([#62](https://github.com/portare-ch/portareos/issues/62)).
 
-## Tuned for the device
+[ROADMAP.md](ROADMAP.md) is where it is going. [BUGS.md](BUGS.md) is what is
+known to be broken.
 
-* Deep suspend enabled.
-* microSD at UHS-I SDR104 rather than legacy High Speed.
-* Input latency work across the gamepad, compositor and emulator frame queue.
-* `sched_ext` with `scx_lavd`, the latency-aware scheduler, for frame pacing
-  across the Nova's big.LITTLE layout.
+## Installing
 
-Several of the kernel patches behind these came from
-[pocknix-os](https://github.com/shuuri-labs/pocknix-os). See Credits.
+PortareOS uses its own boot partition label, so the first image has to be
+written to the card as a fresh install. An update over an existing ROCKNIX
+installation will not find its boot partition. Updates between PortareOS
+builds work normally.
 
-## What was taken out
-
-Removing things is most of the work, so it is worth being specific about what
-is gone.
-
-**Hardware and distributions.** The other twelve device projects and all their
-configuration, patches and quirks. The nine non-ROCKNIX hardware projects
-inherited from the LibreELEC lineage. The LEIoT and LibreELEC distributions.
-Kodi. The unbuilt addon set. The other SM8550 device trees — the four AYN
-boards and the Retroid Pocket 6 top-dpad variant — and the six extra
-`config.xml` entries that built them, which also put six device choices and
-their recovery twins in the boot menu. What remains beside the Nova's own tree
-is the two files it is built from.
-
-**Subsystems.** PulseAudio, sndio, libao and VLC. Wine and the Windows system
-it backed. NFS, the Samba client and OpenVPN. Infrared remote and Video4Linux
-support — the Nova has no IR receiver, no blaster, no camera and no tuner.
-mesa-demos and speedtest-cli.
-
-**Emulators.** aethersx2, cemu, drastic, daedalusx64, bigpemu, touchhle,
-skyemu, nanoboyadvance, hatari, vita3k and m8c, dropped for duplicating
-something already here, for being 16:9 only, or for simply not being wanted.
-The inherited libretro core recipes that were never built went with them.
-
-What ships is thirteen libretro cores under RetroArch, plus a short list of
-standalone emulators: ARMSX2, RPCS3, xemu, ScummVM, PortMaster, Moonlight and
-Steam.
-
-One thing is deliberately still there: `case ${DEVICE}` branches inside
-recipes shared with upstream. They are inert with a single device, and editing
-them would conflict on every import.
-
-## PipeWire, and nothing else
-
-Pulse is banned. There is no `pulseaudio` recipe left in the tree, nothing
-links libpulse, no pulse daemon is built, and a check in
-`validate-pull-request.yml` fails the build if any of it comes back.
-
-Everything reaches PipeWire, though not all by the same road, because that is
-decided by what each upstream project supports:
-
-| | reaches PipeWire via |
-| --- | --- |
-| EmulationStation | libpipewire, native |
-| RetroArch, FluidSynth, OpenAL Soft | their own PipeWire backends |
-| Flycast, ares, ARMSX2, RPCS3 | SDL2 / SDL3, built with the PipeWire driver and PulseAudio off |
-| Dolphin | alsa-lib's `pcm_pipewire`, in process |
-
-The one deliberate exception is `pipewire-pulse`, which stays enabled. Steam
-and the games it runs carry their own libpulse in the Steam runtime and cannot
-be recompiled, so something has to answer them.
-
-The latency floor came down with it. `default.clock.min-quantum` and the
-pulse-compat minimums are pinned at 256 frames, 5.3ms at 48kHz, against the
-960 frames (20ms) this fork inherited.
-
-## EmulationStation rewritten for it
-
-[emulationstation-sdl3](https://github.com/portare-ch/emulationstation-sdl3) is
-built from a fork, and the name says what the fork is for: it runs on SDL3
-rather than SDL2, and it talks to PipeWire directly.
-
-The SDL3 half is not a version bump. SDL3 inverted the return convention of
-most of its API — `SDL_Init` and friends return true on success where SDL2
-returned zero — so every call site had to be read rather than recompiled. A
-missed one is not a compile error, it is a black screen on a device that still
-answers SSH.
-
-The PipeWire half replaced `VolumeControl`, which was ALSA and PulseAudio side
-by side, wrapped in `__APPLE__` and `WIN32` branches for platforms this will
-never run on. It is now one native libpipewire implementation that binds the
-default sink through the registry and sets `channelVolumes` directly.
-
-Video playback moved from VLC to libmpv's software render API, and the gettext
-translation layer is gone.
-
-## What is kept
-
-Not everything inherited is bloat. Still here, because a handheld that plays
-games over a network is still a handheld that plays games:
-
-* Local and remote netplay.
-* Scraping and RetroAchievements.
-* Bluetooth audio and controllers.
-* HDMI audio and video out, and USB audio.
-* Syncthing and rclone for save and ROM sync.
-* WireGuard, Tailscale and ZeroTier.
-
-## What is next
-
-[ROADMAP.md](ROADMAP.md) is where this is going — suspend that actually
-suspends, every emulator configured on arrival, and replacing sway with
-something that does not assume a keyboard and a pointer.
-[BUGS.md](BUGS.md) is what is known to be broken or unfinished, including the
-findings too small or too uncertain to file.
-[docs/performance-plan.md](docs/performance-plan.md) is what to try next about
-performance, with the tests to tell whether it worked.
-
-**Much of the tree has not been verified on hardware.** It builds and the
-changes are internally consistent; whether the Nova behaves with all of them
-is a separate question. The roadmap says which parts.
+Installation steps are at [os.portare.org](https://os.portare.org).
 
 ## Building
 
@@ -205,27 +115,22 @@ is a separate question. The roadmap says which parts.
 make docker-SM8550
 ```
 
-Images are written to `target/`. The build wants a container runtime, roughly
-100 GB of disk and several hours the first time through.
+Images are written to `target/`. The build needs a container runtime, roughly
+100 GB of disk, and several hours the first time.
 
-Two things worth knowing:
+## Where it came from
 
-* The **Build** workflow takes an `incremental` input. Off, it builds
-  everything, which is what scheduled and release builds always do. On, it
-  restores per-stage state and skips packages whose recipes have not changed.
-* `.github/scripts/check-package-deps.py` checks that every package named in a
-  `PKG_DEPENDS_*` line exists, resolving variable-driven lists such as
-  `PKG_EMUS` and `LIBRETRO_CORES`. It runs early in CI so a missing package
-  fails in seconds rather than part-way through a build.
+PortareOS began as a fork of [ROCKNIX](https://github.com/ROCKNIX/distribution),
+itself a fork of [JELOS](https://github.com/JustEnoughLinuxOS/distribution).
+Much of the engineering underneath is theirs, and the credit and the licences
+stay with them.
 
-## Installing
+It no longer tracks ROCKNIX. The trees have diverged past the point where
+merging is cheaper than rewriting, so upstream updates come in selectively,
+one package at a time, through `tools/import-upstream-packages`.
 
-PortareOS uses its own boot partition label, so the first image must be
-written to the card as a fresh install. An in-place update over an existing
-ROCKNIX installation will not find its boot partition. Updates between
-PortareOS builds work normally.
-
-Installation steps are at [os.portare.org](https://os.portare.org).
+**Please do not raise PortareOS problems with the ROCKNIX maintainers.** For
+ROCKNIX itself, go to **[rocknix.org](https://rocknix.org)**.
 
 ## A note about AI
 
