@@ -49,30 +49,6 @@
         <image>./images/portmaster.svg</image>
     </game>
     <game>
-        <path>./cloud_backup.sh</path>
-        <name>RCLONE Backup</name>
-        <desc>Backup your saves to a cloud drive using RCLONE. Please make sure you have followed the steps at rocknix.org to set up RCLONE first.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2024</releasedate>
-        <genre>Script</genre>
-        <players>1</players>
-        <image>./images/rclone-backup.svg</image>
-    </game>
-    <game>
-        <path>./cloud_restore.sh</path>
-        <name>RCLONE Restore</name>
-        <desc>Restores your saves from a cloud drive using RCLONE. Please make sure you have followed the steps at rocknix.org to set up RCLONE first.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2024</releasedate>
-        <genre>Script</genre>
-        <players>1</players>
-        <image>./images/rclone-restore.svg</image>
-    </game>
-    <game>
         <path>./Remove ._ Files.sh</path>
         <name>Remove ._ Files</name>
         <desc>This tool will remove hidden ._ files created by the MacOS filesystem</desc>
@@ -83,18 +59,6 @@
         <genre>Script</genre>
         <players>1</players>
         <image>./images/remove-mac-files.svg</image>
-    </game>
-    <game>
-        <path>./qterminal.sh</path>
-        <name>QTerminal</name>
-        <desc>QTerminal is a lightweight Qt terminal emulator. USB keyboard required.</desc>
-        <developer>LXQT</developer>
-        <publisher>LXQTX</publisher>
-        <rating>5.0</rating>
-        <releasedate>2025</releasedate>
-        <genre>Tool</genre>
-        <players>1</players>
-        <image>./images/qterminal.svg</image>
     </game>
     <game>
         <path>./Install Steam.sh</path>
@@ -280,7 +244,7 @@ it's recommended to have a mouse and keyboard to modify settings.</desc>
     <game>
         <path>./Test Gamepad.sh</path>
         <name>Test Gamepad</name>
-        <desc>A simple SDL GUI gamepad tester to help validate gamepad inputs.</desc>
+        <desc>A simple SDL GUI gamepad tester to help validate gamepad inputs. To exit, hold L1 and press START + SELECT.</desc>
         <developer>PortareOS</developer>
         <publisher>PortareOS</publisher>
         <rating>5.0</rating>
@@ -288,18 +252,6 @@ it's recommended to have a mouse and keyboard to modify settings.</desc>
         <genre>tool</genre>
         <players>1</players>
         <image>./images/test-gamepad.svg</image>
-    </game>
-    <game>
-        <path>./Test Touchscreen.sh</path>
-        <name>Test Touchscreen</name>
-        <desc>A simple SDL GUI touchscreen tester to help validate touchscreen inputs.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2024</releasedate>
-        <genre>tool</genre>
-        <players>1</players>
-        <image>./images/test-touchscreen.svg</image>
     </game>
     <game>
         <path>./GPcal.sh</path>

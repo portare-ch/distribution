@@ -6,13 +6,17 @@ PKG_VERSION="1.0"
 PKG_LICENSE="custom"
 PKG_SITE=""
 PKG_URL=""
-PKG_DEPENDS_TARGET="toolchain rclone commander"
+# The Tools folder. portarelauncher lists every script in it, so what a
+# package drops in here is what the Tools entry offers. rclone and qterminal
+# are gone: cloud backup was driven from EmulationStation, and a terminal
+# needed a compositor to draw in.
+PKG_DEPENDS_TARGET="toolchain commander"
 PKG_LONGDESC="OS Modules Package"
 PKG_TOOLCHAIN="manual"
 
 case ${DEVICE} in
   RK3399|RK3588|SM8250|SM8550|SM8650|SM8750|SM6115)
-    PKG_DEPENDS_TARGET+=" gamepadtester qterminal"
+    PKG_DEPENDS_TARGET+=" gamepadtester"
     ;;
 esac
 
