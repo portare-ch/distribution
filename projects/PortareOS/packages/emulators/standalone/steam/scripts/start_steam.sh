@@ -77,14 +77,26 @@ steam_debug_print() {
   echo "VSYNC set to: ${VSYNC}"
 }
 
-steam_read_sway_geometry() {
-  eval "$(swaymsg -t get_outputs | jq -r '
-    .[] | select(.focused == true) |
-    "W=\(.current_mode.width) H=\(.current_mode.height) TRANSFORM=\(.transform) REFRESH=\(.current_mode.refresh // 60000)"
-  ')"
-  # Round to nearest (119990 mHz -> 120) to match the mode's integer vrefresh,
-  # which gamescope's -r must hit exactly or it falls back to the preferred mode.
-  REFRESH_HZ=$(((REFRESH + 500) / 1000))
+# Asks DRM directly rather than asking a compositor. modetest is a query and
+# needs no DRM master, so this works with the panel already handed over.
+#
+# The preferred mode specifically: since the panel gained a second mode for
+# SwanStation, both of them round to an integer vrefresh of 120, and
+# gamescope's -r must hit the mode's rounded rate exactly or it falls back.
+# Matching on "preferred" picks the one the panel actually wants rather than
+# whichever rounds the same way.
+steam_read_panel_geometry() {
+  eval "$(/usr/bin/modetest -M msm -c 2>/dev/null | awk '
+    /^[[:space:]]*#[0-9]+[[:space:]]/ && /preferred/ {
+      split($2, wh, "x")
+      printf "W=%s H=%s REFRESH_HZ=%d\n", wh[1], wh[2], $3 + 0.5
+      exit
+    }')"
+  TRANSFORM="${TRANSFORM:-normal}"
+  if [ -z "${W}" ] || [ -z "${H}" ] || [ -z "${REFRESH_HZ}" ]; then
+    echo "start_steam: could not read the panel mode from modetest" >&2
+    return 1
+  fi
 }
 
 steam_setup_environment() {
@@ -233,7 +245,9 @@ steam_launch_bigpicture() {
   if [ "${STEAM_FLAVOR}" = "arm64" ]; then
     export STEAM_COMPAT_GRAPHICS_PROVIDER=//storage/.local/share/fex-emu/RootFS/ArchLinux/graphics_provider.json
     steam_exit_code_file=$(mktemp /tmp/steam-exit-code.XXXXXX)
-    systemctl stop sway
+    # Nothing to stop: portarelauncher drops DRM master before running
+    # this, and gamescope takes it. Nothing to start afterwards either -
+    # the front-end never left.
     steam_touch_calibration_begin "${force_orientation}"
     trap steam_touch_calibration_end EXIT
     while true; do
@@ -259,11 +273,12 @@ steam_launch_bigpicture() {
     rm -f "${steam_exit_code_file}"
     steam_touch_calibration_end
     trap - EXIT
-    systemctl start essway
     exit 0
   else
     FEX /usr/bin/steam -exitsteam
-    systemctl stop sway
+    # Nothing to stop: portarelauncher drops DRM master before running
+    # this, and gamescope takes it. Nothing to start afterwards either -
+    # the front-end never left.
     steam_touch_calibration_begin "${force_orientation}"
     trap steam_touch_calibration_end EXIT
     GAMESCOPE_MODE_SAVE_FILE="${gamescope_mode_file}" GAMESCOPE_FAKE_OUTPUT_MM=508x286 env -u WAYLAND_DISPLAY ${EMUPERF} \
@@ -271,7 +286,6 @@ steam_launch_bigpicture() {
       FEX /usr/bin/steam -nobigpicture -noverifyfiles -nobootstrapupdate -skipinitialbootstrap -norepairfiles -noshaders ${game_uri:+"$game_uri"}
     steam_touch_calibration_end
     trap - EXIT
-    systemctl start essway
     exit 0
   fi
 }

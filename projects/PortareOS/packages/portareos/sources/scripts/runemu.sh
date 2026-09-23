@@ -28,13 +28,11 @@ ROMNAME="$1"
 BASEROMNAME=${ROMNAME##*/}
 GAMEFOLDER="${ROMNAME//${BASEROMNAME}}"
 
-### A KMS launch hands the panel to the emulator itself, which page
-### flips straight to the display with no compositor to composite and
-### blit through. sway has to go for that, and essway requires sway, so
-### stopping it ends EmulationStation and every process in its cgroup,
-### this script included. Re-exec into a scope of our own first, the way
-### start_steam.sh does, so the run and the cleanup at the bottom
-### survive the front-end going away.
+### A KMS launch hands the panel to the emulator itself, which page flips
+### straight to the display with no compositor to composite and blit
+### through. Nothing has to be stopped for that any more: portarelauncher
+### holds DRM master, drops it before exec'ing this script, and takes it
+### back when this script returns.
 KMSMODE=$(get_setting "kmsmode" "${PLATFORM}" "${BASEROMNAME}")
 
 ### RetroArch runs on KMS unless something says otherwise. It was built
@@ -69,20 +67,14 @@ case "${EMULATOR}" in
     ;;
 esac
 
-### start_armsx2.sh needs to know, and it runs after sway is already gone.
+### start_armsx2.sh needs to know which display path it is on.
 export KMSMODE
-if [ "${KMSMODE}" = "1" ] && [ -z "${RUNEMU_KMS_SCOPE}" ]; then
-  systemctl stop runemu-kms.scope 2>/dev/null || true
-  exec systemd-run \
-    --scope \
-    --slice=system.slice \
-    --unit=runemu-kms \
-    --collect \
-    -E RUNEMU_KMS_SCOPE=1 \
-    -E HOME="${HOME}" \
-    -E TZ="${TZ}" \
-    -- "${0}" "${@}"
-fi
+
+### This used to re-exec into a scope of its own, because taking the
+### display meant stopping the front-end, and stopping the front-end killed
+### everything in its cgroup including this script. portarelauncher does not
+### go away: it drops DRM master, runs this, and takes master back when it
+### exits. So there is nothing to survive and nothing to re-exec into.
 
 ### One emulator at a time.
 ###
@@ -502,12 +494,12 @@ if [ "${DEVICE_MANGOHUD_SUPPORT}" == "true" ]; then
 fi
 
 ### Take the display for a KMS launch. SDL finds the panel through GBM,
-### but only while nothing else holds DRM master, and sway lets go a
-### moment after systemd reports it stopped.
+### but only while nothing else holds DRM master - and by the time this
+### runs, nothing does. portarelauncher calls drmDropMaster() before it
+### execs this script, so there is no compositor to stop and no wait for
+### one to let go.
 if [ "${KMSMODE}" = "1" ]; then
-  ${VERBOSE} && log $0 "KMS launch, stopping sway"
-  systemctl stop sway
-  sleep 2
+  ${VERBOSE} && log $0 "KMS launch, display already handed over"
   export SDL_VIDEODRIVER=kmsdrm
   export SDL_KMSDRM_REQUIRE_DRM_MASTER=1
   unset WAYLAND_DISPLAY DISPLAY
@@ -606,12 +598,8 @@ then
   fi
 fi
 
-### Bring the front-end back after a KMS launch. essway requires sway,
-### so starting it starts the compositor too.
-if [ "${KMSMODE}" = "1" ]; then
-  ${VERBOSE} && log $0 "KMS launch over, starting the front-end"
-  systemctl start essway
-fi
+### Nothing to bring back. The front-end never left - it is the parent of
+### this script and takes DRM master again when this returns.
 
 ${VERBOSE} && log $0 "Checking errors: ${ret_error} "
 if [ "${ret_error}" == "0" ]
