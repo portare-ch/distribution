@@ -142,45 +142,25 @@ fetch_parts() {
   return 0
 }
 
-# Absolute symlinks carry the checkout path they were made under. The sysroot
-# is full of them - meson installs libdrm.so as a link to the full path of
-# libdrm.so.2.134.0 - so a state saved as /home/runner/work/distribution/
-# distribution restores links into a directory that stopped existing when the
-# repository became portareos. Every such link dangles, the stamp says the
-# package is built, and the failure lands on the first package that links
-# against it: portarelauncher's `ld: cannot find -ldrm`.
-#
-# Repointed rather than rejected: the build directory's own name is the part
-# of the path that is stable, so everything after it is kept and everything
-# before it becomes wherever this checkout is. Links that already point here,
-# and links outside the build tree, are left alone.
-relink_moved_root() {
-  local build_dir="$1"
-  local here name link target rest n=0
-
-  here="$(cd "${build_dir}" && pwd)"
-  name="$(basename "${here}")"
-
-  while IFS= read -r -d '' link; do
-    target="$(readlink "${link}")"
-    case "${target}" in
-      "${here}"/*) continue ;;
-      /*/"${name}"/*) ;;
-      *) continue ;;
-    esac
-    rest="${target#*/"${name}"/}"
-    ln -sfn "${here}/${rest}" "${link}"
-    n=$((n + 1))
-  done < <(find "${build_dir}" -type l -lname "/*" -print0 2>/dev/null)
-
-  if [ "${n}" -gt 0 ]; then
-    echo "build-state: repointed ${n} symlinks saved under another checkout path."
-  fi
+# A saved state is only valid in the checkout it was built in. Build output
+# is full of that path spelled out absolutely: meson's sysroot dev links, the
+# fakeroot wrapper's library search path, host tools' rpaths into
+# toolchain/lib. When the repository became portareos the runner's checkout
+# moved from /home/runner/work/distribution/distribution to .../portareos/
+# portareos, and every archive saved before that restored a tree pointing
+# into a directory that no longer exists. Repointing the symlinks got the
+# build as far as the image, where fakeroot aborted on its own wrapper script;
+# rpaths cannot be rewritten at all when the old and new paths differ in
+# length. So the path is recorded next to the digest and a mismatch is
+# treated like any other one: build cold, once, and save a state that is
+# right for where it will be restored.
+build_root() {
+  realpath -m "$1"
 }
 
 cmd_restore() {
   local build_dir="$1" asset="$2" want="$3"
-  local have
+  local have have_root
 
   if ! fetch_parts "${asset}"; then
     echo "build-state: no saved state for ${asset} - building cold."
@@ -193,8 +173,15 @@ cmd_restore() {
     return 0
   fi
 
-  have="$(cat "${DIGEST_FILE}")"
+  have="$(sed -n 1p "${DIGEST_FILE}")"
+  have_root="$(sed -n 2p "${DIGEST_FILE}")"
   rm -f "${DIGEST_FILE}"
+
+  if [ "${have_root}" != "$(build_root "${build_dir}")" ]; then
+    rm -f state.tar
+    echo "build-state: saved under ${have_root:-an unrecorded path}, this checkout is $(build_root "${build_dir}") - building cold."
+    return 0
+  fi
 
   if [ "${have}" != "${want}" ]; then
     rm -f state.tar
@@ -225,7 +212,6 @@ cmd_restore() {
   echo "build-state: upstream unchanged - restoring ${asset}."
   tar -xf state.tar || echo "build-state: extract failed - building cold."
   rm -f state.tar "${TOOLCHAIN_MARKER}"
-  relink_moved_root "${build_dir}"
 
   echo "build-state: $(find "${build_dir}/.stamps" -type f -name 'build_*' 2>/dev/null | wc -l) stamps now present."
 }
@@ -255,7 +241,7 @@ cmd_save() {
     toolchain_entries "${build_dir}" >> "${list}"
   fi
 
-  printf '%s\n' "${digest}" > "${DIGEST_FILE}"
+  printf '%s\n%s\n' "${digest}" "$(build_root "${build_dir}")" > "${DIGEST_FILE}"
   printf '%s\n' "./${DIGEST_FILE}" >> "${list}"
 
   # Tells restore that this archive carries toolchain output, so the stamps
@@ -347,7 +333,7 @@ recipe_digest() {
 
 cmd_restore_root() {
   local build_dir="$1" asset="$2"
-  local have want
+  local have have_root want
 
   if ! fetch_parts "${asset}"; then
     echo "build-state: no saved state for ${asset} - building cold."
@@ -360,9 +346,16 @@ cmd_restore_root() {
     return 0
   fi
 
-  have="$(cat "${DIGEST_FILE}")"
+  have="$(sed -n 1p "${DIGEST_FILE}")"
+  have_root="$(sed -n 2p "${DIGEST_FILE}")"
   want="$(recipe_digest "${RECIPE_LIST}")"
   rm -f "${DIGEST_FILE}" "${RECIPE_LIST}"
+
+  if [ "${have_root}" != "$(build_root "${build_dir}")" ]; then
+    rm -f state.tar
+    echo "build-state: saved under ${have_root:-an unrecorded path}, this checkout is $(build_root "${build_dir}") - building cold."
+    return 0
+  fi
 
   if [ "${have}" != "${want}" ]; then
     rm -f state.tar
@@ -377,7 +370,6 @@ cmd_restore_root() {
   # The full extract puts the two metadata files back into the checkout; they
   # have served their purpose and save-root writes them fresh.
   rm -f state.tar "${DIGEST_FILE}" "${RECIPE_LIST}"
-  relink_moved_root "${build_dir}"
   echo "build-state: $(find "${build_dir}/.stamps" -type f -name 'build_*' 2>/dev/null | wc -l) stamps now present."
 }
 
@@ -396,7 +388,7 @@ cmd_save_root() {
     | LC_ALL=C sort > "${RECIPE_LIST}"
 
   digest="$(recipe_digest "${RECIPE_LIST}")"
-  printf '%s\n' "${digest}" > "${DIGEST_FILE}"
+  printf '%s\n%s\n' "${digest}" "$(build_root "${build_dir}")" > "${DIGEST_FILE}"
   echo "build-state: $(wc -l < "${RECIPE_LIST}") packages, recipe digest ${digest}."
 
   # "-T <file>" for a stage whose archive set is easier to compute than to
