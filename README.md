@@ -275,6 +275,6 @@ header; the work is theirs, and any mistakes in adapting it are mine.
 | --- | --- |
 | `0210`, `0211`, `0212` | microSD at UHS-I SDR104 via the downstream `sdhci-msm` driver, plus the `sdhc_2` rebind in the RP6 device tree. Originally from Armbian PR #9546 (Alex Ling). |
 | `1012` | rsinput MCU version handshake on init, so the gamepad survives an unlucky resume (jaewun). |
-| `1021` | Expose only the 120Hz mode on the RP6 panel (pocknix). `1022` is this fork's port of it to the Nova panel. |
+| `1021` | Expose only the 120Hz mode on the RP6 panel (pocknix). Its port to the Nova panel, `1022`, was dropped when the Nova gained a second 120Hz mode; the race it closed is now kept closed in the Nova driver's `get_modes()`. |
 | `1050` | `edt,retain-power-in-suspend` option for edt-ft5x06 (jaewun). |
 | `1051` | Lowest A740 GPU operating point, 124.8 MHz (Thorch contributors). |
