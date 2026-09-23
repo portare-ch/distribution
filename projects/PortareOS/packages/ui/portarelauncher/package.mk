@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 PKG_NAME="portarelauncher"
-PKG_VERSION="d227e874a3f7709cf4d93a2623f5cad1aae252d5"
-PKG_SHA256="89772f4deaf747134a554506ecb2d7f345f6e1a4ced1e46f9f730b5dcf432cc9"
+PKG_VERSION="af8dea1efeae306c0c499dfab6f74b2abc01d25b"
+PKG_SHA256="6b86016cac87793f10ab73e6998c70fcec85976e9d686038d5f1f564c46781b2"
 PKG_LICENSE="GPL-2.0"
 PKG_SITE="https://github.com/portare-ch/portarelauncher"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
