@@ -1,0 +1,213 @@
+From: portare-ch <hello@portare.org>
+Subject: [PATCH] vulkan/khr_display: pick the closest mode, and follow the content's rate
+
+Two changes to the Vulkan KMS path (VK_KHR_display), which has no display
+server to change modes for it.
+
+1. vulkan_update_display_mode() took the first mode of the right size
+   within 1 Hz of the requested rate. A panel can carry two modes a
+   fraction of a hertz apart - 119.880 and 119.635 Hz, twice NTSC and twice
+   PlayStation 240p - both inside that window, so the second was never
+   chosen. Among modes of equal size it now takes the one closest to the
+   requested rate, independent of the order the driver lists them in.
+
+2. When a core reports a new frame rate through SET_SYSTEM_AV_INFO, the
+   panel rate that keeps the same whole multiple of it is computed - 2 x
+   59.94 on a panel at twice 59.8173 - and, once the new content rate has
+   held for 60 frames, video is reinitialised at that rate, which recreates
+   the display surface on the matching mode. The hold keeps a menu or FMV
+   that flips modes briefly from costing anything: on a DSI panel the
+   switch is a full modeset, measured at around 460 ms without a picture.
+   It honours video_autoswitch_refresh_rate (anything but "off"), and does
+   nothing under any other context.
+
+Nothing here is specific to one device.
+---
+--- a/gfx/common/vulkan_common.c
++++ b/gfx/common/vulkan_common.c
+@@ -1361,6 +1361,7 @@
+ static bool vulkan_update_display_mode(
+       unsigned *width,
+       unsigned *height,
++      unsigned *rate,
+       const VkDisplayModePropertiesKHR *mode,
+       const struct vulkan_display_surface_info *info)
+ {
+@@ -1387,14 +1388,24 @@
+       int old_delta_x       = (int)info->width  - (int)*width;
+       int old_delta_y       = (int)info->height - (int)*height;
+       int delta_rate        = abs((int)info->refresh_rate_x1000 - (int)visible_rate);
++
++      int old_delta_rate    = abs((int)info->refresh_rate_x1000 - (int)*rate);
+ 
+       int dist              = delta_x     * delta_x     + delta_y     * delta_y;
+       int old_dist          = old_delta_x * old_delta_x + old_delta_y * old_delta_y;
+ 
+-      if (dist < old_dist && delta_rate < 1000)
++      /* Among modes of the same size, the one closest to the requested
++       * rate, not the first within 1 Hz of it. A panel can carry two modes
++       * a fraction of a hertz apart - 119.880 and 119.635, twice NTSC and
++       * twice PlayStation 240p - and both are inside that window, so
++       * taking the first made the second unreachable. */
++      if (delta_rate < 1000
++            && (dist < old_dist
++               || (dist == old_dist && delta_rate < old_delta_rate)))
+       {
+          *width       = visible_width;
+          *height      = visible_height;
++         *rate        = visible_rate;
+          return true;
+       }
+    }
+@@ -1418,6 +1429,7 @@
+    uint32_t best_plane                       = UINT32_MAX;
+    VkDisplayPlaneAlphaFlagBitsKHR alpha_mode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR;
+    VkDisplayModeKHR best_mode                = VK_NULL_HANDLE;
++   unsigned best_rate                        = 0;
+    /* Monitor index starts on 1, 0 is auto. */
+    unsigned monitor_index                    = info->monitor_index;
+    unsigned saved_width                      = *width;
+@@ -1488,7 +1500,7 @@
+       for (i = 0; i < mode_count; i++)
+       {
+          const VkDisplayModePropertiesKHR *mode = &modes[i];
+-         if (vulkan_update_display_mode(width, height, mode, info))
++         if (vulkan_update_display_mode(width, height, &best_rate, mode, info))
+             best_mode = modes[i].displayMode;
+       }
+ 
+--- a/runloop.c
++++ b/runloop.c
+@@ -1490,8 +1490,109 @@
+ {
+    if (runloop_state.perfcnt_enable)
+       perf->total += cpu_features_get_perf_counter() - perf->start;
++}
++
++
++#if defined(HAVE_VULKAN)
++/* Following the content's rate on a VK_KHR_display panel.
++ *
++ * A core can change its frame rate mid-game - a PlayStation switching
++ * between 240p (59.8173 Hz) and 480i (59.94 Hz) is the case this was
++ * written for - and a panel that carries a mode for each rate should move
++ * with it. There is no display server under khr_display to do that, so
++ * nothing did: the mode chosen at start stayed, and content at the other
++ * rate ran a fraction of a percent off, one repeated or dropped frame every
++ * few seconds.
++ *
++ * The switch is a video reinit, which recreates the display surface and
++ * picks the mode closest to the new rate. On a DSI panel that is a full
++ * modeset, measured at around half a second without a picture, so it is
++ * held back until the new rate has lasted DISPLAY_FOLLOW_HOLD_FRAMES: a
++ * menu or FMV that flips modes briefly costs nothing, and a game that
++ * settles into a mode gets the right one.
++ *
++ * Honours video_autoswitch_refresh_rate: anything but "off" enables it,
++ * since a KMS display is exclusive fullscreen by construction. */
++#define DISPLAY_FOLLOW_HOLD_FRAMES 60
++
++static struct
++{
++   float    target_hz;  /* panel rate wanted; 0 when nothing is pending */
++   unsigned frames;     /* frames the content rate has held since      */
++} display_follow;
++
++static bool display_follow_active(void)
++{
++   video_driver_state_t *video_st = video_state_get_ptr();
++   settings_t *settings           = config_get_ptr();
++   const char *ident              = video_st->current_video_context.ident;
++
++   return settings->uints.video_autoswitch_refresh_rate
++            != AUTOSWITCH_REFRESH_RATE_OFF
++         && ident
++         && string_is_equal(ident, "khr_display");
++}
++
++/* The panel rate the new content rate wants: the same whole multiple of it
++ * the panel runs at now - 2 x 59.94 on a 119.88 Hz panel - so a panel at
++ * twice the content rate stays at twice it. */
++static void display_follow_content_rate(float fps)
++{
++   settings_t *settings = config_get_ptr();
++   float current        = settings->floats.video_refresh_rate;
++   unsigned multiple;
++   float target;
++
++   if (!display_follow_active())
++   {
++      video_driver_state_t *video_st = video_state_get_ptr();
++      const char *ident = video_st->current_video_context.ident;
++      RARCH_DBG("[Video] Content rate now %.4f Hz; not following it (context \"%s\").\n",
++            fps, ident ? ident : "none");
++      return;
++   }
++   if (fps <= 0.0f || current <= 0.0f)
++      return;
++
++   multiple = (unsigned)(current / fps + 0.5f);
++   if (multiple < 1)
++      multiple = 1;
++   target   = fps * multiple;
++
++   /* Already there, or the content went back before the hold ran out. */
++   if (fabsf(target - current) < 0.01f)
++   {
++      display_follow.target_hz = 0.0f;
++      return;
++   }
++
++   RARCH_LOG("[Video] Content rate now %.4f Hz: panel wants %.6f Hz, switching if it holds %u frames.\n",
++         fps, target, DISPLAY_FOLLOW_HOLD_FRAMES);
++   display_follow.target_hz = target;
++   display_follow.frames    = 0;
+ }
++
++static void display_follow_frame(void)
++{
++   int reinit_flags;
++   float hz;
+ 
++   if (display_follow.target_hz <= 0.0f)
++      return;
++   if (++display_follow.frames < DISPLAY_FOLLOW_HOLD_FRAMES)
++      return;
++
++   hz                       = display_follow.target_hz;
++   display_follow.target_hz = 0.0f;
++   reinit_flags             = DRIVERS_CMD_ALL
++         & ~(DRIVER_CAMERA_MASK | DRIVER_MICROPHONE_MASK);
++
++   RARCH_LOG("[Video] Content rate held %u frames, moving the panel to %.6f Hz.\n",
++         DISPLAY_FOLLOW_HOLD_FRAMES, hz);
++   video_monitor_set_refresh_rate(hz);
++   command_event(CMD_EVENT_REINIT, &reinit_flags);
++}
++#endif
+ 
+ bool runloop_environment_cb(unsigned cmd, void *data)
+ {
+@@ -2937,6 +3038,11 @@
+                   (*info)->geometry.aspect_ratio,
+                   (*info)->timing.fps,
+                   (*info)->timing.sample_rate);
++
++#if defined(HAVE_VULKAN)
++            if ((*info)->timing.fps != av_info->timing.fps)
++               display_follow_content_rate((float)(*info)->timing.fps);
++#endif
+ 
+             memcpy(av_info, *info, sizeof(*av_info));
+ 
+@@ -8631,6 +8737,10 @@
+          core_run();
+    }
+ 
++#if defined(HAVE_VULKAN)
++   display_follow_frame();
++#endif
++
+    /* Increment runtime tick counter after each call to
+     * core_run() or run_ahead() */
+    runloop_st->core_runtime_usec += runloop_core_runtime_tick(
