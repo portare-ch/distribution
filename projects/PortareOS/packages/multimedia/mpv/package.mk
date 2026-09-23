@@ -32,8 +32,10 @@ else
   PKG_MESON_OPTS_TARGET+=" -Dwayland=disabled"
 fi
 
-# libmpv is what emulationstation plays its preview video through.
-PKG_MESON_OPTS_TARGET+=" -Dsdl2-gamepad=enabled -Dpipewire=enabled -Dlibmpv=true"
+# sdl2-gamepad is how the pad reaches mpv: config/input.conf maps it. libmpv
+# was only for EmulationStation's preview videos, and the mpv binary carries
+# its own copy of the player - 2.7 MB of shared library nothing else loads.
+PKG_MESON_OPTS_TARGET+=" -Dsdl2-gamepad=enabled -Dpipewire=enabled -Dlibmpv=false"
 
 # Vulkan has issues on S922X so disable
 [ "${DEVICE}" == "S922X" ] && PKG_MESON_OPTS_TARGET+=" -Dvulkan=disabled"
