@@ -5,16 +5,24 @@
 
 . /etc/profile
 
-# There is no update server. Put PortareOS-<device>.<arch>-<date>.tar in a
-# directory called UPD, internally or on removable media, and this finds it.
+# Two ways to get an update, both ending in the same place: a verified
+# PortareOS-<device>.<arch>-<date>.tar in /storage/.update, which the next
+# boot applies.
 #
-# EmulationStation calls this, and expects:
+# Online, from this project's GitHub releases, over Wi-Fi. The launcher's
+# Settings > Update uses these, and reads the key=value lines they print:
 #
-#   check         exit 0 + print a version   -> ApiSystem::canUpdate()
-#   check-media   exit 0, quietly            -> ApiSystem::canLocalUpdate()
-#   update        stage it, printing ">>>NN%" for GuiUpdate's progress bar
+#   check-online   what the channel offers, and whether it is newer
+#   update-online  download it with progress=NN lines, verify, stage
 #
-# Staging only. ES prints "REBOOT TO APPLY" on exit 0.
+# From media: put the .tar in a directory called UPD, internally or on
+# removable media. Kept for a device with no network:
+#
+#   check          exit 0 + print a version
+#   check-media    exit 0, quietly
+#   update         stage it, printing ">>>NN%"
+#
+# Staging only. Nothing here reboots.
 
 # /flash is the FAT partition visible when the card is in a computer. The globs
 # catch external media, which lands on a different path depending on what else
@@ -22,6 +30,11 @@
 UPD_ROOTS="${UPD_ROOTS:-/storage/UPD /flash/UPD /storage/games-external/UPD /storage/games-internal/UPD /var/media/*/UPD /media/*/UPD}"
 
 STAGE_DIR="${STAGE_DIR:-/storage/.update}"
+
+# Where the builds are published. build-nightly.yml tags a nightly
+# nightly-<date>-<run> as a prerelease and the monthly build release-<date>-<run>.
+UPDATE_REPO="${UPDATE_REPO:-portare-ch/portareos}"
+UPDATE_API="${UPDATE_API:-https://api.github.com/repos/${UPDATE_REPO}/releases?per_page=30}"
 
 # Print "<path> <version>" for the newest usable update, or nothing.
 find_update() {
@@ -154,6 +167,205 @@ stage_update() {
     return 0
 }
 
+# ---- online ---------------------------------------------------------------
+
+# updates.branch: "nightly" takes the newest build of either kind, since the
+# monthly release is built from the same branch; "release" takes only the
+# monthly ones. "auto", the default, follows the installed build.
+update_channel() {
+    case "$(get_setting updates.branch)" in
+        nightly) echo nightly ;;
+        release) echo release ;;
+        *)       [ "${OS_BUILD}" = "nightly" ] && echo nightly || echo release ;;
+    esac
+}
+
+# One tab-separated line per usable release, newest first, or exit 2 when
+# GitHub could not be asked:
+#   tag  date  commit  tar-name  tar-url  tar-size  sha256-url
+# Usable means not a draft, of this channel, and carrying a .tar for this
+# device - a release that failed to attach one is skipped, not offered.
+# The commit is the one release-notes names in "Built from `<sha>`", which is
+# the only thing that tells two builds from the same day apart: the file name
+# has the date alone, and 22 September 2026 had four nightlies.
+online_releases() {
+    channel="$1"
+    case "${channel}" in
+        release) pattern='^release-' ;;
+        *)       pattern='^(nightly|release)-' ;;
+    esac
+
+    # Fetched first and checked on its own: piped straight into jq, a failed
+    # request would look like a channel with nothing in it.
+    json="$(curl -fsSL --connect-timeout 10 --max-time 30 \
+        -H "Accept: application/vnd.github+json" "${UPDATE_API}")" || return 2
+
+    printf '%s' "${json}" |
+    jq -r --arg pat "${pattern}" --arg dev "${HW_DEVICE}" --arg arch "${HW_ARCH}" '
+        .[] | select(.draft | not) | select(.tag_name | test($pat))
+        | . as $r
+        | ([.assets[] | select(.name | endswith(".tar"))
+                      | select(.name | contains($dev) and contains($arch))] | first) as $tar
+        | select($tar != null)
+        | ([.assets[] | select(.name == ($tar.name + ".sha256"))] | first) as $sum
+        | [ $r.tag_name,
+            ($r.tag_name | capture("-(?<d>[0-9]{8})-").d),
+            (($r.body // "") | capture("Built from `(?<c>[0-9a-f]{7,40})`").c // "-"),
+            $tar.name, $tar.browser_download_url, ($tar.size | tostring),
+            ($sum.browser_download_url // "-") ]
+        | @tsv'
+}
+
+# Decides whether the newest release of the channel should be installed, and
+# prints what the launcher shows. Leaves the chosen line in ONLINE_PICK.
+#
+#   state=update   newer than what is installed
+#   state=current  it is what is installed
+#   state=newer    what is installed is newer (a nightly, on the release channel)
+#   state=none     the channel has nothing for this device yet
+online_check() {
+    channel="$(update_channel)"
+    echo "channel=${channel}"
+    echo "installed=${OS_VERSION} $(printf '%.7s' "${BUILD_ID}")"
+
+    list="$(online_releases "${channel}")" || {
+        echo "error=Could not reach GitHub. Is Wi-Fi connected?"
+        return 2
+    }
+    if [ -z "${list}" ]; then
+        echo "state=none"
+        return 1
+    fi
+
+    ONLINE_PICK="$(printf '%s\n' "${list}" | head -n1)"
+    tag="$(printf '%s' "${ONLINE_PICK}" | cut -f1)"
+    date="$(printf '%s' "${ONLINE_PICK}" | cut -f2)"
+    commit="$(printf '%s' "${ONLINE_PICK}" | cut -f3)"
+    size="$(printf '%s' "${ONLINE_PICK}" | cut -f6)"
+    echo "tag=${tag}"
+    echo "size=${size}"
+
+    # updates.force reinstalls whatever the channel has, even this build.
+    if [ "$(get_setting updates.force)" = "1" ]; then
+        echo "state=update"
+        return 0
+    fi
+
+    case "${BUILD_ID}" in
+        "${commit}"*)
+            [ "${commit}" != "-" ] && { echo "state=current"; return 1; } ;;
+    esac
+
+    # Is the installed build one of the listed releases? Then the newest is
+    # newer, whatever the dates say - which matters on a day with several.
+    installed_listed=0
+    if [ -n "${BUILD_ID}" ]; then
+        for c in $(printf '%s\n' "${list}" | cut -f3); do
+            [ "${c}" = "-" ] && continue
+            case "${BUILD_ID}" in "${c}"*) installed_listed=1 ;; esac
+        done
+    fi
+
+    if [ "${installed_listed}" = "1" ] || [ "${date}" -ge "${OS_VERSION}" ] 2>/dev/null; then
+        echo "state=update"
+        return 0
+    fi
+    echo "state=newer"
+    return 1
+}
+
+# Downloads the newest release of the channel into STAGE_DIR, verifies it
+# against the .sha256 published beside it, and only then gives it the name
+# the next boot looks for.
+online_update() {
+    online_check >/dev/null
+    rc=$?
+    if [ "${rc}" -eq 2 ]; then
+        echo "error=Could not reach GitHub. Is Wi-Fi connected?"
+        return 1
+    fi
+    if [ "${rc}" -ne 0 ]; then
+        echo "error=No newer update on this channel."
+        return 1
+    fi
+
+    name="$(printf '%s' "${ONLINE_PICK}" | cut -f4)"
+    url="$(printf '%s' "${ONLINE_PICK}" | cut -f5)"
+    size="$(printf '%s' "${ONLINE_PICK}" | cut -f6)"
+    sum_url="$(printf '%s' "${ONLINE_PICK}" | cut -f7)"
+    part="${STAGE_DIR}/${name}.part"
+
+    # Refuse without a checksum. The media path can skip it because the user
+    # carried the file across; a download needs it more than anything.
+    if [ "${sum_url}" = "-" ]; then
+        echo "error=The release has no checksum; not downloading it."
+        return 1
+    fi
+    expected="$(curl -fsSL --connect-timeout 10 --max-time 30 "${sum_url}" | awk '{print $1}')"
+    case "${expected}" in
+        [0-9a-f][0-9a-f][0-9a-f][0-9a-f]*) ;;
+        *) echo "error=Could not read the release's checksum."; return 1 ;;
+    esac
+
+    mkdir -p "${STAGE_DIR}" || { echo "error=Cannot create ${STAGE_DIR}."; return 1; }
+
+    # A .part of this same file is an interrupted download of it, and is
+    # continued. Anything else staged is removed: two tars means the boot
+    # picks one, possibly the old one.
+    for f in "${STAGE_DIR}"/*.part; do
+        [ -e "${f}" ] && [ "${f}" != "${part}" ] && rm -f "${f}"
+    done
+    rm -f "${STAGE_DIR}"/*.tar "${STAGE_DIR}"/*.tar.sha256
+
+    have=0
+    [ -f "${part}" ] && have="$(stat -c %s "${part}")"
+    need_mb=$(( (size - have) / 1048576 + 512 ))   # the rest, plus the unpack
+    free_mb="$(df -m "${STAGE_DIR}" | awk 'NR==2 {print $4}')"
+    if [ "${free_mb}" -lt "${need_mb}" ]; then
+        echo "error=Not enough free space: need ${need_mb} MB, have ${free_mb} MB."
+        return 1
+    fi
+
+    if [ "${have}" -lt "${size}" ]; then
+        # --speed-limit/--speed-time end a download that has stalled, rather
+        # than leave the launcher waiting on it; -C - continues a .part.
+        curl -fsSL --connect-timeout 20 --retry 3 --retry-delay 5 \
+            --speed-limit 1024 --speed-time 60 -C - -o "${part}" "${url}" \
+            >/dev/null 2>&1 &
+        pid=$!
+        last=-1
+        while kill -0 "${pid}" 2>/dev/null; do
+            now="$(stat -c %s "${part}" 2>/dev/null || echo 0)"
+            pct=$(( now * 100 / size ))
+            if [ "${pct}" != "${last}" ]; then
+                echo "progress=${pct}"
+                last="${pct}"
+            fi
+            sleep 1
+        done
+        wait "${pid}" || {
+            echo "error=The download stopped. Try again to continue it."
+            return 1
+        }
+    fi
+    echo "progress=100"
+
+    echo "verifying=1"
+    actual="$(sha256sum "${part}" | awk '{print $1}')"
+    if [ "${actual}" != "${expected}" ]; then
+        rm -f "${part}"
+        echo "error=The download was damaged and has been deleted. Try again."
+        return 1
+    fi
+
+    printf '%s  %s\n' "${expected}" "${name}" > "${STAGE_DIR}/${name}.sha256"
+    mv "${part}" "${STAGE_DIR}/${name}"
+    sync
+    set_setting updates.force 0
+    echo "staged=${name}"
+    return 0
+}
+
 case "${1}" in
     check)
         found="$(find_update)"
@@ -172,11 +384,23 @@ case "${1}" in
         stage_update
         exit $?
         ;;
+    check-online)
+        online_check
+        rc=$?
+        [ "${rc}" -eq 1 ] && exit 0      # nothing to install is not a failure
+        exit "${rc}"
+        ;;
+    update-online)
+        online_update
+        exit $?
+        ;;
     *)
-        echo "Usage: ${0} [check|check-media|update]"
-        echo "  check        print the version of an available update, or exit 1"
-        echo "  check-media  exit 0 if an update is available, quietly"
-        echo "  update       stage it in ${STAGE_DIR} for the next boot"
+        echo "Usage: ${0} [check-online|update-online|check|check-media|update]"
+        echo "  check-online   ask GitHub what the update channel offers"
+        echo "  update-online  download it, verify it, stage it for the next boot"
+        echo "  check          print the version of an update on UPD media, or exit 1"
+        echo "  check-media    exit 0 if UPD media has an update, quietly"
+        echo "  update         stage the UPD media update for the next boot"
         exit 1
         ;;
 esac
