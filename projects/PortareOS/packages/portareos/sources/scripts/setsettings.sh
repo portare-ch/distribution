@@ -344,8 +344,16 @@ function configure_hotkeys() {
     log "Configure hotkeys..."
     local MY_CONTROLLER
 
-    if grep -q "Sony Interactive Entertainment DualSense Wireless Controller" /proc/bus/input/devices; then
-        # InputPlumber virtual DS5
+    # InputPlumber's virtual pad, which is what RetroArch reads. It became a
+    # DualSense Edge when the back paddles were mapped, and the Edge's name
+    # does not contain the plain DualSense's ("DualSense Edge Wireless" vs
+    # "DualSense Wireless"). Matching only the plain one fell through to js0,
+    # the built-in pad's raw device, and wrote its button numbers - hotkey 5,
+    # exit 6 - for a controller whose SELECT and START are 8 and 9, so
+    # SELECT+START stopped leaving RetroArch.
+    if grep -q "Sony Interactive Entertainment DualSense Edge Wireless Controller" /proc/bus/input/devices; then
+        MY_CONTROLLER="Sony Interactive Entertainment DualSense Edge Wireless Controller"
+    elif grep -q "Sony Interactive Entertainment DualSense Wireless Controller" /proc/bus/input/devices; then
         MY_CONTROLLER="Sony Interactive Entertainment DualSense Wireless Controller"
     elif grep -q "js0" /proc/bus/input/devices; then
         MY_CONTROLLER=$(grep -b4 js0 /proc/bus/input/devices | awk 'BEGIN {FS="\""}; /Name/ {printf $2}')
