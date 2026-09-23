@@ -35,12 +35,15 @@ mkdir -p /storage/.config/mpv/watch_later
 #   that file for the measurements and the green-screen rip that led to it.
 # aspect.conf: standard-definition rips that lost their 4:3 flag are shown at
 #   4:3, so they fill the panel instead of sitting between black bars.
+# sd.conf: scanlines and a sharper scaler for standard definition; SELECT
+#   turns the scanlines off.
 # quit-watch-later on the back button, so a film resumes where it was left.
 exec /usr/bin/mpv --no-config \
   ${VK} --vulkan-display-mode=$((10#${MODE})) \
   --video-sync=display-resample \
   --include=/usr/config/mpv/decode.conf \
   --include=/usr/config/mpv/aspect.conf \
+  --include=/usr/config/mpv/sd.conf \
   --ao=pipewire \
   --input-gamepad=yes --input-conf=/usr/config/mpv/input.conf \
   --watch-later-dir=/storage/.config/mpv/watch_later \
