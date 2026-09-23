@@ -473,9 +473,10 @@ makeinstall_target() {
   add_es_system ports
 
 
-  # Note - there is actually no ffmpeg core, it is compiled into retroarch
-  add_emu_core mplayer retroarch ffmpeg true
-  add_es_system mplayer
+  ### Movies. One player, mpv, on the panel's 119.88 Hz mode - see
+  ### start_mpv.sh. RetroArch's built-in ffmpeg player used to cover this.
+  add_emu_core movies mpv mpv true
+  add_es_system movies
 
   ### Music Player
   add_emu_core music gmu gmu true
