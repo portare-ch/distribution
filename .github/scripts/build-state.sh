@@ -276,6 +276,12 @@ recipe_paths() {
 # the buildsystem itself, and the options files carry the variables the seven
 # packages that set PKG_STAMP interpolate into their stamps (KERNEL_TARGET,
 # UBOOT_SYSTEM), which recipe_paths alone would not see.
+#
+# Except config/emulators/, which recipe_digest leaves out: it is not
+# buildsystem but the data es_systems.cfg is generated from, read by one
+# package - emulators, whose stamp covers it through PKG_NEED_UNPACK. Folded
+# in here, a line changed in movies.conf refused the saved toolchain and
+# rebuilt gcc and glibc from cold.
 global_surface() {
   local d
   for d in config scripts distributions \
@@ -325,7 +331,8 @@ recipe_digest() {
   # sort -zu collapses the duplicates that fall out of resolving both the local
   # and the global copy of a recipe.
   { printf 'host-arch %s\n' "$(uname -m)"
-    find -L "${paths[@]}" -type f -not -name '.*' -print0 2>/dev/null \
+    find -L "${paths[@]}" -type f -not -name '.*' \
+      -not -path 'config/emulators/*' -print0 2>/dev/null \
       | LC_ALL=C sort -zu \
       | xargs -0 -r sha256sum
   } | sha256sum | cut -d' ' -f1
