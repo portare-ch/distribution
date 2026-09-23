@@ -743,13 +743,14 @@ function set_ra_refresh_rate() {
             ### 0.205% out is a repeated or dropped frame every eight
             ### seconds, so picking wrong is as bad as not picking at all.
             ###
-            ### 240p is the default because that is what PlayStation
-            ### gameplay mostly is. It is a default and not an answer: a
-            ### 480i game is worse off than before, and a game that switches
-            ### between the two - gameplay in 240p, menus or FMV in 480i -
-            ### cannot be served by a mode chosen once at launch. A per-game
-            ### display_mode overrides this, and the case above handles it.
-            ### Tracked in #228.
+            ### 240p is where a game starts, because that is what
+            ### PlayStation gameplay mostly is. It is only the starting
+            ### point: SwanStation reports every 240p/480i change, and
+            ### RetroArch (patch 0013) moves the panel to the matching mode
+            ### once the new rate has held for a second. The move blanks the
+            ### panel for about half a second, which is why it waits. A
+            ### per-game display_mode still pins a rate, and the case above
+            ### handles it. See #228 and #230.
             ###
             ### Asked for by rate rather than by index, so this does nothing
             ### at all on a panel without the mode rather than naming a rate
