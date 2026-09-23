@@ -731,16 +731,28 @@ function set_ra_refresh_rate() {
                 RATE="${EXACT}"
             fi
 
-            ### The PlayStation is not a 59.94 machine. SwanStation reports
-            ### 59.8173, and the panel's usual mode is 2 x 59.94:
+            ### The PlayStation has two rates, not one: 59.8173 in 240p and
+            ### 59.94 in 480i. The panel carries a mode for each, and
+            ### neither is right for both:
             ###
-            ###   119.880120 / 59.8173 = 2.0041
+            ###   119.634590 / 59.8173  = 2.00000   exact
+            ###   119.634590 / 59.94006 = 1.99590   -0.205%
+            ###   119.880120 / 59.8173  = 2.00410   +0.205%
+            ###   119.880120 / 59.94006 = 2.00000   exact
             ###
-            ### which repeats or drops a frame every 245 or so, about every
-            ### four seconds. The panel carries a second mode at 119.634590,
-            ### exactly twice 59.8173, purely for this. Ask for it by rate
-            ### and let the DRM modeline answer, so this does nothing at all
-            ### on a panel that does not have it rather than naming a rate
+            ### 0.205% out is a repeated or dropped frame every eight
+            ### seconds, so picking wrong is as bad as not picking at all.
+            ###
+            ### 240p is the default because that is what PlayStation
+            ### gameplay mostly is. It is a default and not an answer: a
+            ### 480i game is worse off than before, and a game that switches
+            ### between the two - gameplay in 240p, menus or FMV in 480i -
+            ### cannot be served by a mode chosen once at launch. A per-game
+            ### display_mode overrides this, and the case above handles it.
+            ### Tracked in #228.
+            ###
+            ### Asked for by rate rather than by index, so this does nothing
+            ### at all on a panel without the mode rather than naming a rate
             ### the display cannot produce.
             if [ "${CORE}" = "swanstation" ]
             then
