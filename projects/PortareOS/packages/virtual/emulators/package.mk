@@ -8,6 +8,13 @@ PKG_SECTION="emulation" # Do not change to virtual or makeinstall_target will no
 PKG_LONGDESC="Emulation metapackage."
 PKG_TOOLCHAIN="manual"
 
+# es_systems.cfg is generated from config/emulators/<system>.conf by
+# add_es_system (distributions/PortareOS/config/functions), so those files are
+# part of this recipe even though they live outside it. Without this an edit
+# to one of them never changed this package's stamp, and an incremental build
+# shipped the old es_systems.cfg.
+PKG_NEED_UNPACK="${ROOT}/config/emulators"
+
 PKG_EMUS="moonlight scummvmsa"
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays retropie-shaders slang-shaders"
