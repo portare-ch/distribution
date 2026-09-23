@@ -31,13 +31,13 @@ mkdir -p /storage/.config/mpv/watch_later
 #   whatever an earlier mpv left in /storage.
 # display-resample: mpv times frames against the display rather than the
 #   audio clock, which with a whole-number ratio means no judder at all.
-# v4l2m2m-copy: the iris decoder. A third of the CPU of software decoding for
-#   H.264 and HEVC, measured; mpv falls back to software for what it cannot do.
+# decode.conf: the iris hardware decoder for HD, software below 720p - see
+#   that file for the measurements and the green-screen rip that led to it.
 # quit-watch-later on the back button, so a film resumes where it was left.
 exec /usr/bin/mpv --no-config \
   ${VK} --vulkan-display-mode=$((10#${MODE})) \
   --video-sync=display-resample \
-  --hwdec=v4l2m2m-copy \
+  --include=/usr/config/mpv/decode.conf \
   --ao=pipewire \
   --input-gamepad=yes --input-conf=/usr/config/mpv/input.conf \
   --watch-later-dir=/storage/.config/mpv/watch_later \
