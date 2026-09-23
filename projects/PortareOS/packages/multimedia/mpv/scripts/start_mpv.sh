@@ -31,8 +31,8 @@ mkdir -p /storage/.config/mpv/watch_later
 #   whatever an earlier mpv left in /storage.
 # display-resample: mpv times frames against the display rather than the
 #   audio clock, which with a whole-number ratio means no judder at all.
-# decode.conf: the iris hardware decoder for HD, software below 720p - see
-#   that file for the measurements and the green-screen rip that led to it.
+# decode.conf: the iris hardware decoder for H.264 and HEVC, read through
+#   ffmpeg's demuxer - see that file for why and for the measurements.
 # aspect.conf: standard-definition rips that lost their 4:3 flag are shown at
 #   4:3, so they fill the panel instead of sitting between black bars.
 # sd.conf: scanlines and a sharper scaler for standard definition; SELECT
