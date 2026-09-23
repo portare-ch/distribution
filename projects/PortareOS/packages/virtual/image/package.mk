@@ -15,7 +15,9 @@ PKG_DEPENDS_TARGET="toolchain squashfs-tools:host dosfstools:host fakeroot:host 
                     bash coreutils system-utils autostart quirks powerstate sdl2notify \
                     gzip six xmlstarlet pyudev dialog network mako-osd portareos"
 
-PKG_UI="emulationstation es-themes textviewer lowerdeck"
+# The front-end. portarelauncher owns the panel through KMS, so there is no
+# compositor and no session here - see portareos#222.
+PKG_UI="portarelauncher textviewer lowerdeck"
 
 PKG_UI_TOOLS="fbgrab grim"
 

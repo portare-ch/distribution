@@ -49,7 +49,11 @@
     DISPLAYSERVER="wl"
 
   # Windowmanager to use (swaywm-env / no)
-    WINDOWMANAGER="swaywm-env"
+    # No window manager. The front-end takes DRM master itself and the two
+    # things that still want a wayland socket - Steam and gamescope - bring
+    # their own compositor. DISPLAYSERVER stays "wl" because that is what
+    # carries the wayland libraries they link against.
+    WINDOWMANAGER=""
 
   # Additional drivers to install:
   # for a list of additional drivers see packages/linux-drivers

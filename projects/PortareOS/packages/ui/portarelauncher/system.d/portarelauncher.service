@@ -1,0 +1,20 @@
+[Unit]
+Description=PortareOS launcher
+# Nothing to wait for. It takes DRM master itself and needs no compositor,
+# no display manager and no session - which is the point of it.
+After=multi-user.target portareos-automount.service
+ConditionKernelCommandLine=!installer
+
+[Service]
+Type=simple
+Environment=HOME=/storage
+EnvironmentFile=/etc/profile
+WorkingDirectory=/storage
+ExecStart=/usr/bin/portarelauncher
+# It drops DRM master while a game runs and takes it back afterwards, so it
+# stays resident for the whole session and a restart means it died.
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=portareos.target
