@@ -38,6 +38,9 @@ mkdir -p /storage/.config/mpv/watch_later
 # sd.conf: scanlines and a sharper scaler for standard definition; SELECT
 #   turns the scanlines off.
 # quit-watch-later on the back button, so a film resumes where it was left.
+# save-position-on-quit for every other way out - above all Home + START,
+#   where the launcher ends mpv with SIGTERM, which quits without saving
+#   unless this is set.
 exec /usr/bin/mpv --no-config \
   ${VK} --vulkan-display-mode=$((10#${MODE})) \
   --video-sync=display-resample \
@@ -47,5 +50,6 @@ exec /usr/bin/mpv --no-config \
   --ao=pipewire \
   --input-gamepad=yes --input-conf=/usr/config/mpv/input.conf \
   --watch-later-dir=/storage/.config/mpv/watch_later \
+  --save-position-on-quit \
   --sub-auto=fuzzy \
   "${1}"

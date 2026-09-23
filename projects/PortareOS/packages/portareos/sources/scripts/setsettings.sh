@@ -371,12 +371,18 @@ function configure_hotkeys() {
             cp /tmp/joypads/"${MY_CONTROLLER}.cfg" /tmp
             sed -i "s# = #=#g" /tmp/"${MY_CONTROLLER}.cfg"
             source /tmp/"${MY_CONTROLLER}.cfg"
+            # Home + START leaves every emulator the same way, and in one
+            # press: portarelauncher watches for it and closes whatever does
+            # not quit by itself. RetroArch's confirmation would make its
+            # press the only one that needs doing twice. Both names, since
+            # 1.22 renamed quit_press_twice to confirm_quit and a config that
+            # predates that still carries the old one.
             for HKEYSETTING in input_enable_hotkey_btn input_bind_hold            \
                                input_exit_emulator_btn input_fps_toggle_btn       \
                                input_menu_toggle_btn input_save_state_btn         \
                                input_load_state_btn input_toggle_fast_forward_btn \
                                input_toggle_fast_forward_axis input_rewind_axis   \
-                               input_rewind_btn
+                               input_rewind_btn quit_press_twice confirm_quit
             do
                 clear_setting "${HKEYSETTING}"
             done
@@ -394,6 +400,8 @@ input_fps_toggle_btn = "${input_y_btn}"
 input_menu_toggle_btn = "${input_x_btn}"
 input_save_state_btn = "${input_r_btn}"
 input_load_state_btn = "${input_l_btn}"
+quit_press_twice = "false"
+confirm_quit = "false"
 EOF
             if [ -n "${input_r2_btn}" ] && \
                [ -n "${input_l2_btn}" ]
