@@ -6,15 +6,26 @@
 # Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
 
-# The wayland notification daemon went with the compositor, so there is
-# nothing to show an OSD on until portarelauncher draws one - it holds the
-# panel and is the only thing that could. Calls become no-ops rather than
-# "command not found" on every volume press.
-osd_notify() {
-  [ -x osd_notify ] || return 0
-  osd_notify "$@"
-}
 . /etc/profile
+
+# The overlay is drawn by portarelauncher, because only the process holding
+# DRM master can put anything on the panel and that is what does. The wayland
+# notification daemon that used to do it needed a compositor.
+#
+# A FIFO rather than a signal, since the message has content.
+#
+# Bounded by timeout, because opening a FIFO for writing blocks until a
+# reader attaches. Normally the launcher holds it open and this returns
+# immediately, but a FIFO left behind by a killed launcher has no reader at
+# all, and a volume key must not hang on that. Half a second, then give up:
+# a missing overlay is not worth a stuck button.
+OSD_PIPE="/run/portarelauncher.osd"
+
+osd_notify() {
+  [ -p "${OSD_PIPE}" ] || return 0
+  timeout 0.5 sh -c 'printf "%s\n" "$1" >"$2"' sh "${1}" "${OSD_PIPE}" \
+    >/dev/null 2>&1 || true
+}
 
 # Remove or comment out 'set -e' so the script doesn't exit on a single error:
 # set -e
@@ -239,7 +250,7 @@ execute_action() {
         ${FN_A_ACTION_UP}
         if [ "${FN_A_ACTION_UP}" == "brightness up" ]; then
           CUR_BRIGHTNESS=$(get_setting "display.brightness")
-          osd_notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
+          osd_notify "Brightness: ${CUR_BRIGHTNESS}%"
         fi
         ;;
       down)
@@ -247,7 +258,7 @@ execute_action() {
         ${FN_A_ACTION_DOWN}
         if [ "${FN_A_ACTION_DOWN}" == "brightness down" ]; then
           CUR_BRIGHTNESS=$(get_setting "display.brightness")
-          osd_notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
+          osd_notify "Brightness: ${CUR_BRIGHTNESS}%"
         fi
         ;;
     esac
@@ -392,7 +403,7 @@ set +e
           stop_volume_repeat
           if [ "${FN_A_PRESSED}" = false ] && [ "${FN_B_PRESSED}" = false ]; then
             CUR_VOLUME=$(get_setting "audio.volume")
-            osd_notify "Volume: ${CUR_VOLUME}%" -no-es
+            osd_notify "Volume: ${CUR_VOLUME}%"
           fi
         fi
       ;;
@@ -413,7 +424,7 @@ set +e
           stop_volume_repeat
           if [ "${FN_A_PRESSED}" = false ] && [ "${FN_B_PRESSED}" = false ]; then
             CUR_VOLUME=$(get_setting "audio.volume")
-            osd_notify "Volume: ${CUR_VOLUME}%" -no-es
+            osd_notify "Volume: ${CUR_VOLUME}%"
           fi
         fi
       ;;
@@ -485,7 +496,7 @@ set +e
           ${DEBUG} && log $0 "${FUNCTION_HOTKEY_DPAD_RIGHT_EVENT}${FUNCTION_HOTKEY_HAT_RIGHT_EVENT}: Brightness Up"
           brightness up
           CUR_BRIGHTNESS=$(get_setting "display.brightness")
-          osd_notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
+          osd_notify "Brightness: ${CUR_BRIGHTNESS}%"
         fi
       ;;
       (${FUNCTION_HOTKEY_DPAD_LEFT_EVENT}|${FUNCTION_HOTKEY_HAT_LEFT_EVENT})
@@ -493,7 +504,7 @@ set +e
           ${DEBUG} && log $0 "${FUNCTION_HOTKEY_DPAD_LEFT_EVENT}${FUNCTION_HOTKEY_HAT_LEFT_EVENT}: Brightness Down"
           brightness down
           CUR_BRIGHTNESS=$(get_setting "display.brightness")
-          osd_notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
+          osd_notify "Brightness: ${CUR_BRIGHTNESS}%"
         fi
       ;;
       (${FUNCTION_HOTKEY_TOUCH_EVENT})
