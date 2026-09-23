@@ -586,17 +586,10 @@ fi
 ### Disable GPU profiling
 gpu_profiling "off"
 
-### Backup save games
-CLOUD_BACKUP=$(get_setting "cloud.backup")
-if [ "${CLOUD_BACKUP}" = "1" ]
-then
-  INETUP=$(/usr/bin/amionline >/dev/null 2>&1)
-  if [ $? == 0 ]
-  then
-    log $0 "backup saves to the cloud."
-    /usr/bin/run /usr/bin/cloud_backup
-  fi
-fi
+### No cloud backup of saves after a game: rclone went with EmulationStation,
+### whose menus configured it. The call it made went through /usr/bin/run,
+### which stops ${UI_SERVICE} first - with the launcher as the UI service,
+### cloud.backup=1 would have taken the front-end down after every game.
 
 ### Nothing to bring back. The front-end never left - it is the parent of
 ### this script and takes DRM master again when this returns.

@@ -6,6 +6,4 @@
 . /etc/profile
 set_kill set "commander"
 
-sway_fullscreen "commander" &
-
 /usr/bin/commander

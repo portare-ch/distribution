@@ -89,9 +89,9 @@ jobs:
           echo "digest=$(.github/scripts/build-state.sh snapshot \
             build.PortareOS-${{ inputs.DEVICE }}.aarch64)" >> "${GITHUB_OUTPUT}"
 
-      # Before the two deliberate cleans below, so that retroarch and
-      # emulationstation are still forced to rebuild afterwards: the clean
-      # removes their stamps whether the restore just put them back or not.
+      # Before the deliberate clean below, so that retroarch is still forced
+      # to rebuild afterwards: the clean removes its stamps whether the
+      # restore just put them back or not.
       - name: Restore saved build state
         if: inputs.INCREMENTAL == 'yes'
         env:
@@ -108,12 +108,6 @@ jobs:
           ./scripts/get_env > .env
           docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/portareos-build:latest" \
             bash -c "./scripts/clean retroarch"
-      # clean to rebuild emulationstation with credentials
-      - name: Clean emulationstation
-        run: |
-          ./scripts/get_env > .env
-          docker run --init --env-file .env --rm --user $(id -u):$(id -g) -v ${PWD}:${PWD} -w ${PWD} "ghcr.io/${{ inputs.OWNER_LC }}/portareos-build:latest" \
-            bash -c "./scripts/clean emulationstation"
 
       - name: build
         run: |
