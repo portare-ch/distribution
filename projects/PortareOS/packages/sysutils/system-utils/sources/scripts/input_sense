@@ -5,6 +5,15 @@
 # Copyright (C) 2024-2026 ROCKNIX (https://github.com/ROCKNIX)
 # Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
 
+
+# The wayland notification daemon went with the compositor, so there is
+# nothing to show an OSD on until portarelauncher draws one - it holds the
+# panel and is the only thing that could. Calls become no-ops rather than
+# "command not found" on every volume press.
+osd_notify() {
+  [ -x osd_notify ] || return 0
+  osd_notify "$@"
+}
 . /etc/profile
 
 # Remove or comment out 'set -e' so the script doesn't exit on a single error:
@@ -230,7 +239,7 @@ execute_action() {
         ${FN_A_ACTION_UP}
         if [ "${FN_A_ACTION_UP}" == "brightness up" ]; then
           CUR_BRIGHTNESS=$(get_setting "display.brightness")
-          /usr/bin/mako-notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
+          osd_notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
         fi
         ;;
       down)
@@ -238,7 +247,7 @@ execute_action() {
         ${FN_A_ACTION_DOWN}
         if [ "${FN_A_ACTION_DOWN}" == "brightness down" ]; then
           CUR_BRIGHTNESS=$(get_setting "display.brightness")
-          /usr/bin/mako-notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
+          osd_notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
         fi
         ;;
     esac
@@ -383,7 +392,7 @@ set +e
           stop_volume_repeat
           if [ "${FN_A_PRESSED}" = false ] && [ "${FN_B_PRESSED}" = false ]; then
             CUR_VOLUME=$(get_setting "audio.volume")
-            /usr/bin/mako-notify "Volume: ${CUR_VOLUME}%" -no-es
+            osd_notify "Volume: ${CUR_VOLUME}%" -no-es
           fi
         fi
       ;;
@@ -404,7 +413,7 @@ set +e
           stop_volume_repeat
           if [ "${FN_A_PRESSED}" = false ] && [ "${FN_B_PRESSED}" = false ]; then
             CUR_VOLUME=$(get_setting "audio.volume")
-            /usr/bin/mako-notify "Volume: ${CUR_VOLUME}%" -no-es
+            osd_notify "Volume: ${CUR_VOLUME}%" -no-es
           fi
         fi
       ;;
@@ -476,7 +485,7 @@ set +e
           ${DEBUG} && log $0 "${FUNCTION_HOTKEY_DPAD_RIGHT_EVENT}${FUNCTION_HOTKEY_HAT_RIGHT_EVENT}: Brightness Up"
           brightness up
           CUR_BRIGHTNESS=$(get_setting "display.brightness")
-          /usr/bin/mako-notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
+          osd_notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
         fi
       ;;
       (${FUNCTION_HOTKEY_DPAD_LEFT_EVENT}|${FUNCTION_HOTKEY_HAT_LEFT_EVENT})
@@ -484,7 +493,7 @@ set +e
           ${DEBUG} && log $0 "${FUNCTION_HOTKEY_DPAD_LEFT_EVENT}${FUNCTION_HOTKEY_HAT_LEFT_EVENT}: Brightness Down"
           brightness down
           CUR_BRIGHTNESS=$(get_setting "display.brightness")
-          /usr/bin/mako-notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
+          osd_notify "Brightness: ${CUR_BRIGHTNESS}%" -no-es
         fi
       ;;
       (${FUNCTION_HOTKEY_TOUCH_EVENT})
@@ -499,7 +508,7 @@ set +e
           /usr/bin/portareos-screenshot
           # Display notification if 'success' exit code
           SCREENSHOT_SUCCESS=$?
-          [ "$SCREENSHOT_SUCCESS" -eq 0 ] && /usr/bin/mako-notify "Screenshot Saved" -no-ra
+          [ "$SCREENSHOT_SUCCESS" -eq 0 ] && osd_notify "Screenshot Saved" -no-ra
         elif [ "${FN_A_PRESSED}" = true ]; then
           ${DEBUG} && log $0 "${FUNCTION_HOTKEY_BTN_EAST_EVENT}: Close window"
           close_window

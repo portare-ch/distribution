@@ -13,13 +13,23 @@ PKG_DEPENDS_TARGET="toolchain squashfs-tools:host dosfstools:host fakeroot:host 
                     ${BOOTLOADER} busybox lsof umtprd util-linux usb-modeswitch poppler jq socat \
                     p7zip file initramfs grep util-linux btrfs-progs zstd lz4 empty lzo libzip \
                     bash coreutils system-utils autostart quirks powerstate sdl2notify \
-                    gzip six xmlstarlet pyudev dialog network mako-osd portareos"
+                    gzip six xmlstarlet pyudev dialog network portareos"
+
+# mako-osd is gone with the compositor. It is a wayland notification daemon
+# and depends on sway by name, so leaving it here would pull the compositor
+# straight back into the image. The volume and brightness OSD goes with it
+# until the launcher draws its own - it is the only thing that can, now that
+# it holds the panel.
 
 # The front-end. portarelauncher owns the panel through KMS, so there is no
 # compositor and no session here - see portareos#222.
 PKG_UI="portarelauncher textviewer lowerdeck"
 
-PKG_UI_TOOLS="fbgrab grim"
+# grim is gone with the compositor: it screenshots a wayland output and
+# there is no longer one. Only whoever holds DRM master can read the panel
+# now, which is portarelauncher, so a screenshot belongs there if it comes
+# back at all.
+PKG_UI_TOOLS="fbgrab"
 
 PKG_GRAPHICS="imagemagick"
 
