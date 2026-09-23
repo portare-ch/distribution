@@ -731,26 +731,20 @@ function set_ra_refresh_rate() {
                 RATE="${EXACT}"
             fi
 
-            ### The PlayStation has two rates, not one: 59.8173 in 240p and
-            ### 59.94 in 480i. The panel carries a mode for each, and
-            ### neither is right for both:
+            ### SwanStation runs every NTSC PlayStation game at 59.8173 Hz,
+            ### 480i included. Its rate is the CRTC clock over 3413 ticks x
+            ### 263 lines, and the line count does not change when a game
+            ### switches to interlaced output - measured, too: five minutes
+            ### of Tekken 3's attract mode, a 480i game, reported one rate
+            ### and never another. So one mode is exactly right for all of
+            ### it:
             ###
-            ###   119.634590 / 59.8173  = 2.00000   exact
-            ###   119.634590 / 59.94006 = 1.99590   -0.205%
-            ###   119.880120 / 59.8173  = 2.00410   +0.205%
-            ###   119.880120 / 59.94006 = 2.00000   exact
+            ###   119.634590 / 59.8173 = 2.00000   exact
+            ###   119.880120 / 59.8173 = 2.00410   +0.205%, a repeated
+            ###                                    frame every ~8 s
             ###
-            ### 0.205% out is a repeated or dropped frame every eight
-            ### seconds, so picking wrong is as bad as not picking at all.
-            ###
-            ### 240p is where a game starts, because that is what
-            ### PlayStation gameplay mostly is. It is only the starting
-            ### point: SwanStation reports every 240p/480i change, and
-            ### RetroArch (patch 0013) moves the panel to the matching mode
-            ### once the new rate has held for a second. The move blanks the
-            ### panel for about half a second, which is why it waits. A
-            ### per-game display_mode still pins a rate, and the case above
-            ### handles it. See #228 and #230.
+            ### A per-game display_mode still pins another rate, and the
+            ### case above handles it. See #228.
             ###
             ### Asked for by rate rather than by index, so this does nothing
             ### at all on a panel without the mode rather than naming a rate
