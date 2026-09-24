@@ -1,4 +1,4 @@
-# Refresh rates on the Retroid Pocket Nova (SM8550)
+# Refresh and audio rates on the Retroid Pocket Nova (SM8550)
 
 The panel has no variable refresh rate. It runs at **119.880120 Hz**, twice NTSC's 59.94 Hz. For systems whose native rate is noticeably different, `setsettings.sh` (`set_ra_refresh_rate`) asks for a panel mode at exactly twice that rate, and RetroArch switches to it when the game starts.
 
@@ -38,6 +38,43 @@ Where an emulator runs at a different rate from the hardware, the table says so.
 | scummvm, steam, ports | no fixed rate (PC games) | 119.880 |
 | movies (mpv) | the video's frame rate (23.976, 25, 29.97 …) | 119.880; mpv syncs video to audio |
 | music, moonlight, tools, imageviewer | – | 119.880 |
+
+## Audio
+
+The Nova's speaker and headphone link runs at **48 kHz or 44.1 kHz**. The I2S bit clock follows the stream (kernel patch `1054-PortareOS-asoc-qcom-mi2s-bit-clock-from-stream.patch`), and PipeWire allows both rates (`default.clock.allowed-rates = [ 48000 44100 ]`). Neither rate is a resampling stage in itself: the link switches to the rate of the stream that opens it.
+
+**RetroArch always outputs 48 kHz** (`audio_out_rate = 48000`), except for SwanStation, whose per-core config asks for 44.1 kHz. RetroArch resamples each core's audio to that rate with its sinc resampler, and dynamic rate control keeps the stream in step with the display. So every core is resampled at least a little, even one whose rate matches the output, because rate control adjusts the ratio by up to 0.5 %. mpv plays a file at its own rate.
+
+The first rate column is the console's own: the rate its sound hardware produces samples at, or "analog" where the chip's channels are mixed as analog signals and there is no sample rate to speak of. The second is what the emulator hands RetroArch, taken from its source code at the pinned commit with PortareOS's options.
+
+| Systems (default emulator) | Console's audio rate (Hz) | Emulator outputs (Hz) | Played at (Hz) |
+|---|---|---|---|
+| gb, gbh, gbc, gbch (Gambatte) | analog (the APU runs at 1,048,576) | 32,768 | 48,000 |
+| gba, gbah, gbav (mGBA) | 32,768 by default; a game can pick up to 262,144 | 65,536 | 48,000 |
+| snes, snesh, sfc, satellaview, sufami (Snes9x) | 32,000 nominal (about 32,040 on real consoles) | 32,040 | 48,000 |
+| snesmsu1 (Snes9x) | 32,000, plus the MSU-1's 44,100 | 44,100 (MSU-1 enhanced audio) | 48,000 |
+| psx (SwanStation) | 44,100 | 44,100 | 44,100 |
+| mastersystem, sg-1000, gamegear, ggh (Genesis Plus GX) | analog (SN76489, 223,722 per channel step) | 44,100 | 48,000 |
+| megadrive, megadrive-japan, megadriveh, genesis, genh (Genesis Plus GX) | 53,267 (YM2612), plus the SN76489 | 44,100 | 48,000 |
+| segacd, megacd (Genesis Plus GX) | as the Mega Drive, plus 32,552 (RF5C164 PCM) and 44,100 (CD audio) | 44,100 | 48,000 |
+| sega32x (PicoDrive) | as the Mega Drive, plus the 32X's PWM at a rate the game sets | 44,100 (`native` would give 53,267) | 48,000 |
+| n64, n64dd (ParaLLEl N64) | set by the game (commonly 22,050 to 44,100) | the game's rate, exactly, e.g. 22,037.94; 32,040 until the game sets one | 48,000 |
+| neogeo (FBNeo) | 55,555 (YM2610) | about 48,000 (47,995 at 59.1856 fps) | 48,000 |
+| neocd (NeoCD) | 55,555 (YM2610), plus 44,100 (CD audio) | 44,100 | 48,000 |
+| arcade (FBNeo) | depends on the board | about 48,000, depending on the game's frame rate | 48,000 |
+| dreamcast, naomi, atomiswave (Flycast) | 44,100 (AICA) | 44,100 | 48,000 |
+| gamecube, triforce (Dolphin) | 32,029 (DSP), 48,000 (streamed disc audio) | 48,000 (asks RetroArch for its rate) | 48,000 |
+| wii, wiiware (Dolphin) | 32,000 (DSP), 48,000 (streamed disc audio) | 48,000 (asks RetroArch for its rate) | 48,000 |
+| ps2 (ARMSX2) | 48,000 (SPU2) | 48,000 (44,100 in PS1 mode) | 48,000 |
+| xbox (xemu) | 48,000 (AC'97) | 48,000 | 48,000 |
+| psp, pspminis (PPSSPP) | 44,100 | 44,100 | 48,000 |
+| movies, music (mpv, gmu) | the file's rate | the file's rate | the file's rate |
+
+In short:
+
+- **No resampling needed:** PS1 is played at its native 44.1 kHz. Xbox, PS2 and Dolphin already produce 48 kHz.
+- **Resampled from 44.1 to 48 kHz:** Dreamcast, NAOMI, Atomiswave, PSP, NeoCD and the Sega systems. A per-core `audio_out_rate = "44100"` would spare them, as it does SwanStation.
+- **Resampled as on any other device:** Game Boy, GBA, SNES, N64 and Neo Geo. Their rates match neither output rate, so they need resampling either way.
 
 ## Adding a mode
 
