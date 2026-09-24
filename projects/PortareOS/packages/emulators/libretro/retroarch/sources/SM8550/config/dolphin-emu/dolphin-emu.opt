@@ -1,17 +1,21 @@
 # Ask the frontend for the output rate instead of using Dolphin's own.
 #
-# Source/Core/DolphinLibretro/Audio.cpp:
+# Source/Core/DolphinLibretro/Audio.cpp (libretro/dolphin 1a0f972), in
+# short:
 #
 #   unsigned int GetActiveSampleRate() {
+#     if (the mixer already has a rate) return it;
 #     if (g_use_call_back_audio == CallBackMode::PUSH_SAMPLES)
-#       return GetCoreSampleRate();      // LEGACY_DEFAULT_SAMPLE_RATE, 32029
-#     return GetRetroSampleRate();
+#       return GetCoreSampleRate();      // 32029 GameCube, 32000 Wii
+#     return GetRetroSampleRate();       // the frontend's output rate
 #   }
 #
-# The core's default is PUSH_SAMPLES ("0"), which reports 32029 Hz - a rate
-# Audio.h itself calls LEGACY_DEFAULT_SAMPLE_RATE. Nothing downstream runs
-# at 32029, so every sample was resampled to 48000 on the way out for no
-# reason other than the core option's age.
+# GetCoreSampleRate() starts from LEGACY_DEFAULT_SAMPLE_RATE, which Audio.h
+# defines as 32000, and returns 32029 for a GameCube game (the DSP's
+# rate) and 32000 for a Wii one. The core's default is PUSH_SAMPLES
+# ("0"), so it reported one of those. Nothing downstream runs at either,
+# so every sample was resampled to 48000 on the way out for no reason
+# other than the core option's age.
 #
 # "1" is SYNC_PER_FRAME: the core asks the frontend via
 # RETRO_ENVIRONMENT_GET_TARGET_SAMPLE_RATE and lets the frame time callback
