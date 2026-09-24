@@ -15,6 +15,8 @@ Every mode uses the same 1302 × 1001 total timings and changes only the pixel c
 
 The rates are the original NTSC hardware's frame rate, or for handhelds the hardware's own rate.
 
+Where an emulator runs at a different rate from the hardware, the table says so. On the N64, the hardware rate follows from the video chip's 48.681812 MHz clock: a 3094-clock line and a 263-line frame in 240p, or 262.5 lines in 480i. ParaLLEl N64 does not emulate the line length. It derives the frame period from a nominal 60 Hz and the frame height the game sets, so it runs at about 60.02 Hz and reports that rate to RetroArch. Versions before August 2026 (upstream c32f20a7) reported a flat 60.13.
+
 | Systems (default emulator) | Native rate (Hz) | Panel mode (Hz) |
 |---|---|---|
 | gb, gbh, gbc, gbch (Gambatte) | 59.7275 | 119.455 |
@@ -25,7 +27,7 @@ The rates are the original NTSC hardware's frame rate, or for handhelds the hard
 | megadrive, megadrive-japan, megadriveh, genesis, genh (Genesis Plus GX) | 59.9227 | 119.880 |
 | segacd, megacd (Genesis Plus GX) | 59.9227 | 119.880 |
 | sega32x (PicoDrive) | 59.9227 (the emulator reports 60) | 119.880 |
-| n64, n64dd (ParaLLEl N64) | about 60 (the emulator reports 60) | 119.880 |
+| n64, n64dd (ParaLLEl N64) | 59.826 in 240p, 59.94 in 480i (the emulator runs at about 60.02) | 119.880 |
 | neogeo (FBNeo), neocd (NeoCD) | 59.1856 | 119.880 |
 | arcade (FBNeo) | depends on the game's board (about 54–61) | 119.880 |
 | dreamcast, naomi, atomiswave (Flycast) | 59.94 | 119.880 (exactly 2×) |

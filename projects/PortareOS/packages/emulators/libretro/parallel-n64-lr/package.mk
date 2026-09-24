@@ -2,10 +2,7 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="parallel-n64-lr"
-# bump-ignore: upstream HEAD is +1207 commits and breaks platform.patch and
-# libretro-cleanup.patch; r4300.c moved under src/device/ so the gcc-13
-# patch no longer has a file to patch either.
-PKG_VERSION="f8605345e13c018a30c8f4ed03c05d8fc8f70be8"
+PKG_VERSION="6e4c44c51885c8dc16e46d68464c517e6fca6712"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/libretro/parallel-n64"
 PKG_URL="${PKG_SITE}.git"
