@@ -13,7 +13,7 @@ PKG_SHA256="733984395e0dbbe5c046abda2dc49a5544e7e0e1e2366bba849222ae9e3a03b1"
 PKG_URL="http://ffmpeg.org/releases/ffmpeg-${PKG_VERSION}.tar.xz"
 PKG_PATCH_DIRS="libreelec"
 
-PKG_PATCH_DIRS+=" v4l2-request v4l2-drmprime"
+PKG_PATCH_DIRS+=" v4l2-request v4l2-drmprime v4l2-m2m-flush"
 
 post_unpack() {
   # Fix FFmpeg version
