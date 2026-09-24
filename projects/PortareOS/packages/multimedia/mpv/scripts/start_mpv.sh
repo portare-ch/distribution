@@ -29,8 +29,14 @@ mkdir -p /storage/.config/mpv/watch_later
 
 # --no-config: what plays a film here is this file and input.conf, not
 #   whatever an earlier mpv left in /storage.
-# display-resample: mpv times frames against the display rather than the
-#   audio clock, which with a whole-number ratio means no judder at all.
+# video-sync=audio: frames are timed against the audio clock and rendered
+#   only when the picture changes - 24 times a second for film. The panel's
+#   119.88 Hz is a whole multiple of every NTSC rate (5x 23.976, 4x 29.97,
+#   2x 59.94), so there is nothing to resample. display-resample, used
+#   before, rendered at every refresh instead: 120 times a second with the
+#   SD scaler and scanlines, more than the GPU managed at its top clock -
+#   The Wire dropped 2290 frames in its first 4.5 minutes, the display-sync
+#   ratio read 2.75 where 5.00 was due, and A-V wandered up to 90 ms.
 # decode.conf: the iris hardware decoder for H.264 and HEVC, read through
 #   ffmpeg's demuxer - see that file for why and for the measurements.
 # aspect.conf: standard-definition rips that lost their 4:3 flag are shown at
@@ -43,7 +49,7 @@ mkdir -p /storage/.config/mpv/watch_later
 #   unless this is set.
 exec /usr/bin/mpv --no-config \
   ${VK} --vulkan-display-mode=$((10#${MODE})) \
-  --video-sync=display-resample \
+  --video-sync=audio \
   --include=/usr/config/mpv/decode.conf \
   --include=/usr/config/mpv/aspect.conf \
   --include=/usr/config/mpv/sd.conf \
