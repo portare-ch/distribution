@@ -57,6 +57,11 @@ post_install() {
   cp ${PKG_DIR}/sources/post-update ${INSTALL}/usr/share
   chmod 755 ${INSTALL}/usr/share/post-update
 
+  # RetroArch shaders of our own, beside the slang-shaders package's; the
+  # /tmp/shaders overlay RetroArch reads has this directory as a lower layer.
+  mkdir -p ${INSTALL}/usr/share/slang-shaders/portare
+  cp ${PKG_DIR}/sources/shaders/portare/* ${INSTALL}/usr/share/slang-shaders/portare/
+
   # Issue banner
   cat <<EOF >> ${INSTALL}/etc/issue
 ... Version: ${OS_VERSION} (${OS_BUILD})
