@@ -19,9 +19,13 @@ elif [ "${OPENGLES_SUPPORT}" = yes ]; then
   PKG_MAKE_OPTS_TARGET+=" GLES=1 GL_LIB=\"-lGLESv2\""
 fi
 
-if [ "${VULKAN_SUPPORT}" = "yes" ] && [ ${DEVICE} = "AMD64" ]; then
+# ParaLLEl-RDP renders the N64's RDP on the GPU through Vulkan, with
+# Angrylion's accuracy at a fraction of its CPU cost; ParaLLEl-RSP is the
+# matching JIT for the RSP. Both build for aarch64 (upstream's Android build
+# enables them), and RetroArch already runs on Vulkan here.
+if [ "${VULKAN_SUPPORT}" = "yes" ]; then
   PKG_DEPENDS_TARGET+=" vulkan-loader vulkan-headers"
-  PKG_MAKE_OPTS_TARGET+=" HAVE_PARALLEL=1"
+  PKG_MAKE_OPTS_TARGET+=" HAVE_PARALLEL=1 HAVE_PARALLEL_RSP=1"
 fi
 
 PKG_MAKE_OPTS_TARGET+=" platform=${DEVICE}"
