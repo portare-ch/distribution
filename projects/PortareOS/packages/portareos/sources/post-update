@@ -34,6 +34,13 @@ do
 done
 
 rsync -a --delete ${EXCLUDE} /usr/config/system/ /storage/.config/system/
+
+### simple-http-server is gone from the image: it was EmulationStation's file
+### browser, serving /storage on port 80 to anyone on the network with the
+### root password every device shares. A device that had it switched on
+### keeps the enable link in /storage, which would point at nothing.
+rm -f /storage/.config/system.d/*.wants/simple-http-server.service
+sed -i '/^simplehttp\./d' /storage/.config/system/configs/system.cfg 2>/dev/null ||:
 rsync -a --ignore-existing /usr/config/game /storage/.config/
 rsync -a /usr/config/modules /storage/.config/
 
