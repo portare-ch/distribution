@@ -264,5 +264,14 @@ migrate_es_fpslimit() {
   sed -i "s|</config>|    <int name=\"FpsLimit\" value=\"${value}\" />\n</config>|" "${cfg}"
 }
 
+# SSH used to be off except on community builds, and the launcher had no way
+# to turn it on, so an official install could only be reached with a keyboard
+# and a terminal. It is on by default now, behind the per-device root password
+# (autostart/007-rootpw), and Settings > SSH turns it off again.
+migrate_ssh_on() {
+  set_setting ssh.enabled 1
+}
+
 migrate cpugovernor-schedutil migrate_cpugovernor
 migrate es-fpslimit migrate_es_fpslimit
+migrate ssh-default-on migrate_ssh_on
