@@ -169,6 +169,27 @@ Several of the kernel patches behind these came from
 [pocknix-os](https://github.com/shuuri-labs/pocknix-os); authorship is kept
 in each patch header.
 
+## What it looks like
+
+<img src="documentation/images/snes-super-mario-world.jpg" width="640" alt="Super Mario World on the Nova: scanlines from crt-guest-advanced at an exact 4x, with the 32-pixel bars">
+
+**Super Mario World.** The panel runs the SNES mode, 120.198 Hz, two
+refreshes for every one of the game's 60.0988 frames, so nothing is dropped
+or repeated. crt-guest-advanced draws the scanlines over an exact 4×; the
+bars above and below are the price of even lines. The audio link is at
+32 kHz, the console's own rate.
+
+<img src="documentation/images/movies-dvd-4-3.jpg" width="640" alt="A DVD rip playing in mpv, filling the 4:3 panel">
+
+**A DVD rip.** mpv decodes H.264 on the hardware decoder and draws straight
+to the display, no compositor. The rip had lost its aspect flag; it is shown
+at 4:3 again, filling the panel, with scanlines for standard definition.
+
+<img src="documentation/images/launcher.jpg" width="640" alt="The launcher: a list of systems with game counts, and the volume, brightness, battery and time in the header">
+
+**The launcher.** Text on black, drawn by the CPU into a KMS buffer. Systems
+with games, the counts, and the four numbers that matter in the header.
+
 ## The rules
 
 * **One device.** Every other device tree has been deleted, not switched off.
