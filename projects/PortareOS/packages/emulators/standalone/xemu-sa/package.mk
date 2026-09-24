@@ -40,6 +40,23 @@ pre_configure_target() {
   # Required for python
   export DONT_BUILD_LEGACY_PYC=1
 
+  # meson clones xemu's wrap-git subprojects (imgui, implot, SDL3, volk...)
+  # while configuring. A clone that fails part-way leaves its directory
+  # behind, and meson then refuses it - "Subproject exists but has no
+  # meson.build file" - on every later try instead of cloning again. That
+  # is how nightly 35930474138 failed all six retries after one network
+  # error on imgui. Remove such a leftover so a retry clones it afresh.
+  for wrap in ${PKG_BUILD}/subprojects/*.wrap; do
+    [ -f "${wrap}" ] || continue
+    grep -q '^\[wrap-git\]' "${wrap}" || continue
+    dir=$(sed -n 's/^directory *= *//p' "${wrap}")
+    dir="${PKG_BUILD}/subprojects/${dir:-$(basename "${wrap}" .wrap)}"
+    if [ -d "${dir}" ] && [ ! -f "${dir}/meson.build" ] && [ ! -f "${dir}/CMakeLists.txt" ]; then
+      echo "xemu: ${dir##*/} is an incomplete clone - removing it to fetch again"
+      rm -rf "${dir}"
+    fi
+  done
+
   # Download Sub Modules
   ### xxHash
   mkdir -p ${PKG_BUILD}/subprojects/
