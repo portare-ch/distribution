@@ -41,9 +41,9 @@ Where an emulator runs at a different rate from the hardware, the table says so.
 
 ## Audio
 
-The Nova's speaker and headphone link runs at **48 kHz or 44.1 kHz**. The I2S bit clock follows the stream (kernel patch `1054-PortareOS-asoc-qcom-mi2s-bit-clock-from-stream.patch`), and PipeWire allows both rates (`default.clock.allowed-rates = [ 48000 44100 ]`). Neither rate is a resampling stage in itself: the link switches to the rate of the stream that opens it.
+The Nova's speaker and headphone link runs at **48 kHz, 44.1 kHz or 32 kHz**. Kernel patches 1052–1055 open the DSP ports to 44.1 and 32 kHz, the I2S bit clock follows the stream (1054), and PipeWire allows all three rates (`default.clock.allowed-rates = [ 48000 44100 32000 ]`). No rate is a resampling stage in itself: the link switches to the rate of the stream that opens it.
 
-**RetroArch outputs 48 kHz** (`audio_out_rate = 48000`), except for the cores that produce 44.1 kHz: SwanStation, Flycast, PPSSPP, NeoCD, Genesis Plus GX and PicoDrive. Their per-core configs (`config/<core>/<core>.cfg`) ask for 44.1 kHz. RetroArch resamples each core's audio to that rate with its sinc resampler, and dynamic rate control keeps the stream in step with the display. So every core is resampled at least a little, even one whose rate matches the output, because rate control adjusts the ratio by up to 0.5 %. mpv plays a file at its own rate.
+**RetroArch outputs 48 kHz** (`audio_out_rate = 48000`), except for the cores that produce 44.1 kHz: SwanStation, Flycast, PPSSPP, NeoCD, Genesis Plus GX and PicoDrive. Their per-core configs (`config/<core>/<core>.cfg`) ask for 44.1 kHz. Snes9x asks for 32 kHz, and its games in `snesmsu1` for 44.1 kHz (`config/Snes9x/snesmsu1.cfg`, a content-directory override), because MSU-1 games output 44.1 kHz. RetroArch resamples each core's audio to that rate with its sinc resampler, and dynamic rate control keeps the stream in step with the display. So every core is resampled at least a little, even one whose rate matches the output, because rate control adjusts the ratio by up to 0.5 %. mpv plays a file at its own rate.
 
 The first rate column is the console's own: the rate its sound hardware produces samples at, or "analog" where the chip's channels are mixed as analog signals and there is no sample rate to speak of. The second is what the emulator hands RetroArch, taken from its source code at the pinned commit with PortareOS's options.
 
@@ -51,8 +51,8 @@ The first rate column is the console's own: the rate its sound hardware produces
 |---|---|---|---|
 | gb, gbh, gbc, gbch (Gambatte) | analog (the APU runs at 1,048,576) | 32,768 | 48,000 |
 | gba, gbah, gbav (mGBA) | 32,768 by default; a game can pick up to 262,144 | 65,536 | 48,000 |
-| snes, snesh, sfc, satellaview, sufami (Snes9x) | 32,000 nominal (about 32,040 on real consoles) | 32,040 | 48,000 |
-| snesmsu1 (Snes9x) | 32,000, plus the MSU-1's 44,100 | 44,100 (MSU-1 enhanced audio) | 48,000 |
+| snes, snesh, sfc, satellaview, sufami (Snes9x) | 32,000 nominal (about 32,040 on real consoles) | 32,040 | 32,000 |
+| snesmsu1 (Snes9x) | 32,000, plus the MSU-1's 44,100 | 44,100 (MSU-1 enhanced audio) | 44,100 |
 | psx (SwanStation) | 44,100 | 44,100 | 44,100 |
 | mastersystem, sg-1000, gamegear, ggh (Genesis Plus GX) | analog (SN76489, 223,722 per channel step) | 44,100 | 44,100 |
 | megadrive, megadrive-japan, megadriveh, genesis, genh (Genesis Plus GX) | 53,267 (YM2612), plus the SN76489 | 44,100 | 44,100 |
@@ -73,7 +73,8 @@ The first rate column is the console's own: the rate its sound hardware produces
 In short:
 
 - **No resampling needed:** the 44.1 kHz cores play at 44.1 kHz: PS1, Dreamcast, NAOMI, Atomiswave, PSP, NeoCD and every Sega system. Xbox, PS2 and Dolphin already produce 48 kHz.
-- **Resampled as on any other device:** Game Boy, GBA, SNES, N64 and Neo Geo. Their rates match neither output rate, so they need resampling either way.
+- **Nearly native:** the SNES plays at 32 kHz. The 32,040 → 32,000 conversion (0.125 %) is smaller than what rate control adjusts anyway.
+- **Resampled as on any other device:** Game Boy, GBA, N64 and Neo Geo. Their rates match none of the link's rates, so they need resampling either way.
 
 ## Adding a mode
 
