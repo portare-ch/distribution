@@ -10,13 +10,15 @@
 # their remaining issues are resolved.
 case "${QUIRK_DEVICE}" in
   "Retroid Pocket 6"*|"Retroid Pocket Nova"|"AYN Odin 2"*|"AYN-Odin2"|"AYN Thor"|"AYN-Thor")
-    # Default to mem suspend and keep systemd on that state.
+    # Default to mem suspend and keep systemd on that state. The kernel
+    # picks s2idle for it (mem_sleep_default=s2idle on the command line);
+    # MemorySleepMode= would say the same, but systemd 255 does not know
+    # the key and logs "Unknown key" at every suspend.
     mkdir -p /storage/.config/sleep.conf.d
     cat <<EOF >/storage/.config/sleep.conf.d/zz-sm8550-deeponly.conf
 [Sleep]
 SuspendState=
 SuspendState=mem
-MemorySleepMode=s2idle
 EOF
 
     # bin/power-handler owns the power key here: it has to see the press
