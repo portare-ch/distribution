@@ -19,10 +19,6 @@ if [ "${SAMBA_SERVER}" = "yes" ] || [ "$SAMBA_SUPPORT" = "yes" ]; then
   PKG_DEPENDS_TARGET="${PKG_DEPENDS_TARGET} samba"
 fi
 
-if [ "${SIMPLE_HTTP_SERVER}" = "yes" ]; then
-  PKG_DEPENDS_TARGET="${PKG_DEPENDS_TARGET} simple-http-server"
-fi
-
 if [ "${OPENVPN_SUPPORT}" = "yes" ]; then
   PKG_DEPENDS_TARGET="${PKG_DEPENDS_TARGET} openvpn"
 fi
