@@ -3,7 +3,7 @@
 
 PKG_NAME="portarelauncher"
 PKG_VERSION="656099a86b3be885c058ac81f810a477fb6f38ce"
-PKG_SHA256="f7f74d0a3c598b6839936b2fed82b8fd19ad58ddae1d0fd060f440b6e173fac2"
+PKG_SHA256="2fc205259acf0f7c1752387f488e82c9fca7e6246b5732143c9af783a67bd7bd"
 PKG_LICENSE="GPL-2.0"
 PKG_SITE="https://github.com/portare-ch/portarelauncher"
 PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
