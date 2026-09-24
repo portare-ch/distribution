@@ -31,7 +31,7 @@ makeinstall_target() {
     FW=${INSTALL}/$(get_full_firmware_dir)/qcom/sm8550
     rm -rf ${FW}/ayaneo ${FW}/ayn/thor ${FW}/ayn/odin2portal ${FW}/ayn/odin2mini
 
-    python3 ${PKG_DIR}/sources/tplg-allow-44100.py \
+    python3 ${PKG_DIR}/sources/tplg-playback-rates.py \
       ${INSTALL}/$(get_full_firmware_dir)/qcom/sm8550/AYN-Odin2-tplg.bin
   fi
 }
