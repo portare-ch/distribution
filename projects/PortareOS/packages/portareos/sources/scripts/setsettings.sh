@@ -1065,6 +1065,18 @@ function set_n64opts() {
         sed -i '/parallel-n64-framerate = /c\parallel-n64-framerate = "'${GAMESPEED}'"' "${PARALLELN64DIR}/ParaLLEl N64.opt"
         local ACCURACY="$(game_setting parallel_n64_gfx_accuracy)"
         sed -i '/parallel-n64-gfxplugin-accuracy = /c\parallel-n64-gfxplugin-accuracy = "'${ACCURACY}'"' "${PARALLELN64DIR}/ParaLLEl N64.opt"
+        # 2x: a 640x480 game renders at the panel's 1280x960, and a
+        # 320x240 one at 640x480, scaled 2x to the panel. 4x would suit
+        # the low-res games and cost the hi-res ones 2560x1920. 2x also
+        # when the setting is missing, as on an install from before it.
+        local UPSCALING="$(game_setting parallel_n64_upscaling)"
+        UPSCALING="${UPSCALING:-2x}"
+        if grep -q '^parallel-n64-upscaling = ' "${PARALLELN64DIR}/ParaLLEl N64.opt"
+        then
+            sed -i '/parallel-n64-upscaling = /c\parallel-n64-upscaling = "'${UPSCALING}'"' "${PARALLELN64DIR}/ParaLLEl N64.opt"
+        else
+            echo "parallel-n64-upscaling = \"${UPSCALING}\"" >> "${PARALLELN64DIR}/ParaLLEl N64.opt"
+        fi
         local CONTROLLERPAK="$(game_setting parallel_n64_controller_pak)"
         sed -i '/parallel-n64-pak1 = /c\parallel-n64-pak1 = "'${CONTROLLERPAK}'"' "${PARALLELN64DIR}/ParaLLEl N64.opt"
     fi

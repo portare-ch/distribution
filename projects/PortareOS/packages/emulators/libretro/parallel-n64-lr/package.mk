@@ -2,10 +2,7 @@
 # Copyright (C) 2024-present ROCKNIX (https://github.com/ROCKNIX)
 
 PKG_NAME="parallel-n64-lr"
-# bump-ignore: upstream HEAD is +1207 commits and breaks platform.patch and
-# libretro-cleanup.patch; r4300.c moved under src/device/ so the gcc-13
-# patch no longer has a file to patch either.
-PKG_VERSION="f8605345e13c018a30c8f4ed03c05d8fc8f70be8"
+PKG_VERSION="6e4c44c51885c8dc16e46d68464c517e6fca6712"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/libretro/parallel-n64"
 PKG_URL="${PKG_SITE}.git"
@@ -22,9 +19,13 @@ elif [ "${OPENGLES_SUPPORT}" = yes ]; then
   PKG_MAKE_OPTS_TARGET+=" GLES=1 GL_LIB=\"-lGLESv2\""
 fi
 
-if [ "${VULKAN_SUPPORT}" = "yes" ] && [ ${DEVICE} = "AMD64" ]; then
+# ParaLLEl-RDP renders the N64's RDP on the GPU through Vulkan, with
+# Angrylion's accuracy at a fraction of its CPU cost; ParaLLEl-RSP is the
+# matching JIT for the RSP. Both build for aarch64 (upstream's Android build
+# enables them), and RetroArch already runs on Vulkan here.
+if [ "${VULKAN_SUPPORT}" = "yes" ]; then
   PKG_DEPENDS_TARGET+=" vulkan-loader vulkan-headers"
-  PKG_MAKE_OPTS_TARGET+=" HAVE_PARALLEL=1"
+  PKG_MAKE_OPTS_TARGET+=" HAVE_PARALLEL=1 HAVE_PARALLEL_RSP=1"
 fi
 
 PKG_MAKE_OPTS_TARGET+=" platform=${DEVICE}"
