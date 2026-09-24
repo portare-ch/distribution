@@ -4,9 +4,11 @@
 //
 // SwanStation upscales 4x, so the image this receives is already 960 lines:
 // a CRT shader that counts its input lines would put a "scanline" on every
-// panel row. This one takes the console's line count as a parameter - 240
-// for a PlayStation - and draws a beam per console line over the upscaled
-// picture, keeping the detail the upscale gives.
+// panel row. This one draws a beam per console line over the upscaled
+// picture, keeping the detail the upscale gives. UPSCALE says how many
+// source lines make one console line (4 for SwanStation at 4x), so a
+// 224-line game gets 224 beams and a 240-line game 240; with UPSCALE at 0
+// the LINES parameter is used instead.
 //
 // In linear light:
 //   beam   a gaussian across each console line, wider for brighter colour,
@@ -21,6 +23,7 @@ layout(push_constant) uniform Push
 {
 	vec4 SourceSize;
 	vec4 OutputSize;
+	float UPSCALE;
 	float LINES;
 	float BEAM_MIN;
 	float BEAM_MAX;
@@ -30,7 +33,8 @@ layout(push_constant) uniform Push
 	float BOOST;
 } params;
 
-#pragma parameter LINES "Console lines per frame" 240.0 120.0 1080.0 1.0
+#pragma parameter UPSCALE "Source lines per console line (0: use LINES)" 4.0 0.0 8.0 1.0
+#pragma parameter LINES "Console lines per frame, when UPSCALE is 0" 240.0 120.0 1080.0 1.0
 #pragma parameter BEAM_MIN "Beam width, dark" 0.20 0.05 0.60 0.01
 #pragma parameter BEAM_MAX "Beam width, bright" 0.36 0.05 0.80 0.01
 #pragma parameter SOFT "Horizontal softness" 0.35 0.0 1.0 0.05
@@ -67,10 +71,12 @@ vec3 lin(vec2 uv)
 
 void main()
 {
-	float line_h = 1.0 / params.LINES;  /* one console line, in uv */
+	float lines = params.UPSCALE > 0.5 ? params.SourceSize.y / params.UPSCALE
+	                                   : params.LINES;
+	float line_h = 1.0 / lines;         /* one console line, in uv */
 
 	/* Where in its console line this pixel is: -0.5 top, 0 centre, 0.5 bottom. */
-	float ly = vTexCoord.y * params.LINES;
+	float ly = vTexCoord.y * lines;
 	float d = fract(ly) - 0.5;
 	/* This pixel's own colour, read where it is rather than at the line's
 	 * centre: the upscale's vertical detail stays; the beam only shapes it. */
@@ -78,9 +84,12 @@ void main()
 	/* The neighbouring lines' colour, at their centres. */
 	vec2 centre = vec2(vTexCoord.x, (floor(ly) + 0.5) * line_h);
 
-	/* Horizontal spread of half a console pixel either side: 4:3 over this
-	 * many lines makes a console pixel LINES * 4/3 across the frame. */
-	vec2 hx = vec2(0.5 / (params.LINES * 4.0 / 3.0), 0.0);
+	/* Horizontal spread of half a console pixel either side. The source
+	 * says how many console pixels it has when UPSCALE is known; otherwise
+	 * 4:3 over the lines makes it LINES * 4/3 across the frame. */
+	float cols = params.UPSCALE > 0.5 ? params.SourceSize.x / params.UPSCALE
+	                                  : lines * 4.0 / 3.0;
+	vec2 hx = vec2(0.5 / cols, 0.0);
 	vec3 c = lin(uv) * (1.0 - params.SOFT)
 	       + (lin(uv - hx) + lin(uv + hx)) * (0.5 * params.SOFT);
 
