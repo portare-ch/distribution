@@ -1,0 +1,51 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] ASoC: qcom: allow 32 kHz playback
+
+The SNES's DSP runs at 32 kHz (about 32040 on real consoles, which is
+what Snes9x produces), and RetroArch upsampled it to 48000 because the
+link could only carry 48000 and 44100. This adds 32000 the same way
+1052 and 1053 added 44100:
+
+- the longhand PRIMARY_MI2S_RX entry (the speakers) gains
+  SNDRV_PCM_RATE_32000. The MI2S and CDC-DMA RX macros already list it,
+  so the headphone port needs nothing;
+- sc8280xp_be_hw_params_fixup() lets a frontend rate of exactly 32000
+  through on PRIMARY_MI2S_RX and RX_CODEC_DMA_RX_0, as it does 44100.
+  Every other backend keeps the 48000 pin.
+
+The bit clock needs no change: 1054 derives it from the stream, and
+32000 x 2 x 16 = 1024000, which is 24.576 MHz / 24 and so in the same
+clock family as 48000. If q6prm refuses it, 1054 warns
+"could not set i2s bit clock to 1024000".
+
+The rest of the path already takes 32000: lpass-rx-macro (sr_val_tbl
+{32000, 0x3}) for the headphones, and the aw88166 amps
+(SNDRV_PCM_RATE_8000_48000). The amps follow BCLK, as they do at 44100.
+--- a/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c
++++ b/sound/soc/qcom/qdsp6/q6dsp-lpass-ports.c
+@@ -387,7 +387,8 @@
+ 		.playback = {
+ 			.stream_name = "Primary MI2S Playback",
+ 			.rates = SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_44100 |
+-				 SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000,
++				 SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_8000 |
++				 SNDRV_PCM_RATE_16000,
+ 			.formats = SNDRV_PCM_FMTBIT_S16_LE |
+ 				   SNDRV_PCM_FMTBIT_S24_LE,
+ 			.channels_min = 1,
+--- a/sound/soc/qcom/sc8280xp.c
++++ b/sound/soc/qcom/sc8280xp.c
+@@ -143,6 +143,13 @@
+ 		 */
+ 		if (fe_rate == 44100)
+ 			rate->min = rate->max = 44100;
++		/*
++		 * 32 kHz for the SNES, whose DSP runs at it. Both ports list
++		 * 32000, and the MI2S bit clock follows the stream, so this
++		 * is 1024000 - 24.576 MHz / 24, in the 48 kHz clock family.
++		 */
++		if (fe_rate == 32000)
++			rate->min = rate->max = 32000;
+ 		break;
+ 	default:
+ 		break;
