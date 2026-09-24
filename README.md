@@ -111,9 +111,11 @@ Every emulator quits with the same buttons, Home + Start.
 
 * 4:3 with integer scaling where the console's lines divide into 960: Game
   Boy at 960×864, N64 at 2× on ParaLLEl-RDP, PlayStation at 4× with a CRT
-  shader, the handheld LCD shaders for the Game Boy family. The SNES runs at
-  an exact 4× with crt-guest-advanced, and keeps its 32-pixel bars rather
-  than stretch 224 lines over 960: even scanlines need an integer scale.
+  shader of our own that draws one beam per console line, the Game Boy
+  Advance at 5× under an LCD subpixel grid (lcd-grid-v2), the Game Boy and
+  Game Boy Color under their own LCD shaders, the SNES at an exact 4× with
+  crt-guest-advanced. Where an integer scale leaves 32-pixel bars, they
+  stay rather than stretch 224 lines over 960: even scanlines need it.
 * Correct palettes and boot logos: a Game Boy Color game gets the GBC
   hardware and its colour correction.
 * No automatic savestate loading.
