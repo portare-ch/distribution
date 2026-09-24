@@ -8,11 +8,7 @@ PKG_LICENSE="GPLv3"
 PKG_SITE="https://github.com/ARMSX2/ARMSX2"
 PKG_URL="${PKG_SITE}/archive/refs/tags/${PKG_VERSION}.tar.gz"
 PKG_LONGDESC="ARMSX2 is a native ARM64 PlayStation 2 (PS2) emulator, a fork of PCSX2 that ports the EE/IOP/VU JIT recompilers to ARM64."
-# ecm (extra-cmake-modules): WAYLAND_API=ON below makes cmake/SearchForStuff.cmake
-# run find_package(ECM REQUIRED). Nothing declared it, so it was there only
-# when saved build state happened to carry it - a cold build (nightly
-# 35930474138) failed all six retries on "Could not find ... ECM".
-PKG_DEPENDS_TARGET="toolchain llvm:host SDL3 libpng zlib libjpeg-turbo zstd lz4 libwebp freetype plutosvg curl libpcap ffmpeg libX11 libXext qt6 shaderc ecm"
+PKG_DEPENDS_TARGET="toolchain llvm:host SDL3 libpng zlib libjpeg-turbo zstd lz4 libwebp freetype plutosvg curl libpcap ffmpeg libX11 libXext qt6 shaderc"
 PKG_TOOLCHAIN="manual"
 PKG_BUILD_FLAGS="speed"
 
@@ -40,7 +36,10 @@ pre_configure_target() {
     -DUSE_BACKTRACE=OFF
     -DENABLE_QT_UI=ON
     -DENABLE_QT_DEBUGGER=OFF
-    -DWAYLAND_API=ON
+    # No Wayland: ARMSX2 draws straight to the panel through VK_KHR_display,
+    # with no compositor to be a client of. ON also made its CMake require
+    # ECM (extra-cmake-modules), which nothing here provides.
+    -DWAYLAND_API=OFF
     -DX11_API=ON
     -DCMAKE_LINKER_TYPE=LLD
   )
