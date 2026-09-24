@@ -54,14 +54,6 @@ PKG_SYNC=""
 
 PKG_TOOLS="patchelf i2c-tools evtest"
 
-# scx_lavd, the sched_ext scheduler. Not in PKG_TOOLS: the base stage builds
-# those with EMULATION_DEVICE=no and no rust toolchain, and would compile
-# rustc from source to get it. It is built in the rust stage instead
-# (build-aarch64-rust.yml) and reaches the image through the stage artifacts,
-# so the image stage only installs it. Its unit is gated on
-# /sys/kernel/btf/vmlinux either way.
-PKG_SCHED="scx-scheds"
-
 PKG_DEBUG="debug"
 
 if [ "${BASE_ONLY}" = "true" ]
@@ -80,7 +72,7 @@ else
 fi
 
 # Device is an emulation focused device
-[ "${EMULATION_DEVICE}" = "yes" ] && PKG_DEPENDS_TARGET+=" emulators gamesupport ${PKG_SCHED}"
+[ "${EMULATION_DEVICE}" = "yes" ] && PKG_DEPENDS_TARGET+=" emulators gamesupport"
 
 # Add support for containers
 [ "${CONTAINER_SUPPORT}" = "yes" ] && PKG_DEPENDS_TARGET+=" ${PKG_TOOLS} docker"
