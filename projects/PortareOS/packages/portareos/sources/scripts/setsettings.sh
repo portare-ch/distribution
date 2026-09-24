@@ -762,17 +762,34 @@ function set_ra_refresh_rate() {
             ### A per-game display_mode still pins another rate, and the
             ### case above handles it. See #228.
             ###
+            ### The same for the other systems whose frame rate is not
+            ### 59.94, each with a panel mode at exactly twice it:
+            ###
+            ###   Game Boy, Color, Advance  59.7275 = 4194304 / 70224
+            ###                                     = 16777216 / 280896
+            ###                             at 119.88 a frame repeated
+            ###                             about every 2.3 s; 119.455 exact
+            ###   Super Nintendo (NTSC)     60.0988 = 21477272.7 / 357366
+            ###                             at 119.88 a frame dropped
+            ###                             about every 3.2 s; 120.198 exact
+            ###
             ### Asked for by rate rather than by index, so this does nothing
             ### at all on a panel without the mode rather than naming a rate
             ### the display cannot produce.
-            if [ "${CORE}" = "swanstation" ]
+            local WANT="" WHY=""
+            case "${CORE}" in
+                swanstation)     WANT=119.6346; WHY="2 x 59.8173" ;;
+                gambatte|mgba)   WANT=119.4550; WHY="2 x 59.7275" ;;
+                snes9x|bsnes)    WANT=120.1976; WHY="2 x 60.0988" ;;
+            esac
+            if [ -n "${WANT}" ]
             then
-                local PSX_RATE
-                PSX_RATE="$(exact_refresh_from_drm 119.6346)"
-                if [ -n "${PSX_RATE}" ]
+                local EXACT_RATE
+                EXACT_RATE="$(exact_refresh_from_drm "${WANT}")"
+                if [ -n "${EXACT_RATE}" ]
                 then
-                    log "SwanStation: ${PSX_RATE} is exactly 2 x 59.8173, using it over ${RATE}"
-                    RATE="${PSX_RATE}"
+                    log "${CORE}: ${EXACT_RATE} is exactly ${WHY}, using it over ${RATE}"
+                    RATE="${EXACT_RATE}"
                 fi
             fi
         ;;
