@@ -67,7 +67,7 @@ case $1 in
     set_kill set "-9 scummvm"
     GAME=$(cat "${GAME}")
     systemctl start fluidsynth
-    eval /usr/bin/scummvm --fullscreen --joystick=0 --themepath=/usr/config/scummvm/themes "${GAME}"
+    eval /usr/bin/scummvm --fullscreen --joystick=0 --themepath=/usr/local/share/scummvm "${GAME}"
     systemctl stop fluidsynth
   ;;
 esac
