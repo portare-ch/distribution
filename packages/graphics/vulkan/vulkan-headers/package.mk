@@ -11,3 +11,9 @@ PKG_URL="https://github.com/KhronosGroup/Vulkan-Headers/archive/v${PKG_VERSION}.
 PKG_DEPENDS_HOST="toolchain:host"
 PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="Vulkan Header files and API registry"
+
+# The API registry (vk.xml and friends, 19 MB) is for code generators at
+# build time, which read it from the sysroot. The image has no use for it.
+post_makeinstall_target() {
+  rm -rf ${INSTALL}/usr/share/vulkan/registry
+}

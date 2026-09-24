@@ -40,6 +40,13 @@ rsync -a --delete ${EXCLUDE} /usr/config/system/ /storage/.config/system/
 ### root password every device shares. A device that had it switched on
 ### keeps the enable link in /storage, which would point at nothing.
 rm -f /storage/.config/system.d/*.wants/simple-http-server.service
+
+### ScummVM's theme sources were copied into /storage on first start - 74 MB
+### on every card. It reads the built themes from /usr/local/share/scummvm
+### now; the copy, recognisable by its nested themes/themes, goes.
+if [ -d /storage/.config/scummvm/themes/themes ]; then
+  rm -rf /storage/.config/scummvm/themes
+fi
 sed -i '/^simplehttp\./d' /storage/.config/system/configs/system.cfg 2>/dev/null ||:
 rsync -a --ignore-existing /usr/config/game /storage/.config/
 rsync -a /usr/config/modules /storage/.config/

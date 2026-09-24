@@ -121,8 +121,15 @@
 # Build modules packages
   MODULES_PKG="${MODULES_PKG:-yes}"
 
-# Support for debug tools such as strace
-  DEBUG_PACKAGES="${DEBUG_PACKAGES:-yes}"
+# Debug tools - gdb, strace, apitrace, renderdoc, nvtop, memtester, about
+# 40 MB. In nightlies, which are what gets debugged; not in an official
+# release, where they are weight nobody uses. DEBUG_PACKAGES=yes still
+# overrides either way.
+  if [ "${OFFICIAL}" = "yes" ]; then
+    DEBUG_PACKAGES="${DEBUG_PACKAGES:-no}"
+  else
+    DEBUG_PACKAGES="${DEBUG_PACKAGES:-yes}"
+  fi
 
 # Windowmanager to use (swaywm-env / no)
   WINDOWMANAGER="none"

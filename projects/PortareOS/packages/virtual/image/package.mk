@@ -71,11 +71,8 @@ then
 else
   PKG_DEPENDS_TARGET+=" ${PKG_TOOLS} ${PKG_FONTS} ${PKG_SOUND} ${PKG_SYNC} ${PKG_GRAPHICS} ${PKG_UI} ${PKG_UI_TOOLS} ${PKG_MULTIMEDIA} misc-packages"
 
-  # GLmark2
-  [[ ! -z "${OPENGLES_SUPPORT}" ]] && PKG_DEPENDS_TARGET+=" glmark2"
-
-  # Vulkan demos and tools
-  [ "${VULKAN_SUPPORT}" = "yes" ] && PKG_DEPENDS_TARGET+=" vkmark"
+  # glmark2 and vkmark (and the assimp vkmark pulls in, ~20 MB together) were
+  # shipped in every image as benchmarks; nothing on the device uses them.
 
   # Sound support
   [ "${PIPEWIRE_SUPPORT}" = "yes" ] && PKG_DEPENDS_TARGET+=" alsa pipewire wireplumber"

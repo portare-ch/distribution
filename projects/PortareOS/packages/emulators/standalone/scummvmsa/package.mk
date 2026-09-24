@@ -37,8 +37,10 @@ post_makeinstall_target() {
   mkdir -p ${INSTALL}/usr/config/scummvm/
   cp -rf ${PKG_DIR}/config/* ${INSTALL}/usr/config/scummvm/
 
-  mkdir -p ${INSTALL}/usr/config/scummvm/themes
-  cp -rf ${PKG_BUILD}/gui/themes ${INSTALL}/usr/config/scummvm/themes
+  # No copy of gui/themes: make install already puts the built themes
+  # (scummmodern.zip and the rest) in /usr/local/share/scummvm, which
+  # start_scummvm.sh passes as --themepath. The copy was the theme sources,
+  # 74 MB, nested themes/themes, and was copied again into /storage.
 
   mv ${INSTALL}/usr/local/bin ${INSTALL}/usr/
   cp -rf ${PKG_DIR}/sources/* ${INSTALL}/usr/bin

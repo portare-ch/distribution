@@ -36,3 +36,17 @@ post_configure_target() {
   libtool_remove_rpath gettext-runtime/libasprintf/libtool
   libtool_remove_rpath gettext-tools/libtool
 }
+
+# The translation tool chain - xgettext alone is 13 MB - is for building
+# software, not for running it. gettext, ngettext and envsubst stay: shell
+# scripts may call those.
+post_makeinstall_target() {
+  local t
+  for t in xgettext msgattrib msgcat msgcmp msgcomm msgconv msgen msgexec \
+           msgfilter msgfmt msggrep msginit msgmerge msgunfmt msguniq \
+           recode-sr-latin gettextize autopoint; do
+    rm -f ${INSTALL}/usr/bin/${t}
+  done
+  rm -f ${INSTALL}/usr/lib/libgettextlib* ${INSTALL}/usr/lib/libgettextsrc* \
+        ${INSTALL}/usr/lib/libgettextpo*
+}
