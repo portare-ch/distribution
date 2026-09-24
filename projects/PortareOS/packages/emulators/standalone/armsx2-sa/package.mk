@@ -36,7 +36,10 @@ pre_configure_target() {
     -DUSE_BACKTRACE=OFF
     -DENABLE_QT_UI=ON
     -DENABLE_QT_DEBUGGER=OFF
-    -DWAYLAND_API=ON
+    # No Wayland: ARMSX2 draws straight to the panel through VK_KHR_display,
+    # with no compositor to be a client of. ON also made its CMake require
+    # ECM (extra-cmake-modules), which nothing here provides.
+    -DWAYLAND_API=OFF
     -DX11_API=ON
     -DCMAKE_LINKER_TYPE=LLD
   )
