@@ -8,7 +8,11 @@ PKG_LICENSE="GPLv3"
 PKG_SITE="https://github.com/ARMSX2/ARMSX2"
 PKG_URL="${PKG_SITE}/archive/refs/tags/${PKG_VERSION}.tar.gz"
 PKG_LONGDESC="ARMSX2 is a native ARM64 PlayStation 2 (PS2) emulator, a fork of PCSX2 that ports the EE/IOP/VU JIT recompilers to ARM64."
-PKG_DEPENDS_TARGET="toolchain llvm:host SDL3 libpng zlib libjpeg-turbo zstd lz4 libwebp freetype plutosvg curl libpcap ffmpeg libX11 libXext qt6 shaderc"
+# ecm (extra-cmake-modules): WAYLAND_API=ON below makes cmake/SearchForStuff.cmake
+# run find_package(ECM REQUIRED). Nothing declared it, so it was there only
+# when saved build state happened to carry it - a cold build (nightly
+# 35930474138) failed all six retries on "Could not find ... ECM".
+PKG_DEPENDS_TARGET="toolchain llvm:host SDL3 libpng zlib libjpeg-turbo zstd lz4 libwebp freetype plutosvg curl libpcap ffmpeg libX11 libXext qt6 shaderc ecm"
 PKG_TOOLCHAIN="manual"
 PKG_BUILD_FLAGS="speed"
 
