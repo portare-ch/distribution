@@ -13,5 +13,30 @@ then
   touch /storage/.cache/samba/smbpasswd
 fi
 
+# Every device used to ship with the same root password, and it opens ssh.
+# So a device makes its own: on first boot, when there is none yet, and on
+# the first boot after an update for one still on a shared default - the
+# image's "portareos", or "rocknix" from before the rename. Settings > About
+# shows it.
+#
+# 12 characters from the 31 lower-case letters and digits that cannot be
+# mistaken for one another off a screen (no 0/o, 1/l/i): about 59 bits.
+# Bytes of 248 and up are skipped so every character is equally likely.
+new_root_password() {
+  head -c 64 /dev/urandom | od -An -tu1 | awk -v A="abcdefghjkmnpqrstuvwxyz23456789" '
+    { for (i = 1; i <= NF; i++) if ($i < 248 && n < 12) { s = s substr(A, $i % 31 + 1, 1); n++ } }
+    END { print s }'
+}
+
 ROOTPASS=$(get_setting root.password)
-setrootpass "${ROOTPASS}"
+case "${ROOTPASS}" in
+  ""|portareos|rocknix)
+    ROOTPASS=$(new_root_password)
+    # Not below twelve: /dev/urandom giving too little would otherwise
+    # leave a short password, or none.
+    if [ "${#ROOTPASS}" -eq 12 ]; then
+      set_setting root.password "${ROOTPASS}"
+    fi
+    ;;
+esac
+setrootpass "$(get_setting root.password)"
