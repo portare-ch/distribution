@@ -1,0 +1,59 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 PortareOS (https://portare.org)
+
+# Yellow thumbsticks while the battery charges, off again when it stops.
+# led.charging=0 in system.cfg switches it off; read every round, so the
+# launcher's switch takes effect within a few seconds, no restart.
+#
+# Stays out of the way of the other LED owners: with led.color=battery the
+# battery service colours the sticks by charge and this does nothing; with
+# led.color=rgb the user's colours come back when charging ends.
+
+. /etc/profile
+
+LED_PATH="/sys/devices/platform"
+STATUS="/sys/class/power_supply/battery/status"
+# multi_intensity is blue green red
+YELLOW="0 150 255"
+
+sticks() {
+  local n
+  for side in l r; do
+    for n in 1 2 3 4; do
+      echo "${2}" > "${LED_PATH}/multi-led${side}${n}/leds/rgb:${side}${n}/multi_intensity"
+      echo "${1}" > "${LED_PATH}/multi-led${side}${n}/leds/rgb:${side}${n}/brightness"
+    done
+  done 2>/dev/null
+}
+
+restore() {
+  case "$(get_setting led.color)" in
+    rgb) /usr/bin/analog_sticks_ledcontrol $(get_setting analogsticks.led) ;;
+    *)   sticks 0 "0 0 0" ;;
+  esac
+}
+
+[ -e "${STATUS}" ] || exit 0
+
+STATE="idle"
+while true; do
+  WANT=0
+  if [ "$(get_setting led.charging)" != "0" ] && \
+     [ "$(get_setting led.color)" != "battery" ] && \
+     [ "$(cat "${STATUS}" 2>/dev/null)" = "Charging" ]; then
+    WANT=1
+  fi
+
+  if [ "${WANT}" = "1" ]; then
+    # Written every round, not only on the change: a resume can hand the
+    # sticks back dark, and this is the cheapest way to have them yellow
+    # again within seconds.
+    sticks 255 "${YELLOW}"
+    STATE="charging"
+  elif [ "${STATE}" = "charging" ]; then
+    restore
+    STATE="idle"
+  fi
+  sleep 3
+done
