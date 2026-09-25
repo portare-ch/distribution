@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Fit PortareOS's sRGB / gamma 2.2 color profile for the Retroid Pocket Nova.
+"""Fit a PortareOS color profile for the Retroid Pocket Nova: sRGB primaries, D65 white,
+and either a gamma 2.2 or the piecewise sRGB tone curve.
 
 Input: the 921 colorimeter readings that pippopapera measured on a Nova
 (github.com/pippopapera/nova-display-calibration, docs/data/readings.csv, MIT)
@@ -13,7 +14,8 @@ matrix works on gamma-encoded values; the fit chooses the matrix and the table
 together to get as close to sRGB primaries, D65 and gamma 2.2 as that pipeline
 can, judged by CIEDE2000 against the same targets their measurements use.
 
-    python3 fit-srgb22.py /path/to/nova-display-calibration > srgb22.profile
+    python3 fit-profile.py /path/to/nova-display-calibration gamma22 > gamma22.profile
+    python3 fit-profile.py /path/to/nova-display-calibration srgb    > srgb.profile
 
 Needs numpy and scipy. Takes about a quarter of an hour.
 """
@@ -22,6 +24,15 @@ import numpy as np
 from scipy.optimize import least_squares, minimize
 
 R = sys.argv[1].rstrip('/') + '/'
+TRANSFER = sys.argv[2] if len(sys.argv) > 2 else 'gamma22'
+assert TRANSFER in ('gamma22', 'srgb'), TRANSFER
+
+def eotf(v):
+    """Display-referred code 0..1 -> linear light, the two targets their tools/color_math.py uses."""
+    v = np.asarray(v, float)
+    if TRANSFER == 'srgb':
+        return np.where(v <= 0.04045, v / 12.92, ((v + 0.055) / 1.055) ** 2.4)
+    return v ** 2.2
 rows = [r for r in csv.DictReader(open(R + 'docs/data/readings.csv')) if r['android_brightness'] == '173']
 man = json.load(open(R + 'sourceprofiles/profile-manifest.json'))['profiles']
 
@@ -73,7 +84,7 @@ p = fit.x
 err = np.abs(model(p, D) - XYZ).sum(1) / (XYZ.sum(1) + 1)
 print(f"# panel model: {n} readings, median error {np.median(err) * 100:.2f} %, 90th percentile {np.percentile(err, 90) * 100:.2f} %", file=sys.stderr)
 
-# ---- 2. color science, as in their tools/color_math.py
+# ---- 2. color science, as in their tools/color_math.py (eotf above)
 def srgb_matrix(whiteY):
     u = lambda x, y: np.array([x / y, 1, (1 - x - y) / y])
     prim = np.column_stack([u(.64, .33), u(.30, .60), u(.15, .06)]); wu = u(.3127, .3290)
@@ -99,7 +110,7 @@ def de00(l1, l2):
 def errors(codes, drv, drv_white):
     """CIEDE2000 of the model's prediction against sRGB / D65 / gamma 2.2, normalised to the pipeline's own white."""
     pr = model(p, drv); wY = model(p, drv_white)[0][1]
-    Mx, wh = srgb_matrix(wY); tgt = (codes / 255.0) ** 2.2 @ Mx.T
+    Mx, wh = srgb_matrix(wY); tgt = eotf(codes / 255.0) @ Mx.T
     return de00(lab(pr, wh), lab(tgt, wh))
 
 codes_b = np.array([t[3] for t in TAG if t[1] == 'original' and t[2] not in ('white-start', 'white-end', 'black')], float)
@@ -134,13 +145,13 @@ q = minimize(obj, q, args=(True,), method='Powell', options={'maxiter': 30000, '
 M = q[:9].reshape(3, 3); white = our_drive(q, np.array([[1., 1, 1]]))
 
 # ---- 4. the profile, with what it is expected to do
-print("# PortareOS color profile for the Retroid Pocket Nova: sRGB primaries, D65 white, gamma 2.2.")
+print("# PortareOS color profile for the Retroid Pocket Nova: sRGB primaries, D65 white, %s." % ("gamma 2.2" if TRANSFER == "gamma22" else "the piecewise sRGB tone curve"))
 print("#")
-print("# Fitted by fit-srgb22.py to the colorimeter readings pippopapera published for this")
+print("# Fitted by fit-profile.py %s to the colorimeter readings pippopapera published for this" % TRANSFER)
 print("# panel (github.com/pippopapera/nova-display-calibration, MIT, Copyright (c) 2026")
 print("# pippopapera), for the two-stage pipeline mainline drm/msm exposes: a 3x3 matrix (CTM) on")
 print("# gamma-encoded values, then a 1024-entry gamma table (GAMMA_LUT). Predicted CIEDE2000")
-print("# against sRGB / D65 / gamma 2.2, normalised to each pipeline's white (model, not measured):")
+print("# against this target, normalised to each pipeline's white (model, not measured):")
 print("#")
 print("#   %-28s %10s %10s" % ("", "stock", "this file"))
 for cs, lbl in sets:

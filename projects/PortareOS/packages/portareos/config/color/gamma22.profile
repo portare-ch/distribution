@@ -1,10 +1,10 @@
 # PortareOS color profile for the Retroid Pocket Nova: sRGB primaries, D65 white, gamma 2.2.
 #
-# Fitted by fit-srgb22.py to the colorimeter readings pippopapera published for this
+# Fitted by fit-profile.py gamma22 to the colorimeter readings pippopapera published for this
 # panel (github.com/pippopapera/nova-display-calibration, MIT, Copyright (c) 2026
 # pippopapera), for the two-stage pipeline mainline drm/msm exposes: a 3x3 matrix (CTM) on
 # gamma-encoded values, then a 1024-entry gamma table (GAMMA_LUT). Predicted CIEDE2000
-# against sRGB / D65 / gamma 2.2, normalised to each pipeline's white (model, not measured):
+# against this target, normalised to each pipeline's white (model, not measured):
 #
 #                                     stock  this file
 #   36 gamut-boundary colors      5.48 mean  2.83 mean   (max 8.55 / 5.69)
