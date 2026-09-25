@@ -26,21 +26,15 @@ The rule this applies is the README's: if it is not needed for a smooth game, it
 |---|---|---|
 | **libretro-database** | 172 | RetroArch's scanner and playlist database. The launcher scans folders itself; nothing on the device reads it. The largest single item in the image. |
 | **kernel-overlays** | 59 | Every kernel module for every board the base tree knows. The Nova needs a fraction: build in what it uses, drop the rest, through the kernel config. |
-| **common-shaders, glsl-shaders, retropie-shaders** | 22+ | GLSL shaders for RetroArch's `gl` driver. We run Vulkan, which takes slang shaders only. |
 | **slang-shaders** — trim, not drop | 70 → ~10 | We use `crt/crt-guest-advanced`, `handheld/lcd-grid-v2` and our own `portare/`. Keep those families and what they include; drop the other 60 MB. |
 | **retroarch-overlays** | 13 | Touch overlays. Unused. |
 | **renderdoc, apitrace (with glretrace, eglretrace), gdb, gdbserver, perf, vulkan-tools, glslc, binutils (strings, readelf), v4l-utils, edid-decode, cec-ctl, plplay, gltrim, wflinfo** | ~55 | Debugging and GPU tracing tools, in a release image. `DEBUG_PACKAGES` is off, so they arrive as somebody's dependency; find whose. |
-| **gtk3, gdk-pixbuf, atk, at-spi2-core, the pango tools** | ~12 | Nothing on the device links GTK except GTK's own utilities. |
 | **gstreamer, gst-plugins-base, gst-plugins-good, gst-libav** | 8 | No binary links it. |
-| **espeak** | 1 | Speech for EmulationStation's accessibility mode. EmulationStation is gone. |
-| **entware** (`installentware`, `entware.service`) | 1 | An opkg package manager bootstrap: the definition of an anti-feature here. |
 | **usb-modeswitch** | 1 | Switches 3G modems into modem mode. |
-| **btop** (htop stays), the sqlite3 CLI, nano and dialog, bluez's btmon, meshctl and mesh-cfgclient, two of p7zip's three binaries | ~6 | Duplicates and unused command-line tools. |
-| **xorg.service, xorg-launch-helper, xrandr** | 1 | There is no Xorg on the image, only Xwayland under gamescope. |
+| The sqlite3 CLI, nano and dialog, bluez's btmon, meshctl and mesh-cfgclient, two of p7zip's three binaries | ~5 | Duplicates and unused command-line tools. |
 | **iwd_get-networks, ukify, spit** | – | Leftover scripts; the launcher uses nmcli. |
 | **gconv** — trim to UTF-8 and Latin-1 | 19 | glibc's charset converters for every encoding there is. |
 | **i18n** — trim to en_US | 13 | Locales for the world. |
-| The 310 `.info` files of cores we do not ship | 1 | Cosmetic; ship the 15 we have. |
 
 ## Questionable: replace, or reconsider
 
@@ -61,11 +55,25 @@ The rule this applies is the README's: if it is not needed for a smooth game, it
 
 ## Services that start at boot and deserve a look
 
-`tailscaled`, `zerotier-one`, `avahi-daemon`, `entware`, `fluidsynth`, `xorg`, `batteryledstatus` (idle unless `led.color=battery`), `hdmi-hotplug` (the Nova has USB-C DisplayPort; keep), `debug-shell`, `debugconfig`.
+`tailscaled`, `zerotier-one`, `avahi-daemon`, `fluidsynth`, `batteryledstatus` (idle unless `led.color=battery`), `hdmi-hotplug` (the Nova has USB-C DisplayPort; keep), `debug-shell`, `debugconfig`.
+
+## Removed
+
+Done in #334, from the lists above:
+
+| Package | MB | How |
+|---|---|---|
+| retropie-shaders (the `/usr/share/common-shaders` tree), the common-shaders and glsl-shaders lines for other boards | 22 | out of `virtual/emulators` |
+| gtk3, with gdk-pixbuf, atk, at-spi2-core, pango and their tools | ~12 | xemu-sa listed gtk3 and atk for a display backend it does not use; libdecor built its GTK plugin. Both dropped, and the chain fell away. |
+| espeak | 1 | `PKG_SOUND` emptied |
+| entware | 1 | out of `virtual/image`, with the `/opt` link |
+| btop | 1 | `BTOP_TOOL` gone from the options; htop stays |
+| xorg-launch-helper, its `xorg.service`, xrandr | 1 | xwayland listed the helper, glew the CLI; neither needed them |
+| the 310 `.info` files of cores we do not ship | 1 | `core-info` installs the fifteen we have, under their own names: Saturn's is `mednafen_saturn`, as the core file is, which the old rename to `beetle_` had broken |
 
 ## The sum
 
-libretro-database 172 + kernel modules ~45 + shaders ~80 + debug tools ~55 + Qt ~60 + Python 34 + tailscale 26 + GTK and GStreamer ~20 + locales and gconv ~25: **about 500 MB of the 1.4 GB installed, a third of the image, without touching a supported system.**
+Still on the table: libretro-database 172 + kernel modules ~45 + slang-shaders ~60 + debug tools ~55 + Qt ~60 + Python 34 + tailscale 26 + GStreamer 8 + locales and gconv ~25: **about 460 MB of the 1.4 GB installed, a third of the image, without touching a supported system.** About 40 MB is out already (above).
 
 ## Method
 

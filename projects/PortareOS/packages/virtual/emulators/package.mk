@@ -17,7 +17,9 @@ PKG_NEED_UNPACK="${ROOT}/config/emulators"
 
 PKG_EMUS="moonlight scummvmsa"
 
-PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays retropie-shaders slang-shaders"
+# retropie-shaders and the GLSL shader packs are gone: they are for the gl
+# driver, and this image runs RetroArch on Vulkan, which takes slang only.
+PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays slang-shaders"
 
 LIBRETRO_CORES=" beetle-saturn-lr fbneo-lr flycast-lr gambatte-lr genesis-plus-gx-lr mgba-lr neocd_lr nestopia-lr parallel-n64-lr picodrive-lr snes9x-lr swanstation-lr"
 
@@ -27,14 +29,10 @@ if [ "${ARCH}" = "aarch64" ]; then
 fi
 
 case "${DEVICE}" in
-  H700|RK3326)
-    PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
-    ;;
   RK3399)
     LIBRETRO_CORES+=" bsnes-lr dolphin-lr"
     ;;
   RK3566|RK3576)
-    PKG_DEPENDS_TARGET+=" common-shaders glsl-shaders"
     LIBRETRO_CORES+=" dolphin-lr"
     ;;
   RK3588)
