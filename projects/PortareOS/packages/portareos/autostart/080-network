@@ -13,4 +13,10 @@ then
 elif [ "$(get_setting wifi.enabled)" == "1" ] || [ "$1" == "enable" ]
 then
   nohup wifictl enable &
+  # The same situation as a resume: the unblock reloads the firmware, iwd's
+  # first scans fail against it and its backoff then wastes a minute, during
+  # which NetworkManager's autoconnect attempts find nothing. wifi-resume
+  # waits for the chip to answer and kicks a scan; detached, so the boot
+  # does not wait for the network.
+  systemd-run --no-block --collect --unit=wifi-boot /usr/bin/wifi-resume
 fi
