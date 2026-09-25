@@ -9,7 +9,7 @@ The rate that matters is the one the emulator reports, because that is what Retr
 | Game Boy, Game Boy Color (Gambatte) | 59.7275 | 119.455 | done |
 | Game Boy Advance (mGBA) | 59.7275 | 119.455 | done |
 | SNES, Satellaview, Sufami Turbo, MSU-1 (Snes9x) | 60.0988 | 120.198 | done |
-| PlayStation (SwanStation) | 59.8173 (console: 59.826) | 119.635 | done for the emulator's rate; open: fix SwanStation's 3413-clock line, then share the N64 mode |
+| PlayStation (SwanStation) | 59.826 (patched; upstream 59.8173) | 119.652 | done, shares the N64 mode; 480i runs on it too (0.19 % slow), accepted |
 | Nintendo 64 (ParaLLEl N64) | 59.826 in 240p, 59.94 in 480i | 119.652 | 240p in #307; 480i runs on the 240p mode (0.19 % slow), accepted |
 | Master System, Game Gear, Mega Drive, Mega CD (Genesis Plus GX) | 59.9227 | 119.846 (candidate) | open, tracked in #284 |
 | 32X (PicoDrive) | 60 (console: 59.9227) | – | open: PicoDrive reports a flat 60, so it needs a core fix before a mode makes sense |

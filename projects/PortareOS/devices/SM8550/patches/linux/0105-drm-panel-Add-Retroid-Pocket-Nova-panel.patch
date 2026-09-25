@@ -35,7 +35,7 @@ new file mode 100644
 index 000000000000..1c8ed849edbf
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-ilitek-il97680a.c
-@@ -0,0 +1,592 @@
+@@ -0,0 +1,544 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Ilitek IL97680A panels driver
@@ -214,54 +214,6 @@ index 000000000000..1c8ed849edbf
 +	},
 +	{
 +		/*
-+		 * 119.63459Hz, which is 2 x 59.817295 - the rate SwanStation
-+		 * reports for NTSC PlayStation content, and not 59.94. The
-+		 * PlayStation was never a 59.94 machine: on a CRT the console
-+		 * drove the set, so "the display's refresh rate" was whatever
-+		 * the console emitted, and nothing had to agree with anything.
-+		 * A fixed panel has no such freedom.
-+		 *
-+		 *   119.880120 / 59.8173 = 2.0041   <- the mode above
-+		 *   119.634590 / 59.8173 = 2.0000   <- this one
-+		 *
-+		 * At 2.0041 a frame is repeated or dropped roughly every 245,
-+		 * about every four seconds. That is not a rounding error to be
-+		 * lived with, it is a visible hitch, and no amount of fixing
-+		 * the audio clock removes it.
-+		 *
-+		 *   155920000 / (1302 * 1001) = 119.63459...
-+		 *
-+		 * which is -0.1ppm from 2 x 59.8173: one frame in about 46
-+		 * hours.
-+		 *
-+		 * Same totals as the mode above, so only the pixel clock
-+		 * moves, by 0.2%. That matters more than it looks:
-+		 * drm_mode_vrefresh() rounds this to 120 exactly as it rounds
-+		 * 119.88, so the panel's frame-rate register (0x60) is still
-+		 * programmed 0x00 and the panel is not asked to do anything it
-+		 * is not already doing. The 60Hz mode this replaces was a
-+		 * different proposition - it rounds to 60, changes that
-+		 * register, and the manufacturer's implementation of that mode
-+		 * is broken, which is why it was dropped.
-+		 *
-+		 * This mode is only reachable because get_modes() exposes the
-+		 * whole table. Patch 1022 used to cut it to the first entry,
-+		 * which is why the 60Hz entry never reached the connector - and
-+		 * why, for as long as 1022 was carried, neither did this one:
-+		 * DRM advertised 119.88Hz alone and SwanStation ran on it.
-+		 */
-+		.clock = 155920,
-+		.hdisplay = 1280,
-+		.hsync_start = 1280 + 12,
-+		.hsync_end = 1280 + 12 + 2,
-+		.htotal = 1280 + 12 + 2 + 8,
-+		.vdisplay = 960,
-+		.vsync_start = 960 + 12,
-+		.vsync_end = 960 + 12 + 2,
-+		.vtotal = 960 + 12 + 2 + 27,
-+	},
-+	{
-+		/*
 +		 * 119.45505Hz, which is 2 x 59.727500 - the Game Boy, Game Boy
 +		 * Color and Game Boy Advance, all three: 4194304Hz over 70224
 +		 * cycles a frame, and 16777216Hz over 280896 for the GBA, come
@@ -328,9 +280,13 @@ index 000000000000..1c8ed849edbf
 +		 *
 +		 *   155943000 / (1302 * 1001) = 119.65224...
 +		 *
-+		 * +0.35ppm from 2 x 59.82610, a frame in about 8 hours. It sits
-+		 * 0.018Hz above the PlayStation's mode; setsettings asks for a
-+		 * mode within 0.002Hz, so the two cannot be confused.
++		 * +0.35ppm from 2 x 59.82610, a frame in about 8 hours.
++		 *
++		 * The NTSC PlayStation in 240p is the same rate: 263 lines of
++		 * 3412.5 GPU clocks at 53.693175MHz, 59.82610 too, since the
++		 * 001-ntsc-line-is-3412-5-ticks patch to SwanStation. Before
++		 * it the core rounded the line to 3413 clocks, ran at 59.8173,
++		 * and had a 155920kHz mode of its own here.
 +		 */
 +		.clock = 155943,
 +		.hdisplay = 1280,
