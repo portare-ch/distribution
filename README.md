@@ -124,7 +124,15 @@ Every emulator quits with the same buttons, Home + Start.
   crt-guest-advanced. Where an integer scale leaves 32-pixel bars, they
   stay rather than stretch 224 lines over 960: even scanlines need it.
 * Correct palettes and boot logos: a Game Boy Color game gets the GBC
-  hardware and its colour correction.
+  hardware and its color correction.
+* A color profile for the panel. The Nova's screen is wide-gamut and
+  blue-tinted; Settings > Color profile switches it to a measured sRGB, D65,
+  gamma 2.2 correction, written into the display controller's own color
+  blocks, so it holds for every game, film and the launcher alike. It is a
+  fit to pippopapera's colorimeter readings of this panel, for the two
+  stages mainline Linux exposes (a matrix and a gamma table): closer than
+  stock by a clear margin, not as close as the three-stage Android
+  correction. See documentation/PER_DEVICE_DOCUMENTATION/SM8550/COLOR_PROFILE.md.
 * No automatic savestate loading.
 
 ### Movies at the right shape

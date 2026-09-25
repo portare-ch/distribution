@@ -14,7 +14,7 @@ Audio works the same way. A sample rate is a divided clock (the PS1's 44100 Hz i
 
 ## The NTSC line, and the 263-line rule
 
-NTSC's colour subcarrier is 315/88 MHz = 3.579545… MHz. A line is 227.5 subcarrier periods, 15734.266 Hz, and a frame is 525 lines in two interlaced fields of 262.5 lines: 59.9401 fields per second.
+NTSC's color subcarrier is 315/88 MHz = 3.579545… MHz. A line is 227.5 subcarrier periods, 15734.266 Hz, and a frame is 525 lines in two interlaced fields of 262.5 lines: 59.9401 fields per second.
 
 Consoles that build their video clock from the subcarrier keep this line. For interlaced output (480i) they use 262.5 lines per field and get 59.940 Hz. For progressive output (240p) a field has to be a whole number of lines, and the PlayStation, the Nintendo 64 and the Dreamcast all use 263: 15734.266 / 263 = **59.826 Hz**. That is why three unrelated consoles share a rate, and why 240p and 480i games on the same console differ.
 
