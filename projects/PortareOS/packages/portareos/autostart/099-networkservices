@@ -9,6 +9,12 @@ tocon "Starting services..."
 
 for SERVICE in /usr/lib/autostart/daemons/*
 do
+  # Each file sets what it needs and nothing else: 004-tailscaled sets no
+  # CONF, so without this it inherited sshd.conf from 001-ssh and the "remove
+  # the old marker" step below deleted the SSH marker that had just been
+  # created - a moment before systemd checked for it. That was SSH off after
+  # every boot, whatever ssh.enabled said.
+  unset STATE SVC CONF DAEMONS
   source ${SERVICE}
 
 
