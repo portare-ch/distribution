@@ -1,0 +1,23 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] arm64: dts: qcom: sm8550: name the display's LUTDMA registers
+
+The DPU's LUTDMA engine sits at 0x0aeac000, between the MDP and VBIF
+regions. The driver maps it as "regdma" when present, and loads the
+DSPP's IGC table through it.
+
+Signed-off-by: PortareOS <hello@portare.org>
+---
+--- a/arch/arm64/boot/dts/qcom/sm8550.dtsi
++++ b/arch/arm64/boot/dts/qcom/sm8550.dtsi
+@@ -4089,8 +4089,9 @@
+ 			mdss_mdp: display-controller@ae01000 {
+ 				compatible = "qcom,sm8550-dpu";
+ 				reg = <0 0x0ae01000 0 0x8f000>,
+-				      <0 0x0aeb0000 0 0x3000>;
+-				reg-names = "mdp", "vbif";
++				      <0 0x0aeb0000 0 0x3000>,
++				      <0 0x0aeac000 0 0x800>;
++				reg-names = "mdp", "vbif", "regdma";
+ 
+ 				interrupt-parent = <&mdss>;
+ 				interrupts = <0>;

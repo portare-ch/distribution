@@ -1,0 +1,760 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] drm/msm/dpu: drive the DSPP IGC through the LUTDMA engine, DEGAMMA_LUT
+
+The DSPP has three color stages: IGC (de-gamma), PCC (3x3 matrix), GC
+(gamma table). Mainline drives the last two; the IGC of DPU 7.x and later
+is version 4, whose table has no register path - it is loaded by the
+LUTDMA engine, a small DMA block beside the MDP that executes a command
+buffer. This adds the engine, for that one consumer, and exposes the IGC
+as the CRTC's DEGAMMA_LUT (256 entries).
+
+The engine (dpu_hw_reg_dma.c): a page in the display's address space
+holds the command sequence - select the DSPP, a LUT bus write of the
+257-entry table, the enable register - and a two-dword last command;
+both are queued on the CTL's queue 0, the CTL's trigger register starts
+them, and the done bit is polled (20 ms at most). Offsets and encodings
+are those of the downstream sde_hw_reg_dma_v1.c for engine version 2.0
+and its reg_dmav2_setup_dspp_igcv4(). Only the DB block is used; the SB
+block, which downstream triggers off the DSPP flush, is not needed.
+
+The catalog describes the engine (base, version, VBIF client) and the
+IGC block; the device tree names the engine's registers as "regdma".
+Without either, nothing changes: no DEGAMMA_LUT, the IGC untouched.
+
+Signed-off-by: PortareOS <hello@portare.org>
+---
+diff --color -ruN pa/drivers/gpu/drm/msm/Makefile pb/drivers/gpu/drm/msm/Makefile
+--- a/drivers/gpu/drm/msm/Makefile	2026-09-25 18:49:19
++++ b/drivers/gpu/drm/msm/Makefile	2026-09-25 18:49:19
+@@ -89,6 +89,7 @@
+ 	disp/dpu1/dpu_hw_sspp.o \
+ 	disp/dpu1/dpu_hw_sspp_v13.o \
+ 	disp/dpu1/dpu_hw_dspp.o \
++	disp/dpu1/dpu_hw_reg_dma.o \
+ 	disp/dpu1/dpu_hw_merge3d.o \
+ 	disp/dpu1/dpu_hw_top.o \
+ 	disp/dpu1/dpu_hw_util.o \
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/catalog/dpu_9_0_sm8550.h pb/drivers/gpu/drm/msm/disp/dpu1/catalog/dpu_9_0_sm8550.h
+--- a/drivers/gpu/drm/msm/disp/dpu1/catalog/dpu_9_0_sm8550.h	2026-09-25 18:49:19
++++ b/drivers/gpu/drm/msm/disp/dpu1/catalog/dpu_9_0_sm8550.h	2026-09-25 18:49:19
+@@ -178,25 +178,43 @@
+ 	},
+ };
+ 
++/* As sdm845_dspp_sblk, plus the v4 IGC, whose table the LUTDMA loads. */
++static const struct dpu_dspp_sub_blks sm8550_dspp_sblk = {
++	.pcc = {.name = "pcc", .base = 0x1700,
++		.len = 0x90, .version = 0x40000},
++	.gc = {.name = "gc", .base = 0x17c0,
++		.len = 0x40, .version = 0x10008},
++	.igc = {.name = "igc", .base = 0x1260,
++		.len = 0x10, .version = 0x40000},
++};
++
+ static const struct dpu_dspp_cfg sm8550_dspp[] = {
+ 	{
+ 		.name = "dspp_0", .id = DSPP_0,
+ 		.base = 0x54000, .len = 0x1800,
+-		.sblk = &sdm845_dspp_sblk,
++		.sblk = &sm8550_dspp_sblk,
+ 	}, {
+ 		.name = "dspp_1", .id = DSPP_1,
+ 		.base = 0x56000, .len = 0x1800,
+-		.sblk = &sdm845_dspp_sblk,
++		.sblk = &sm8550_dspp_sblk,
+ 	}, {
+ 		.name = "dspp_2", .id = DSPP_2,
+ 		.base = 0x58000, .len = 0x1800,
+-		.sblk = &sdm845_dspp_sblk,
++		.sblk = &sm8550_dspp_sblk,
+ 	}, {
+ 		.name = "dspp_3", .id = DSPP_3,
+ 		.base = 0x5a000, .len = 0x1800,
+-		.sblk = &sdm845_dspp_sblk,
++		.sblk = &sm8550_dspp_sblk,
+ 	},
+ };
++
++static const struct dpu_reg_dma_cfg sm8550_reg_dma = {
++	.base = 0x0, .len = 0x800,
++	.mdss_off = 0xac000,
++	.version = 0x00020000,
++	.trigger_off = 0x119c,
++	.xin_id = 7,
++};
+ static const struct dpu_pingpong_cfg sm8550_pp[] = {
+ 	{
+ 		.name = "pingpong_0", .id = PINGPONG_0,
+@@ -389,6 +407,7 @@
+ 	.mixer = sm8550_lm,
+ 	.dspp_count = ARRAY_SIZE(sm8550_dspp),
+ 	.dspp = sm8550_dspp,
++	.reg_dma = &sm8550_reg_dma,
+ 	.pingpong_count = ARRAY_SIZE(sm8550_pp),
+ 	.pingpong = sm8550_pp,
+ 	.dsc_count = ARRAY_SIZE(sm8550_dsc),
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c pb/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c	2026-09-25 18:49:19
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c	2026-09-25 18:49:19
+@@ -27,6 +27,7 @@
+ #include "dpu_hw_lm.h"
+ #include "dpu_hw_ctl.h"
+ #include "dpu_hw_dspp.h"
++#include "dpu_hw_reg_dma.h"
+ #include "dpu_crtc.h"
+ #include "dpu_plane.h"
+ #include "dpu_encoder.h"
+@@ -844,6 +845,29 @@
+ 	gc_lut->flags = 0;
+ }
+ 
++static void _dpu_crtc_get_igc_lut(struct drm_crtc_state *state,
++		struct dpu_hw_igc_lut *igc_lut)
++{
++	struct drm_color_lut *lut;
++	int i;
++
++	lut = (struct drm_color_lut *)state->degamma_lut->data;
++
++	if (!lut)
++		return;
++
++	/* 256 entries of 12 bits, and the value past the top of the table,
++	 * which the hardware wants as well. */
++	for (i = 0; i < IGC_TBL_LEN; i++) {
++		igc_lut->c0[i] = drm_color_lut_extract(lut[i].green, 12);
++		igc_lut->c1[i] = drm_color_lut_extract(lut[i].blue, 12);
++		igc_lut->c2[i] = drm_color_lut_extract(lut[i].red, 12);
++	}
++	igc_lut->c0[IGC_TBL_LEN] = 4095;
++	igc_lut->c1[IGC_TBL_LEN] = 4095;
++	igc_lut->c2[IGC_TBL_LEN] = 4095;
++}
++
+ static void _dpu_crtc_setup_cp_blocks(struct drm_crtc *crtc)
+ {
+ 	struct drm_crtc_state *state = crtc->state;
+@@ -851,6 +875,7 @@
+ 	struct dpu_crtc_mixer *mixer = cstate->mixers;
+ 	struct dpu_hw_pcc_cfg cfg;
+ 	struct dpu_hw_gc_lut *gc_lut;
++	struct dpu_hw_igc_lut *igc_lut;
+ 	struct dpu_hw_ctl *ctl;
+ 	struct dpu_hw_dspp *dspp;
+ 	int i;
+@@ -866,6 +891,25 @@
+ 		if (!dspp)
+ 			continue;
+ 
++		/* First in the pipeline, so first here: the matrix works on
++		 * what the IGC hands it. */
++		if (dspp->ops.setup_igc) {
++			if (!state->degamma_lut) {
++				dspp->ops.setup_igc(dspp, ctl, NULL);
++			} else {
++				igc_lut = kzalloc_obj(*igc_lut);
++				if (!igc_lut)
++					continue;
++				_dpu_crtc_get_igc_lut(state, igc_lut);
++				dspp->ops.setup_igc(dspp, ctl, igc_lut);
++				kfree(igc_lut);
++			}
++
++			/* stage config flush mask */
++			ctl->ops.update_pending_flush_dspp(ctl,
++				mixer[i].hw_dspp->idx, DPU_DSPP_IGC);
++		}
++
+ 		if (dspp->ops.setup_pcc) {
+ 			if (!state->ctm) {
+ 				dspp->ops.setup_pcc(dspp, NULL);
+@@ -1423,7 +1467,7 @@
+ 	else
+ 		topology.num_lm = 1;
+ 
+-	if (crtc_state->ctm || crtc_state->gamma_lut)
++	if (crtc_state->ctm || crtc_state->gamma_lut || crtc_state->degamma_lut)
+ 		topology.num_dspp = topology.num_lm;
+ 
+ 	return topology;
+@@ -1915,11 +1959,14 @@
+ 	if (dpu_kms->catalog->dspp_count) {
+ 		const struct dpu_dspp_cfg *dspp = &dpu_kms->catalog->dspp[0];
+ 
++		u32 degamma = (dspp->sblk->igc.base && dpu_reg_dma_ready())
++			    ? DPU_DEGAMMA_LUT_SIZE : 0;
++
+ 		if (dspp->sblk->gc.base) {
+ 			drm_mode_crtc_set_gamma_size(crtc, DPU_GAMMA_LUT_SIZE);
+-			drm_crtc_enable_color_mgmt(crtc, 0, true, DPU_GAMMA_LUT_SIZE);
++			drm_crtc_enable_color_mgmt(crtc, degamma, true, DPU_GAMMA_LUT_SIZE);
+ 		} else {
+-			drm_crtc_enable_color_mgmt(crtc, 0, true, 0);
++			drm_crtc_enable_color_mgmt(crtc, degamma, true, 0);
+ 		}
+ 	}
+ 
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h pb/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h	2026-09-25 18:49:19
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_catalog.h	2026-09-25 18:49:19
+@@ -78,10 +78,12 @@
+  * DSPP sub-blocks
+  * @DPU_DSPP_PCC             Panel color correction block
+  * @DPU_DSPP_GC              Gamma correction block
++ * @DPU_DSPP_IGC             Inverse gamma correction block (de-gamma)
+  */
+ enum {
+ 	DPU_DSPP_PCC = 0x1,
+ 	DPU_DSPP_GC,
++	DPU_DSPP_IGC,
+ 	DPU_DSPP_MAX
+ };
+ 
+@@ -331,12 +333,35 @@
+  * struct dpu_dspp_sub_blks: Information of DSPP block
+  * @pcc: pixel color correction block
+  * @gc: gamma correction block
++ * @igc: inverse gamma correction block. Version 4 and later take the table
++ *       through the LUTDMA engine only (see dpu_reg_dma_cfg); the driver
++ *       leaves it unused when the engine is not described.
+  */
+ struct dpu_dspp_sub_blks {
+ 	struct dpu_pp_blk pcc;
+ 	struct dpu_pp_blk gc;
++	struct dpu_pp_blk igc;
+ };
+ 
++/**
++ * struct dpu_reg_dma_cfg - the LUTDMA (register DMA) engine
++ * @base: offset of the engine's registers within the "regdma" region
++ * @len: length of the engine's registers
++ * @mdss_off: offset of the "regdma" region from the MDSS root: the engine
++ *            addresses its own decode register absolutely
++ * @version: engine version, 0x00020000 for the LUT-bus capable v2
++ * @trigger_off: offset of the trigger register within each CTL
++ * @xin_id: the engine's VBIF client id
++ */
++struct dpu_reg_dma_cfg {
++	u32 base;
++	u32 len;
++	u32 mdss_off;
++	u32 version;
++	u32 trigger_off;
++	u32 xin_id;
++};
++
+ struct dpu_pingpong_sub_blks {
+ 	struct dpu_pp_blk dither;
+ };
+@@ -751,6 +776,8 @@
+ 
+ 	u32 dspp_count;
+ 	const struct dpu_dspp_cfg *dspp;
++
++	const struct dpu_reg_dma_cfg *reg_dma;
+ 
+ 	u32 cwb_count;
+ 	const struct dpu_cwb_cfg *cwb;
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_ctl.c pb/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_ctl.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_ctl.c	2026-09-25 18:49:19
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_ctl.c	2026-09-25 18:49:19
+@@ -402,6 +402,9 @@
+ 	case DPU_DSPP_GC:
+ 		ctx->pending_dspp_flush_mask[dspp - DSPP_0] |= BIT(5);
+ 		break;
++	case DPU_DSPP_IGC:
++		ctx->pending_dspp_flush_mask[dspp - DSPP_0] |= BIT(2);
++		break;
+ 	default:
+ 		return;
+ 	}
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dspp.c pb/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dspp.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dspp.c	2026-09-25 18:49:19
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dspp.c	2026-09-25 18:49:19
+@@ -8,6 +8,8 @@
+ #include "dpu_hw_catalog.h"
+ #include "dpu_hw_lm.h"
+ #include "dpu_hw_dspp.h"
++#include "dpu_hw_reg_dma.h"
++#include "dpu_hw_ctl.h"
+ #include "dpu_kms.h"
+ 
+ 
+@@ -115,6 +117,62 @@
+ 	DPU_REG_WRITE(&ctx->hw, base, reg);
+ }
+ 
++/* The IGC v4 table goes through the LUTDMA, in the engine's layout: per
++ * entry red, green, blue as u16 with the 12-bit value in the top bits, the
++ * 256 entries and the one past the top, padded to the LUT bus transfer of
++ * 12 bytes. The enable is written by the engine as well, after the table. */
++#define IGC_DMA_ENTRIES ((IGC_TBL_LEN + 1) * 3)
++#define IGC_DMA_TRANS 12
++
++static void dpu_setup_dspp_igc(struct dpu_hw_dspp *ctx, struct dpu_hw_ctl *ctl,
++		struct dpu_hw_igc_lut *igc_lut)
++{
++	u32 base;
++	u16 *data;
++	size_t len;
++	int i, j, ret;
++
++	if (!ctx || !ctl) {
++		DRM_ERROR("invalid ctx %p ctl %p\n", ctx, ctl);
++		return;
++	}
++
++	base = ctx->cap->sblk->igc.base;
++	if (!base) {
++		DRM_ERROR("invalid ctx %p igc base\n", ctx);
++		return;
++	}
++
++	if (!igc_lut) {
++		DRM_DEBUG_DRIVER("disable igc feature\n");
++		ret = dpu_reg_dma_load_igc(ctl, ctx->idx, base, NULL, 0);
++		if (ret)
++			DRM_ERROR("igc disable failed on dspp %d: %d\n", ctx->idx - DSPP_0, ret);
++		return;
++	}
++
++	len = IGC_DMA_ENTRIES * sizeof(u16);
++	if (len % IGC_DMA_TRANS)
++		len += IGC_DMA_TRANS - len % IGC_DMA_TRANS;
++
++	data = kzalloc(len, GFP_KERNEL);
++	if (!data)
++		return;
++
++	/* c0 --> G; c1 --> B; c2 --> R */
++	for (i = 0, j = 0; i <= IGC_TBL_LEN; i++) {
++		data[j++] = (u16)(igc_lut->c2[i] << 4);
++		data[j++] = (u16)(igc_lut->c0[i] << 4);
++		data[j++] = (u16)(igc_lut->c1[i] << 4);
++	}
++
++	ret = dpu_reg_dma_load_igc(ctl, ctx->idx, base, data, len);
++	if (ret)
++		DRM_ERROR("igc table load failed on dspp %d: %d\n", ctx->idx - DSPP_0, ret);
++
++	kfree(data);
++}
++
+ /**
+  * dpu_hw_dspp_init() - Initializes the DSPP hw driver object.
+  * should be called once before accessing every DSPP.
+@@ -146,6 +204,9 @@
+ 		c->ops.setup_pcc = dpu_setup_dspp_pcc;
+ 	if (c->cap->sblk->gc.base)
+ 		c->ops.setup_gc = dpu_setup_dspp_gc;
++	/* The IGC needs the LUTDMA; without it the block stays as it was. */
++	if (c->cap->sblk->igc.base && dpu_reg_dma_ready())
++		c->ops.setup_igc = dpu_setup_dspp_igc;
+ 
+ 	return c;
+ }
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dspp.h pb/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dspp.h
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dspp.h	2026-09-25 18:49:19
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_dspp.h	2026-09-25 18:49:19
+@@ -6,6 +6,7 @@
+ #define _DPU_HW_DSPP_H
+ 
+ struct dpu_hw_dspp;
++struct dpu_hw_ctl;
+ 
+ /**
+  * struct dpu_hw_pcc_coeff - PCC coefficient structure for each color
+@@ -37,7 +38,23 @@
+ #define PGC_TBL_LEN 512
+ #define PGC_8B_ROUND BIT(0)
+ 
++/* The IGC: 256 entries plus the value past the top, 12 bits each. */
++#define DPU_DEGAMMA_LUT_SIZE 256
++#define IGC_TBL_LEN 256
++
+ /**
++ * struct dpu_hw_igc_lut - igc (de-gamma) lut feature structure
++ * @c0: color0 (green) component lut, IGC_TBL_LEN + 1 entries
++ * @c1: color1 (blue) component lut
++ * @c2: color2 (red) component lut
++ */
++struct dpu_hw_igc_lut {
++	__u32 c0[IGC_TBL_LEN + 1];
++	__u32 c1[IGC_TBL_LEN + 1];
++	__u32 c2[IGC_TBL_LEN + 1];
++};
++
++/**
+  * struct dpu_hw_gc_lut - gc lut feature structure
+  * @flags: flags for the feature values can be:
+  *         - PGC_8B_ROUND
+@@ -71,6 +88,14 @@
+ 	 * @gc_lut: Pointer to lut content
+ 	 */
+ 	void (*setup_gc)(struct dpu_hw_dspp *ctx, struct dpu_hw_gc_lut *gc_lut);
++
++	/**
++	 * setup_igc - setup dspp igc (de-gamma), NULL turns it off
++	 * @ctx: Pointer to dspp context
++	 * @igc_lut: Pointer to igc lut configuration
++	 */
++	void (*setup_igc)(struct dpu_hw_dspp *ctx, struct dpu_hw_ctl *ctl,
++			  struct dpu_hw_igc_lut *igc_lut);
+ 
+ };
+ 
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_reg_dma.c pb/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_reg_dma.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_reg_dma.c	1970-01-01 01:00:00
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_reg_dma.c	2026-09-25 18:49:19
+@@ -0,0 +1,248 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * LUTDMA v2.0, as on SM8550. Register offsets and the command encoding are
++ * those of the downstream sde_hw_reg_dma_v1.c for engine version 2.0; the
++ * IGC sequence is reg_dmav2_setup_dspp_igcv4() there.
++ */
++#include <linux/iopoll.h>
++#include <linux/mutex.h>
++
++#include <drm/drm_managed.h>
++
++#include "dpu_hw_reg_dma.h"
++#include "dpu_hw_ctl.h"
++#include "dpu_kms.h"
++#include "msm_gem.h"
++
++/* The DB block's registers, relative to its base. */
++#define DMA_OPMODE		0x004
++#define DMA_QUEUE0_ADDR(ctl)	(0x014 + (ctl) * 0x10)
++#define DMA_QUEUE0_CMD(ctl)	(0x018 + (ctl) * 0x10)
++#define DMA_DECODE_SEL		0x114
++#define DMA_INTR0_STATUS	0x160
++#define DMA_INTR4_STATUS	0x170
++#define DMA_INTR0_CLEAR		0x1a0
++#define DMA_INTR4_CLEAR		0x1b0
++#define DMA_ERROR_MASK		(BIT(0) | BIT(1) | BIT(2) | BIT(16) | BIT(17) | BIT(18) | BIT(19))
++
++/* In the CTL: the software trigger of queue 0. */
++#define CTL_DMA_TRIGGER		0x0d4
++#define CTL_DMA_TRIGGER_Q0	BIT(0)
++
++/* The done bit of queue 0 per CTL, in INTR0. */
++static u32 dma_done_bit(int ctl)
++{
++	static const u8 bits[] = { 16, 17, 18, 19, 25, 26 };
++
++	return ctl < ARRAY_SIZE(bits) ? BIT(bits[ctl]) : 0;
++}
++
++/* The command word. Bits 31:28 are the opcode, bit 27 marks an offset that
++ * is absolute from the MDSS root rather than relative to the selected
++ * block, bits 21:0 the offset. */
++#define OP_SINGLE_WRITE		BIT(28)
++#define OP_ABSOLUTE		BIT(27)
++#define OP_LUTBUS_WRITE		(BIT(30) | BIT(29))
++#define OP_NOP			0
++
++/* LUT bus: the write's second word. */
++#define LUTBUS_TRANS(sz)	(((sz) << 16) & 0xff0000)
++#define LUTBUS_SIZE(n)		((n) & 0x3fff)
++#define LUTBUS_BLOCK_IGC	0
++#define LUTBUS_IGC_TRANS	3	/* dwords per transfer */
++
++/* The queue command: bit 24 says this is the last command of the sequence,
++ * bit 22 that it writes, the low bits how many dwords it holds. */
++#define CMD_LAST		BIT(24)
++#define CMD_WRITE		BIT(22)
++#define CMD_DWORDS(n)		((n) & 0x3fff)
++
++/* The IGC v4 block: its enable register sits 4 past its base; bit 8 turns
++ * it on (bits 4 and 3:0 would add dither, bit 16 the high-precision table). */
++#define IGC_V4_MODE_OFF		0x4
++#define IGC_V4_EN		BIT(8)
++
++/* One page: the command sequence at the front, and at a 256-byte aligned
++ * offset the two-dword "last command" that closes a queue. */
++#define BUF_DWORDS		1024
++#define LAST_CMD_DWORD		768
++#define DATA_DWORDS_MAX		(LAST_CMD_DWORD - 4)
++
++struct dpu_reg_dma {
++	struct dpu_kms *kms;
++	const struct dpu_reg_dma_cfg *cfg;
++	struct dpu_hw_blk_reg_map hw;	/* the DB block */
++	struct drm_gem_object *bo;
++	u32 *buf;
++	u64 iova;
++	u32 decode_word;
++	struct mutex lock;
++	bool ready;
++};
++
++static struct dpu_reg_dma *reg_dma;
++
++bool dpu_reg_dma_ready(void)
++{
++	return reg_dma && reg_dma->ready;
++}
++
++int dpu_reg_dma_init(struct dpu_kms *kms)
++{
++	const struct dpu_reg_dma_cfg *cfg = kms->catalog->reg_dma;
++	struct dpu_reg_dma *r;
++	void *vaddr;
++
++	if (!cfg || !kms->regdma)
++		return -ENODEV;
++	if (cfg->version != 0x00020000) {
++		DPU_DEBUG("LUTDMA version 0x%08x not supported\n", cfg->version);
++		return -ENODEV;
++	}
++	if (!kms->base.vm)
++		return -ENODEV;
++
++	r = drmm_kzalloc(kms->dev, sizeof(*r), GFP_KERNEL);
++	if (!r)
++		return -ENOMEM;
++
++	r->kms = kms;
++	r->cfg = cfg;
++	r->hw.blk_addr = kms->regdma + cfg->base;
++	r->hw.log_mask = DPU_DBG_MASK_TOP;
++	mutex_init(&r->lock);
++
++	/* Selecting a block is itself a command: an absolute write of the
++	 * block mask to the engine's own decode register. */
++	r->decode_word = OP_SINGLE_WRITE | OP_ABSOLUTE |
++			 ((cfg->mdss_off + cfg->base + DMA_DECODE_SEL) & GENMASK(21, 0));
++
++	/* In the display's address space, since the engine reads it through
++	 * the MDP's VBIF. Write-combined: the CPU fills it, a barrier, done. */
++	vaddr = msm_gem_kernel_new(kms->dev, BUF_DWORDS * sizeof(u32),
++				   MSM_BO_WC, kms->base.vm, &r->bo, &r->iova);
++	if (IS_ERR(vaddr)) {
++		DPU_ERROR("LUTDMA buffer: %ld\n", PTR_ERR(vaddr));
++		return PTR_ERR(vaddr);
++	}
++	/* The queue register holds 32 bits of address, 256-byte aligned. */
++	if (r->iova >= SZ_4G || (r->iova & 0xff)) {
++		DPU_ERROR("LUTDMA buffer at %llx is out of the engine's reach\n", r->iova);
++		msm_gem_kernel_put(r->bo, kms->base.vm);
++		return -ENOMEM;
++	}
++	msm_gem_object_set_name(r->bo, "lutdma");
++	r->buf = vaddr;
++	r->ready = true;
++	reg_dma = r;
++
++	DPU_DEBUG("LUTDMA v%x.%x at 0x%x, buffer at %llx\n",
++		  cfg->version >> 16, cfg->version & 0xffff, cfg->base, r->iova);
++	return 0;
++}
++
++void dpu_reg_dma_destroy(struct dpu_kms *kms)
++{
++	struct dpu_reg_dma *r = reg_dma;
++
++	if (!r || r->kms != kms)
++		return;
++	r->ready = false;
++	reg_dma = NULL;
++	if (r->bo)
++		msm_gem_kernel_put(r->bo, kms->base.vm);
++}
++
++/* Runs the n dwords at the front of the buffer through queue 0 of the given
++ * CTL and waits for the engine. As downstream does it: the command sequence
++ * is queued first, then the two-dword last command that closes the queue,
++ * and the trigger starts the lot. */
++static int dpu_reg_dma_kick(struct dpu_reg_dma *r, struct dpu_hw_ctl *ctl, u32 n)
++{
++	int idx = ctl->idx - CTL_0;
++	u32 done = dma_done_bit(idx);
++	u32 err, val;
++	int ret;
++
++	if (!done)
++		return -EINVAL;
++
++	/* The last command: a block select of nothing. */
++	r->buf[LAST_CMD_DWORD] = r->decode_word;
++	r->buf[LAST_CMD_DWORD + 1] = 0;
++
++	/* The buffer is write-combined: make sure it has left the CPU. */
++	wmb();
++
++	DPU_REG_WRITE(&r->hw, DMA_OPMODE, BIT(0));
++
++	err = DPU_REG_READ(&r->hw, DMA_INTR4_STATUS);
++	if (err) {
++		DPU_DEBUG("LUTDMA error status 0x%08x before kick, cleared\n", err);
++		DPU_REG_WRITE(&r->hw, DMA_INTR4_CLEAR, DMA_ERROR_MASK);
++	}
++
++	DPU_REG_WRITE(&r->hw, DMA_QUEUE0_ADDR(idx), lower_32_bits(r->iova));
++	DPU_REG_WRITE(&r->hw, DMA_QUEUE0_CMD(idx), CMD_WRITE | CMD_DWORDS(n));
++	wmb();
++	DPU_REG_WRITE(&r->hw, DMA_QUEUE0_ADDR(idx),
++		      lower_32_bits(r->iova + LAST_CMD_DWORD * sizeof(u32)));
++	DPU_REG_WRITE(&r->hw, DMA_QUEUE0_CMD(idx), CMD_LAST | CMD_WRITE | CMD_DWORDS(2));
++	wmb();
++	DPU_REG_WRITE(&r->hw, DMA_INTR0_CLEAR, done);
++	DPU_REG_WRITE(&ctl->hw, CTL_DMA_TRIGGER, CTL_DMA_TRIGGER_Q0);
++
++	ret = readl_poll_timeout(r->hw.blk_addr + DMA_INTR0_STATUS, val,
++				 val & done, 10, 20000);
++	if (ret) {
++		err = DPU_REG_READ(&r->hw, DMA_INTR4_STATUS);
++		DPU_ERROR("LUTDMA did not finish on ctl %d: status 0x%08x, errors 0x%08x\n",
++			  idx, val, err);
++		return ret;
++	}
++	return 0;
++}
++
++int dpu_reg_dma_load_igc(struct dpu_hw_ctl *ctl, enum dpu_dspp dspp,
++			 u32 igc_off, const u16 *data, size_t len)
++{
++	struct dpu_reg_dma *r = reg_dma;
++	u32 *w, n, i, ndata;
++	int ret;
++
++	if (!r || !r->ready || !ctl)
++		return -ENODEV;
++	if (dspp < DSPP_0 || dspp - DSPP_0 > 3)
++		return -EINVAL;
++	if (data && (len % (LUTBUS_IGC_TRANS * sizeof(u32)) || len / sizeof(u32) + 16 > DATA_DWORDS_MAX))
++		return -EINVAL;
++
++	mutex_lock(&r->lock);
++	w = r->buf;
++	n = 0;
++
++	/* Select the DSPP: bits 17 to 20 are DSPP_0 to DSPP_3. */
++	w[n++] = r->decode_word;
++	w[n++] = BIT(17 + (dspp - DSPP_0));
++
++	if (data) {
++		ndata = len / sizeof(u32);
++		w[n++] = OP_LUTBUS_WRITE | LUTBUS_BLOCK_IGC;
++		w[n++] = LUTBUS_TRANS(LUTBUS_IGC_TRANS) |
++			 LUTBUS_SIZE(len / (LUTBUS_IGC_TRANS * sizeof(u32)));
++		memcpy(&w[n], data, len);
++		n += ndata;
++		/* The engine wants more than four dwords after a LUT bus write
++		 * before the next opcode; three no-ops make sure of it. */
++		for (i = 0; i < 3; i++)
++			w[n++] = OP_NOP;
++	}
++
++	/* Then the enable, relative to the selected block. */
++	w[n++] = OP_SINGLE_WRITE | ((igc_off + IGC_V4_MODE_OFF) & GENMASK(21, 0));
++	w[n++] = data ? IGC_V4_EN : 0;
++
++	ret = dpu_reg_dma_kick(r, ctl, n);
++	mutex_unlock(&r->lock);
++	return ret;
++}
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_reg_dma.h pb/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_reg_dma.h
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_reg_dma.h	1970-01-01 01:00:00
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_hw_reg_dma.h	2026-09-25 18:49:19
+@@ -0,0 +1,42 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * The LUTDMA (register DMA) engine of DPU 7.x and later.
++ *
++ * A small DMA block beside the MDP that executes a command buffer: select a
++ * hardware block, write its registers, and - over the LUT bus - stream a
++ * table into a block whose table has no register path at all. On DPU 9.0
++ * the DSPP's IGC (de-gamma) is such a block: its enable bit is a register,
++ * its 257-entry table is reachable through this engine only.
++ *
++ * One consumer, one buffer, one engine (the "DB" block, software-triggered
++ * through the CTL and polled for completion). The downstream driver also
++ * drives the "SB" block off the DSPP flush; not needed here.
++ */
++#ifndef _DPU_HW_REG_DMA_H
++#define _DPU_HW_REG_DMA_H
++
++#include <linux/types.h>
++#include "dpu_hw_mdss.h"
++
++struct dpu_kms;
++struct dpu_hw_ctl;
++
++/* Maps the engine and allocates its command buffer in the display's address
++ * space, when the catalog and the device tree describe one. Returns -ENODEV,
++ * quietly, when they do not. Must run before the DSPPs are created and after
++ * the MMU is up. */
++int dpu_reg_dma_init(struct dpu_kms *kms);
++void dpu_reg_dma_destroy(struct dpu_kms *kms);
++
++/* Whether a table can be loaded: the engine is up and has its buffer. */
++bool dpu_reg_dma_ready(void);
++
++/* Loads an IGC table into a DSPP and enables the block, or, with data NULL,
++ * disables it. igc_off is the IGC's offset within the DSPP; data is the
++ * engine's own layout, len its length in bytes, a multiple of the IGC's LUT
++ * bus transfer (12 bytes). Triggers through ctl and blocks until the engine
++ * reports done, 20 ms at most. */
++int dpu_reg_dma_load_igc(struct dpu_hw_ctl *ctl, enum dpu_dspp dspp,
++			 u32 igc_off, const u16 *data, size_t len);
++
++#endif
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c pb/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c	2026-09-25 18:49:19
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.c	2026-09-25 18:49:19
+@@ -33,6 +33,7 @@
+ #include "dpu_formats.h"
+ #include "dpu_hw_vbif.h"
+ #include "dpu_kms.h"
++#include "dpu_hw_reg_dma.h"
+ #include "dpu_plane.h"
+ #include "dpu_vbif.h"
+ #include "dpu_writeback.h"
+@@ -888,6 +889,7 @@
+ 
+ static void _dpu_kms_hw_destroy(struct dpu_kms *dpu_kms)
+ {
++	dpu_reg_dma_destroy(dpu_kms);
+ 	dpu_kms->hw_intr = NULL;
+ 
+ 	/* safe to call these more than once during shutdown */
+@@ -1197,6 +1199,14 @@
+ 		goto err_pm_put;
+ 	}
+ 
++	/* The LUTDMA before the resource manager: the DSPPs it creates get
++	 * their IGC op only if the engine is ready. Needs the MMU (its buffer
++	 * lives in the display's address space) and the catalog, both above;
++	 * the MDP top, which it uses at load time, comes later. */
++	rc = dpu_reg_dma_init(dpu_kms);
++	if (rc && rc != -ENODEV)
++		DPU_ERROR("LUTDMA init failed: %d, de-gamma unavailable\n", rc);
++
+ 	rc = dpu_rm_init(dev, &dpu_kms->rm, dpu_kms->catalog, dpu_kms->mdss, dpu_kms->mmio);
+ 	if (rc) {
+ 		DPU_ERROR("rm init failed: %d\n", rc);
+@@ -1372,6 +1382,11 @@
+ 		dpu_kms->vbif = NULL;
+ 		return ret;
+ 	}
++
++	/* Optional: only SoCs whose device tree names the LUTDMA region. */
++	dpu_kms->regdma = msm_ioremap_quiet(pdev, "regdma");
++	if (IS_ERR(dpu_kms->regdma))
++		dpu_kms->regdma = NULL;
+ 
+ 	return 0;
+ }
+diff --color -ruN pa/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.h pb/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.h
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.h	2026-09-25 18:49:19
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_kms.h	2026-09-25 18:49:19
+@@ -64,6 +64,7 @@
+ 
+ 	/* io/register spaces: */
+ 	void __iomem *mmio, *vbif;
++	void __iomem *regdma;   /* the LUTDMA engine, NULL when not described */
+ 
+ 	struct regulator *vdd;
+ 	struct regulator *mmagic;
