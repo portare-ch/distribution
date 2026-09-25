@@ -1,0 +1,48 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] drm/msm/dpu: write the CTM into the PCC the right way round
+
+The DRM CTM is row-major with a row per output channel: matrix[1] is the
+green input's contribution to the red output. The PCC's registers are
+laid out per output plane as well - offset 0x10 + 4 * plane is that
+plane's red-input coefficient, so 0x14 is the green output's red-input
+coefficient - and dpu_hw_dspp.c names 0x14 PCC_GREEN_R_OFF accordingly.
+_dpu_crtc_get_pcc_coeff() put matrix[1] there, and the rest of the
+off-diagonals likewise: the matrix reached the hardware transposed.
+
+A diagonal matrix - night light - is its own transpose, which is why
+nothing showed. A measured gamut correction is not: with one applied,
+gray came out green, the column sums of the matrix where its row sums
+should have been. Map the rows across as rows.
+
+Signed-off-by: PortareOS <hello@portare.org>
+---
+diff --color -ruN a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
+--- a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c	2026-09-25 18:58:37
++++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c	2026-09-25 18:58:37
+@@ -803,16 +803,20 @@
+ 	if (!ctm)
+ 		return;
+ 
++	/* The DRM matrix is row-major with a row per output: matrix[1] is
++	 * the green input's share of the red output. The PCC's registers are
++	 * laid out per output plane too - cfg->r holds the red output's
++	 * three input coefficients - so the rows map straight across. */
+ 	cfg->r.r = CONVERT_S3_15(ctm->matrix[0]);
+-	cfg->g.r = CONVERT_S3_15(ctm->matrix[1]);
+-	cfg->b.r = CONVERT_S3_15(ctm->matrix[2]);
++	cfg->r.g = CONVERT_S3_15(ctm->matrix[1]);
++	cfg->r.b = CONVERT_S3_15(ctm->matrix[2]);
+ 
+-	cfg->r.g = CONVERT_S3_15(ctm->matrix[3]);
++	cfg->g.r = CONVERT_S3_15(ctm->matrix[3]);
+ 	cfg->g.g = CONVERT_S3_15(ctm->matrix[4]);
+-	cfg->b.g = CONVERT_S3_15(ctm->matrix[5]);
++	cfg->g.b = CONVERT_S3_15(ctm->matrix[5]);
+ 
+-	cfg->r.b = CONVERT_S3_15(ctm->matrix[6]);
+-	cfg->g.b = CONVERT_S3_15(ctm->matrix[7]);
++	cfg->b.r = CONVERT_S3_15(ctm->matrix[6]);
++	cfg->b.g = CONVERT_S3_15(ctm->matrix[7]);
+ 	cfg->b.b = CONVERT_S3_15(ctm->matrix[8]);
+ }
+ 
