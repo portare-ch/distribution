@@ -26,9 +26,11 @@ The SNES and the Sega consoles also derive their clocks from the subcarrier, but
 |---|---|---|---|---|---|---|
 | Game Boy, Game Boy Color | 4.194304 MHz (2^22) | same | 456 dots | 154 | 59.7275 | 59.7275 (Gambatte) |
 | Game Boy Advance | 16.777216 MHz (2^24) | same | 1232 | 228 | 59.7275 | 59.7275 (mGBA) |
+| NES, Famicom | 21.477272 MHz (6 × subcarrier) | same | 1364 (341 dots of 4; one dot skipped every other frame) | 262 | 60.0988 | 60.0988 (Nestopia, computed from the clock) |
 | SNES | 21.477272 MHz (6 × subcarrier) | same | 1364 (1360 once every other frame) | 262 | 60.0988 | 60.0988 (Snes9x) |
 | Master System, Game Gear, Mega Drive, Mega CD, 32X | 53.693175 MHz (15 × subcarrier) | same | 3420 | 262 | 59.9227 | 59.9227 (Genesis Plus GX); 60 (PicoDrive) |
 | PlayStation | 33.8688 MHz (768 × 44100) | 53.693175 MHz (× 715909/451584) | 3412.5 | 263 (240p), 262.5 (480i) | 59.826, 59.940 | 59.826 for both (SwanStation with PortareOS's patch; upstream 59.8173) |
+| Saturn | 28.636364 MHz (8 × subcarrier), or × 61/65 = 26.874126 MHz in the 320-wide modes | same | 1820 dots, or 1708 (both the broadcast line) | 263 (240p), 262.5 (480i) | 59.826, 59.940 | 59.8261 (Beetle Saturn with PortareOS's patch; upstream 59.8265) |
 | Nintendo 64 | 14.318182 MHz (4 × subcarrier) | 48.681818 MHz (× 17/5) | 3094 | 263 (240p), 262.5 (480i) | 59.826, 59.940 | 59.826 / 59.94 (ParaLLEl N64 with our patch) |
 | Neo Geo MVS | 24.000 MHz | 6.000 MHz (÷ 4) | 384 pixels | 264 | 59.1856 | 59.18 (FBNeo keeps hundredths) |
 | Neo Geo AES, Neo Geo CD | 24.167829 MHz | 6.041957 MHz (÷ 4) | 384 pixels | 264 | 59.599 | 59.5999 (NeoCD); FBNeo runs cartridges at the MVS rate |
@@ -59,6 +61,15 @@ The sound DACs are driven by a timer; the game chooses the rate (commonly 16384 
 
 - GBATEK, *LCD Dimensions and Timings* — "1232 cycles" per line, "280896 cycles - ca. 59.737 Hz": https://problemkaputt.de/gbatek-lcd-dimensions-and-timings.htm
 - mGBA, `src/platform/libretro/libretro.c`: `info->timing.fps = core->frequency(core) / core->frameCycles(core)`
+
+### NES and Famicom
+
+The master clock is the SNES's, 21.477272 MHz = 6 × the subcarrier, and the PPU's dot clock is a quarter of it. A line is 341 dots, a frame 262 lines, and with rendering on, the pre-render line of every other frame is one dot short. So a frame averages 341 × 262 × 4 − 2 = 357366 master clocks, exactly the SNES's count, and the rate is the same **60.0988 Hz** (21477272 / 357366). PAL: 26.601712 MHz, 5 clocks per dot, 312 lines, 50.0070 Hz.
+
+Audio: the APU's channels are mixed as analog signals; there is no sample rate. Nestopia mixes at the APU clock and decimates to 48000 Hz.
+
+- NESdev wiki, *Cycle reference chart* — "21.477272 MHz ± 40 Hz", 4 master clocks per dot, "341 × 262 = 89342" dots, "pre-render line is one dot shorter in every odd frame", "60.0988 Hz": https://www.nesdev.org/wiki/Cycle_reference_chart
+- Nestopia, `libretro/libretro.cpp`, `retro_get_system_av_info`: `Core::CLK_NTSC / (Core::CLK_NTSC_DIV * Core::PPU_RP2C02_HVSYNC)`; `source/core/NstBase.hpp`: `CLK_NTSC = 39375000UL * 6`, `CLK_NTSC_DIV = 11`, `PPU_RP2C02_HVSYNC = (HVSYNC_0 + HVSYNC_1) / 2` with `HVSYNC_0 = 262 * 1364` and `HVSYNC_1 = 262 * 1364 - 4`
 
 ### SNES
 
@@ -92,6 +103,17 @@ Audio: the SPU's rate is the crystal / 768 = 44100 Hz exactly.
 - Mednafen (Beetle PSX), `mednafen/psx/gpu.c`: `GPU.LineClockCounter = 3412 + GPU.PhaseChange - 200; … GPU.PhaseChange = !GPU.PhaseChange;`
 - PortareOS, `projects/PortareOS/packages/emulators/libretro/swanstation-lr/patches/001-ntsc-line-is-3412-5-ticks.patch`
 - SwanStation, `src/core/system.h`: `MASTER_CLOCK = 44100 * 0x300; // 33868800Hz`; `src/core/gpu.h`: `NTSC_TICKS_PER_LINE = 3413, … NTSC_TOTAL_LINES = 263, PAL_TICKS_PER_LINE = 3406, … PAL_TOTAL_LINES = 314`; `src/core/gpu.cpp`, `SystemTicksToCRTCTicks`: × 715909 / 451584 (NTSC), × 709379 / 451584 (PAL)
+
+### Saturn
+
+The Saturn has two dot clocks and switches between them with the horizontal resolution: 28.636364 MHz, 8 × the subcarrier, for the 352-wide modes, and 61/65 of it, 26.874126 MHz, for the 320-wide ones. A line is 1820 dots in the first and 1708 in the second, and both come to the broadcast line, 15734.26 Hz. A frame is 263 lines in 240p (VDP2 `TVSTAT` counts 0x107 lines in every NTSC mode): 28636363.6 / (1820 × 263) = **59.826 Hz**, the PlayStation's and the N64's rate; 480i alternates 262- and 263-line fields, 59.940 Hz. PAL: 28.4375 MHz, 313 lines, 49.920 Hz.
+
+Beetle Saturn emulates this chain (a 1746818182 Hz timestamp clock divided by 61 or 65, 455 or 427 counter units of 4 per line, 263 lines) and upstream reports a hard-coded 59.8265, 0.0007 % above it; PortareOS patches it (`beetle-saturn-lr/patches/001-exact-ntsc-rate.patch`) to report the exact chain, 59.826105, so the Saturn shares the PS1/N64 panel mode. MAME's 59.7648 comes from pinning both modes to 26.8466 MHz, which is not what the hardware does. Interlaced games run at the reported 240p rate, as on the PlayStation.
+
+Audio: the SCSP outputs 44100 Hz.
+
+- Beetle Saturn, `mednafen/ss/ss.c`: `MasterClock = PAL ? 1734687500 : 1746818182; /* NTSC: 1746818181.818... */`, `VDP2_StartFrame(espec, cur_clock_div == 61)`; `mednafen/ss/vdp2.c`: `HTimings[2][HPHASE__COUNT] = { { 0x140, 0x15B, 0x1AB }, { 0x160, 0x177, 0x1C7 } }` (427 and 455 units), `VTimings` NTSC total `0x107` (263) in all four modes; `libretro.c`, `retro_get_system_av_info`: the comment deriving 59.826105 and rejecting MAME's 59.764802
+- PortareOS, `projects/PortareOS/packages/emulators/libretro/beetle-saturn-lr/patches/001-exact-ntsc-rate.patch`
 
 ### Nintendo 64
 

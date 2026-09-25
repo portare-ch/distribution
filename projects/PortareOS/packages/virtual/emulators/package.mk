@@ -19,7 +19,7 @@ PKG_EMUS="moonlight scummvmsa"
 
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays retropie-shaders slang-shaders"
 
-LIBRETRO_CORES=" fbneo-lr flycast-lr gambatte-lr genesis-plus-gx-lr mgba-lr neocd_lr parallel-n64-lr picodrive-lr snes9x-lr swanstation-lr"
+LIBRETRO_CORES=" beetle-saturn-lr fbneo-lr flycast-lr gambatte-lr genesis-plus-gx-lr mgba-lr neocd_lr nestopia-lr parallel-n64-lr picodrive-lr snes9x-lr swanstation-lr"
 
 if [ "${ARCH}" = "aarch64" ]; then
   LIBRETRO_CORES+=" ppsspp-lr"
@@ -311,6 +311,14 @@ makeinstall_target() {
   add_emu_core neocd retroarch neocd true
   add_es_system neocd
 
+  ### Nintendo NES, Famicom, Famicom Disk System
+  add_emu_core nes retroarch nestopia true
+  add_es_system nes
+  add_emu_core famicom retroarch nestopia true
+  add_es_system famicom
+  add_emu_core fds retroarch nestopia true
+  add_es_system fds
+
   ### Nintendo 64
   add_emu_core n64 retroarch parallel_n64 true
   add_es_system n64
@@ -347,6 +355,10 @@ makeinstall_target() {
   add_system_dir /storage/roms/scummvm
   install_script "Scan ScummVM Games.sh"
   install_script "Start ScummVM.sh"
+
+  ### Sega Saturn
+  add_emu_core saturn retroarch mednafen_saturn true
+  add_es_system saturn
 
   ### Sega 32X
   add_emu_core sega32x retroarch picodrive true
