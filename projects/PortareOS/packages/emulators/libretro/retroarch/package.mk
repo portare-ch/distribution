@@ -129,8 +129,8 @@ makeinstall_target() {
     fi
 
   # Make sure the shader directories exist for overlayfs.
-  mkdir -p ${INSTALL}/usr/share/{common,glsl,slang}-shaders
-    touch ${INSTALL}/usr/share/{common,glsl,slang}-shaders/.overlay
+  mkdir -p ${INSTALL}/usr/share/slang-shaders
+    touch ${INSTALL}/usr/share/slang-shaders/.overlay
 
   mkdir -p ${INSTALL}/usr/share/libretro
     # Copy achievment sounds

@@ -189,7 +189,6 @@
   HTOP_TOOL="yes"
 
 # btop tool (yes / no)
-  BTOP_TOOL="yes"
 
 # Distribution Specific source location
   DISTRO_MIRROR="https://github.com/ROCKNIX/distribution-sources/releases/download/sources-v2"

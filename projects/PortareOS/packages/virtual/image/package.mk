@@ -45,7 +45,8 @@ PKG_FONTS="corefonts"
 
 PKG_MULTIMEDIA="ffmpeg mpv gmu"
 
-PKG_SOUND="espeak"
+# espeak spoke EmulationStation's menus; EmulationStation is gone.
+PKG_SOUND=""
 
 # rclone and syncthing, 89 MB between them, were switched on and driven from
 # EmulationStation's menus. rsync stays: the network package brings it, and
@@ -106,15 +107,7 @@ fi
 # htop
 [ "${HTOP_TOOL}" = "yes" ] && PKG_DEPENDS_TARGET+=" htop"
 
-# btop
-[ "${BTOP_TOOL}" = "yes" ] && PKG_DEPENDS_TARGET+=" btop"
-
 # modules packages
 [ "${MODULES_PKG}" = "yes" ] && PKG_DEPENDS_TARGET+=" modules"
-
-# Entware support
-mkdir -p ${INSTALL}
-ln -sf /storage/.opt ${INSTALL}/opt
-PKG_DEPENDS_TARGET+=" entware"
 
 true
