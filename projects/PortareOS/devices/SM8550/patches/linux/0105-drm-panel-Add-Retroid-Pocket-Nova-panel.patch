@@ -35,7 +35,7 @@ new file mode 100644
 index 000000000000..1c8ed849edbf
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-ilitek-il97680a.c
-@@ -0,0 +1,564 @@
+@@ -0,0 +1,592 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Ilitek IL97680A panels driver
@@ -314,6 +314,34 @@ index 000000000000..1c8ed849edbf
 +		.vsync_end = 960 + 12 + 2,
 +		.vtotal = 960 + 12 + 2 + 27,
 +	}
++	{
++		/*
++		 * 119.65224Hz, which is 2 x 59.82610 - the NTSC Nintendo 64 in
++		 * 240p: a 48.681812MHz video clock, 3094 clocks a line and 263
++		 * lines a frame, 813722 clocks. ParaLLEl N64 emulates that
++		 * period exactly since its 003-vi-frame-period patch; before
++		 * it the core ran at 60.0176 and no mode could have fitted.
++		 *
++		 *   119.880120 / 59.82610 = 2.0039   <- a frame repeated about
++		 *                                       every 4.3 seconds
++		 *   119.652237 / 59.82610 = 2.0000   <- this one
++		 *
++		 *   155943000 / (1302 * 1001) = 119.65224...
++		 *
++		 * +0.35ppm from 2 x 59.82610, a frame in about 8 hours. It sits
++		 * 0.018Hz above the PlayStation's mode; setsettings asks for a
++		 * mode within 0.002Hz, so the two cannot be confused.
++		 */
++		.clock = 155943,
++		.hdisplay = 1280,
++		.hsync_start = 1280 + 12,
++		.hsync_end = 1280 + 12 + 2,
++		.htotal = 1280 + 12 + 2 + 8,
++		.vdisplay = 960,
++		.vsync_start = 960 + 12,
++		.vsync_end = 960 + 12 + 2,
++		.vtotal = 960 + 12 + 2 + 27,
++	},
 +};
 +
 +
