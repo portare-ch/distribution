@@ -47,23 +47,12 @@ KMSMODE=$(get_setting "kmsmode" "${PLATFORM}" "${BASEROMNAME}")
 ### emulators have their own display handling and several of them do
 ### want a compositor.
 ###
-### ArmSX2 joins it on the same reasoning but by a different mechanism: it
-### is a Qt6 application, so there is no SDL or RetroArch context to name.
-### Its renderer takes the panel itself through VK_KHR_display and Qt runs
-### offscreen - see start_armsx2.sh. That only works with the Vulkan
-### renderer, so the default is conditional on it; with OpenGL or the
-### software renderer there is nothing to drive the panel and stopping the
-### compositor would leave a black screen.
+### ArmSX2 joins it: its SDL frontend has no window at all and takes the
+### panel through VK_KHR_display, whatever the renderer setting says - see
+### start_armsx2.sh.
 case "${EMULATOR}" in
-  retroarch)
+  retroarch|armsx2)
     [ -z "${KMSMODE}" ] && KMSMODE=1
-    ;;
-  armsx2)
-    if [ -z "${KMSMODE}" ] &&
-       [ "$(get_setting graphics_backend "${PLATFORM}" "${BASEROMNAME}")" = "2" ]
-    then
-      KMSMODE=1
-    fi
     ;;
 esac
 

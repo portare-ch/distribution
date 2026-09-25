@@ -24,12 +24,12 @@ The rule this applies is the README's: if it is not needed for a smooth game, it
 
 | Package | MB | Why |
 |---|---|---|
-| **libretro-database** | 172 | RetroArch's scanner and playlist database. The launcher scans folders itself; nothing on the device reads it. The largest single item in the image. |
+| **libretro-database** | 172 | Only the cheat files: the package already leaves the rdb scanner database out, so there is nothing here for naming or dump checks. RetroArch's in-game cheat menu reads them from `/tmp/database/cht`. All 172 MB is `cht`, for every system there is; ours come to 68 MB (N64 22, PSP 12, SNES 8, Dreamcast 7, NES 5, Mega Drive 4, PS1 3, the rest small). Trim to our systems, or drop cheats. |
 | **kernel-overlays** | 59 | Every kernel module for every board the base tree knows. The Nova needs a fraction: build in what it uses, drop the rest, through the kernel config. |
 | **slang-shaders** — trim, not drop | 70 → ~10 | We use `crt/crt-guest-advanced`, `handheld/lcd-grid-v2` and our own `portare/`. Keep those families and what they include; drop the other 60 MB. |
 | **retroarch-overlays** | 13 | Touch overlays. Unused. |
 | **renderdoc, apitrace (with glretrace, eglretrace), gdb, gdbserver, perf, vulkan-tools, glslc, binutils (strings, readelf), v4l-utils, edid-decode, cec-ctl, plplay, gltrim, wflinfo** | ~55 | Debugging and GPU tracing tools, in a release image. `DEBUG_PACKAGES` is off, so they arrive as somebody's dependency; find whose. |
-| **gstreamer, gst-plugins-base, gst-plugins-good, gst-libav** | 8 | No binary links it. |
+| **gstreamer, gst-plugins-base, gst-plugins-good, gst-libav** | 8 | No binary links it. qt6 pulled it and is gone; portmaster still lists gst-plugins-base, for ports. Goes with portmaster. |
 | **usb-modeswitch** | 1 | Switches 3G modems into modem mode. |
 | The sqlite3 CLI, nano and dialog, bluez's btmon, meshctl and mesh-cfgclient, two of p7zip's three binaries | ~5 | Duplicates and unused command-line tools. |
 | **iwd_get-networks, ukify, spit** | – | Leftover scripts; the launcher uses nmcli. |
@@ -40,7 +40,6 @@ The rule this applies is the README's: if it is not needed for a smooth game, it
 
 | Package | MB | The question |
 |---|---|---|
-| **qt6** (Core, Gui, Widgets, Quick, Qml, ShaderTools, Designer, …) | ~60 | Only ARMSX2's offscreen Qt UI and FEXConfig use it. ARMSX2 runs the GS on KMS and drags Qt along for a window nobody sees; a Qt-less build, or a headless target, drops the biggest library on the image. FEXConfig is a desktop configuration dialog and has no place on a handheld. |
 | **python3** with pyudev, six, pyyaml, setuptools | 34 | Real users: `portareos-bluetooth-agent`, the pairing agent that runs as a service, and Steam's `steamdeps`. Rewrite the agent in C against bluez's D-Bus API, or as a bluetoothctl script, and Python goes. |
 | **tailscale** (`tailscaled`, enabled at boot) | 26 | A Go VPN mesh daemon on a handheld, the second-largest binary after ScummVM. Keep if it is used; otherwise out. **zerotier-one** (2 MB) is the same question. |
 | **avahi, nss-mdns** | 3 | mDNS. Useful for `portareos.local` over SSH; otherwise off. |
@@ -71,9 +70,15 @@ Done in #334, from the lists above:
 | xorg-launch-helper, its `xorg.service`, xrandr | 1 | xwayland listed the helper, glew the CLI; neither needed them |
 | the 310 `.info` files of cores we do not ship | 1 | `core-info` installs the fifteen we have, under their own names: Saturn's is `mednafen_saturn`, as the core file is, which the old rename to `beetle_` had broken |
 
+Done in #335:
+
+| Package | MB | How |
+|---|---|---|
+| qt6, and the CI job that built it | ~60 | ARMSX2 is built as upstream's SDL frontend, `armsx2-sdl`: VK_KHR_display to the panel, FullscreenUI for the menus, no window. Tested on the Nova before the switch. FEXConfig, a Qt desktop dialog, is not built. |
+
 ## The sum
 
-Still on the table: libretro-database 172 + kernel modules ~45 + slang-shaders ~60 + debug tools ~55 + Qt ~60 + Python 34 + tailscale 26 + GStreamer 8 + locales and gconv ~25: **about 460 MB of the 1.4 GB installed, a third of the image, without touching a supported system.** About 40 MB is out already (above).
+Still on the table: cheats for other systems ~104 + kernel modules ~45 + slang-shaders ~60 + debug tools ~55 + Python 34 + tailscale 26 + GStreamer 8 + locales and gconv ~25: **about 360 MB of the 1.4 GB installed, a quarter of the image, without touching a supported system.** About 100 MB is out already (above).
 
 ## Method
 
