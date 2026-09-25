@@ -2,7 +2,7 @@
 
 The panel has no variable refresh rate. It runs at **119.880120 Hz**, twice NTSC's 59.94 Hz. For systems whose native rate is noticeably different, `setsettings.sh` (`set_ra_refresh_rate`) asks for a panel mode at exactly twice that rate, and RetroArch switches to it when the game starts.
 
-Where each system's native rate comes from, crystal by crystal, and where an emulator's number differs from the console's, is derived in [CONSOLE_CLOCKS.md](../../CONSOLE_CLOCKS.md).
+Where each system's native rate comes from, crystal by crystal, and where an emulator's number differs from the console's, is derived in [CONSOLE_CLOCKS.md](../../CONSOLE_CLOCKS.md). Which systems have their mode, and which are still open, is in [PortareOS_Modelines.md](../../PortareOS_Modelines.md).
 
 Every mode uses the same 1302 × 1001 total timings and changes only the pixel clock. That keeps the panel in its 120 Hz class. The modes are defined in the panel driver, `projects/PortareOS/devices/SM8550/patches/linux/0105-drm-panel-Add-Retroid-Pocket-Nova-panel.patch`.
 
