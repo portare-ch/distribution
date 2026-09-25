@@ -16,6 +16,29 @@ Every mode uses the same 1302 × 1001 total timings and changes only the pixel c
 | 118.360134 Hz | 154259 kHz | `fbneo`, for `neogeo` only |
 | 119.199541 Hz | 155353 kHz | `neocd` |
 
+## Pacing: how a frame lands on a frame
+
+A mode at twice the console's rate is only half of it. The other half is RetroArch holding the core to that mode, one frame for every two refreshes, with nothing else setting the pace.
+
+RetroArch reaches the panel through Vulkan's `VK_KHR_display`, with no compositor. Its swap interval is left on automatic, which resolves to 2 when the mode is within the audio timing skew of twice the core's rate; that is what the modes are chosen for. Vulkan has no swap interval, so stock RetroArch keeps one by presenting the same frame twice into the FIFO swapchain. With two swapchain images, which the image uses for latency, the second present's acquire returns at the vblank between the two, and the core has one refresh period, 8.36 ms, to produce the next frame. A frame that takes longer costs a whole refresh. SwanStation at 4x with a CRT shader missed often enough for 55.65 fps against 59.83, with the audio buffer running dry every 50 to 100 ms and 5 to 8 ms gaps in the sound 7.5% of the time. That was the "slowed down" audio after threaded video was turned off.
+
+Patch `0014-vulkan-khr-display-timed-presents.patch` presents each frame once instead, with a desired present time through `VK_GOOGLE_display_timing`: two refresh periods after the last present the driver has timed, counted per present issued since it. Mesa's KMS backend flips on exactly that vblank. The acquire then returns the moment the previous frame reaches the display, the core has the whole frame period, and the loop runs at the mode's rate, which is the console's. The last present's actual time is the anchor, so a late frame moves the cadence by a refresh and the next one is placed from where the display is, not from a schedule that has drifted. The repeat stays for contexts that cannot time a present. Two things in RetroArch had to be fixed for the extension to be usable at all: its entry points were only loaded on Windows, and a device negotiated by a hardware core, which is how SwanStation and the other Vulkan cores work, never had the extension enabled or recorded.
+
+Measured on Tekken 3, threaded video off:
+
+| Presents | Core fps | Audio gaps in 15 s |
+|---|---|---|
+| The same frame twice | 55.65 | 161 gaps of 5 to 8 ms, 7.5% of the time |
+| One, timed | 59.64 | none |
+
+The dropped-frame count was about ten in every run, all in the first seconds, while the core loads and the pipelines compile.
+
+**Threaded video is off** (`video_threaded = "false"`). With it on, a worker thread presents whatever frame is latest and the core is paced by the audio sink instead: full speed and clean audio, but a thread hop of latency, frames reaching the panel unevenly, the core drifting against the panel by the difference of two clocks, and nothing for the automatic frame delay to measure. The exact modes buy nothing in that arrangement. It was the stopgap (#337) between finding the cause and fixing the driver (#339). A core that cannot make a frame inside 16.7 ms can still have it on in its own override file, `config/<core>/<core>.cfg`; better to find out why it is that slow.
+
+With the core paced by the panel, audio rate control only absorbs the residual between the mode and the panel's crystal, a few parts per million, rather than the difference between the audio and video clocks. Where the mode is not exactly twice the core's rate, the arcade boards for instance, the skew is larger and rate control bends the pitch accordingly, as on any other device.
+
+To see it working: the log has `Timed presents: swap interval 2, one present a frame, 16.683 ms apart.` when the path is in effect. RetroArch's statistics overlay (`statistics_show`) reports the core's frame rate, the loop deviation and the audio buffer's underruns. `/sys/kernel/debug/dri/0/crtc-0/status` counts vblanks, and a program waiting on `DRM_IOCTL_WAIT_VBLANK` on `/dev/dri/card0` measures the panel's real rate without DRM master: 119.653 Hz on the PlayStation mode, so the mode is what it says. A capture of the PipeWire sink (`pw-record --target <sink> -P '{ stream.capture.sink = true }'`) shows audio gaps as runs of zero samples.
+
 ## Systems
 
 The rates are the original NTSC hardware's frame rate, or for handhelds the hardware's own rate.

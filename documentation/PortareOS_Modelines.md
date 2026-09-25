@@ -2,7 +2,7 @@
 
 The Nova's panel runs at 119.880 Hz, twice NTSC's 59.94 Hz. Systems with a different native rate get a panel mode at exactly twice their rate, switched on when the game starts. [REFRESH_RATES.md](PER_DEVICE_DOCUMENTATION/SM8550/REFRESH_RATES.md) has the mechanism and the tables; [CONSOLE_CLOCKS.md](CONSOLE_CLOCKS.md) derives every rate. This page is only the status.
 
-The rate that matters is the one the emulator reports, because that is what RetroArch syncs to. Where it differs from the console's, the column says so.
+The rate that matters is the one the emulator reports, because that is what RetroArch syncs to. Where it differs from the console's, the column says so. How RetroArch holds the core to the mode, one timed present a frame, is the pacing section of REFRESH_RATES.md.
 
 | System (emulator) | Emulator's rate (Hz) | Panel mode (Hz) | Status |
 |---|---|---|---|

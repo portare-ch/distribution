@@ -28,7 +28,11 @@ console instead.
 
 The Nova has no variable refresh rate, so the panel driver carries one mode
 per console family, at exactly twice the console's frame rate. RetroArch asks
-for the matching mode when a game starts, and a frame lands on a frame.
+for the matching mode when a game starts, presents each frame once, timed to
+the vblank two refreshes after the last, and the core is paced by the panel:
+a frame lands on a frame, at the console's rate. How that works, and what
+it took, is in
+[REFRESH_RATES.md](documentation/PER_DEVICE_DOCUMENTATION/SM8550/REFRESH_RATES.md).
 
 | Panel mode | Console | Frame rate |
 | --- | --- | --- |
@@ -154,7 +158,8 @@ scanlines, because a DVD was made for a CRT. Position is saved on quit.
 
 1000 Hz tick, preemption model selectable at boot, the teo idle governor,
 schedutil with the chip's energy model, and the emulator frame queue kept as
-short as it goes: two swapchain images and automatic frame delay in
+short as it goes: two swapchain images, no threaded video, each frame
+presented once and timed to its vblank, and automatic frame delay in
 RetroArch. Black frame insertion, which a 120 Hz panel showing 60 Hz content
 can afford, is work in progress.
 
