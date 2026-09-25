@@ -33,9 +33,9 @@ for the matching mode when a game starts, and a frame lands on a frame.
 | Panel mode | Console | Frame rate |
 | --- | --- | --- |
 | 119.880 Hz | The 59.94 Hz consoles: Dreamcast, PS2, PSP, GameCube, Xbox; and the default | 59.94 |
-| 119.652 Hz | PlayStation, Nintendo 64 | 59.8261 |
+| 119.652 Hz | PlayStation, Nintendo 64, Saturn | 59.8261 |
 | 119.455 Hz | Game Boy, Game Boy Color, Game Boy Advance | 59.7275 |
-| 120.198 Hz | Super Nintendo | 60.0988 |
+| 120.198 Hz | Super Nintendo, NES | 60.0988 |
 | 119.846 Hz | Master System, Game Gear, Mega Drive, Mega CD | 59.9227 |
 | 118.360 Hz | Neo Geo | 59.18 |
 | 119.200 Hz | Neo Geo CD | 59.5999 |
@@ -96,6 +96,7 @@ the settings nobody had tuned for them.
 | Neo Geo CD | NeoCD |
 | Game Boy, Game Boy Color | Gambatte |
 | Game Boy Advance | mGBA |
+| NES, Famicom, Famicom Disk System | Nestopia UE |
 | Super Nintendo | Snes9x (bsnes still under evaluation) |
 | Nintendo 64 | ParaLLEl N64 with ParaLLEl-RDP on Vulkan |
 | GameCube, Wii | Dolphin |
@@ -103,6 +104,7 @@ the settings nobody had tuned for them.
 | 32X | PicoDrive |
 | Dreamcast, NAOMI, Atomiswave | Flycast |
 | PlayStation | SwanStation |
+| Saturn | Beetle Saturn |
 | PlayStation 2 | ARMSX2 |
 | PSP | PPSSPP |
 | Xbox | xemu |

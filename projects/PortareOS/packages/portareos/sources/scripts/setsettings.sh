@@ -774,6 +774,14 @@ function set_ra_refresh_rate() {
             ###   Super Nintendo (NTSC)     60.0988 = 21477272.7 / 357366
             ###                             at 119.88 a frame dropped
             ###                             about every 3.2 s; 120.198 exact
+            ###   NES (NTSC)                60.0988, the same clock and the
+            ###                             same 357366 cycles (341 x 262
+            ###                             dots, one skipped every other
+            ###                             frame); 120.198 exact
+            ###   Saturn (NTSC)             59.8261 = 28636363.6 / 478660
+            ###                             (1820 dots x 263 lines), the
+            ###                             PlayStation's and N64's rate;
+            ###                             119.652 exact
             ###   Nintendo 64 (NTSC)        59.8261 = 48681812 / 813722
             ###                             at 119.88 a frame repeated
             ###                             about every 4.3 s; 119.652 exact
@@ -796,6 +804,8 @@ function set_ra_refresh_rate() {
                 swanstation)     WANT=119.6522; WHY="2 x 59.8261" ;;
                 gambatte|mgba)   WANT=119.4550; WHY="2 x 59.7275" ;;
                 snes9x|bsnes)    WANT=120.1976; WHY="2 x 60.0988" ;;
+                nestopia)        WANT=120.1976; WHY="2 x 60.0988, the NES's rate is the SNES's" ;;
+                mednafen_saturn) WANT=119.6522; WHY="2 x 59.8261" ;;
                 parallel_n64)    WANT=119.6522; WHY="2 x 59.8261" ;;
                 genesis_plus_gx) WANT=119.8455; WHY="2 x 59.9227" ;;
                 neocd)           WANT=119.1998; WHY="2 x 59.5999" ;;
