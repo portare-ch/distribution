@@ -1078,6 +1078,14 @@ function set_n64opts() {
         else
             echo "parallel-n64-upscaling = \"${UPSCALING}\"" >> "${PARALLELN64DIR}/ParaLLEl N64.opt"
         fi
+        # A key the shipped options file gained after an install copied
+        # it: added once with the shipped value, so an existing install gets
+        # the new default. A value set since in RetroArch is left alone.
+        for KEY in parallel-n64-parallel-rdp-vi-bilinear; do
+            if ! grep -q "^${KEY} = " "${PARALLELN64DIR}/ParaLLEl N64.opt"; then
+                grep "^${KEY} = " "/usr/config/retroarch/ParaLLEl N64.opt" >> "${PARALLELN64DIR}/ParaLLEl N64.opt"
+            fi
+        done
         local CONTROLLERPAK="$(game_setting parallel_n64_controller_pak)"
         sed -i '/parallel-n64-pak1 = /c\parallel-n64-pak1 = "'${CONTROLLERPAK}'"' "${PARALLELN64DIR}/ParaLLEl N64.opt"
     fi
