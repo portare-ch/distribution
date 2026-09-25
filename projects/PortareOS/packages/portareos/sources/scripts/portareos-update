@@ -182,7 +182,14 @@ update_channel() {
 
 # One tab-separated line per usable release, newest first, or exit 2 when
 # GitHub could not be asked:
-#   tag  date  commit  tar-name  tar-url  tar-size  sha256-url
+#   tag  date  commit  tar-name  tar-url  tar-size  sha256-url  run
+#
+# Newest by the run number at the end of the tag, not by the order GitHub
+# lists them in. That order is not build order: on 25 September 2026 the API
+# put release-20260925-133 ahead of nightly-20260925-134, four hours younger,
+# and the nightly channel offered the release. Both kinds are tagged by the
+# same workflow from its run number, so the number is the one key that says
+# which build is newer, on a day with several and across the two kinds.
 # Usable means not a draft, of this channel, and carrying a .tar for this
 # device - a release that failed to attach one is skipped, not offered.
 # The commit is the one release-notes names in "Built from `<sha>`", which is
@@ -212,8 +219,10 @@ online_releases() {
             ($r.tag_name | capture("-(?<d>[0-9]{8})-").d),
             (($r.body // "") | capture("Built from `(?<c>[0-9a-f]{7,40})`").c // "-"),
             $tar.name, $tar.browser_download_url, ($tar.size | tostring),
-            ($sum.browser_download_url // "-") ]
-        | @tsv'
+            ($sum.browser_download_url // "-"),
+            (($r.tag_name | capture("-(?<n>[0-9]+)$").n) // "0") ]
+        | @tsv' |
+    sort -t "$(printf '\t')" -k8,8nr
 }
 
 # Decides whether the newest release of the channel should be installed, and
