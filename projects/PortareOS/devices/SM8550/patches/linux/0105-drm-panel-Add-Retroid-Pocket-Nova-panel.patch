@@ -313,7 +313,7 @@ index 000000000000..1c8ed849edbf
 +		.vsync_start = 960 + 12,
 +		.vsync_end = 960 + 12 + 2,
 +		.vtotal = 960 + 12 + 2 + 27,
-+	}
++	},
 +	{
 +		/*
 +		 * 119.65224Hz, which is 2 x 59.82610 - the NTSC Nintendo 64 in
