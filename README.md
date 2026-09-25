@@ -33,12 +33,17 @@ for the matching mode when a game starts, and a frame lands on a frame.
 | Panel mode | Console | Frame rate |
 | --- | --- | --- |
 | 119.880 Hz | The 59.94 Hz consoles: Dreamcast, PS2, PSP, GameCube, Xbox; and the default | 59.94 |
-| 119.635 Hz | PlayStation | 59.8173 |
+| 119.652 Hz | PlayStation, Nintendo 64 | 59.8261 |
 | 119.455 Hz | Game Boy, Game Boy Color, Game Boy Advance | 59.7275 |
 | 120.198 Hz | Super Nintendo | 60.0988 |
+| 119.846 Hz | Master System, Game Gear, Mega Drive, Mega CD | 59.9227 |
+| 118.360 Hz | Neo Geo | 59.18 |
+| 119.200 Hz | Neo Geo CD | 59.5999 |
 
 The rates come from the consoles' own clocks, and the modes only vary the
-pixel clock, so the panel stays in its 120 Hz class throughout. Dynamic
+pixel clock, so the panel stays in its 120 Hz class throughout. They are
+the NTSC rates: PortareOS is built for NTSC games and no PAL mode is
+planned. Dynamic
 switching mid-game was evaluated and dropped: SwanStation does not change
 rate the way a real PlayStation does, so there is nothing to follow.
 
@@ -197,6 +202,8 @@ with games, the counts, and the four numbers that matter in the header.
 * **KMS is the only way to launch a game.** No compositing, except for Steam.
 * **The console's rates, not the display's.** Refresh and sample rates are
   matched wherever the hardware can carry them.
+* **NTSC.** That is what is supported and cared for. PAL is not planned;
+  fixes from contributors are welcome as long as they do not break NTSC.
 * **Latency before everything except correctness.**
 * **Anti-features come out.** If it is not needed for a smooth game, it is
   not in the image.

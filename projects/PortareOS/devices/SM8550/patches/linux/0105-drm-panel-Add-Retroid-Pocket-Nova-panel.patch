@@ -35,7 +35,7 @@ new file mode 100644
 index 000000000000..1c8ed849edbf
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-ilitek-il97680a.c
-@@ -0,0 +1,592 @@
+@@ -0,0 +1,631 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Ilitek IL97680A panels driver
@@ -214,54 +214,6 @@ index 000000000000..1c8ed849edbf
 +	},
 +	{
 +		/*
-+		 * 119.63459Hz, which is 2 x 59.817295 - the rate SwanStation
-+		 * reports for NTSC PlayStation content, and not 59.94. The
-+		 * PlayStation was never a 59.94 machine: on a CRT the console
-+		 * drove the set, so "the display's refresh rate" was whatever
-+		 * the console emitted, and nothing had to agree with anything.
-+		 * A fixed panel has no such freedom.
-+		 *
-+		 *   119.880120 / 59.8173 = 2.0041   <- the mode above
-+		 *   119.634590 / 59.8173 = 2.0000   <- this one
-+		 *
-+		 * At 2.0041 a frame is repeated or dropped roughly every 245,
-+		 * about every four seconds. That is not a rounding error to be
-+		 * lived with, it is a visible hitch, and no amount of fixing
-+		 * the audio clock removes it.
-+		 *
-+		 *   155920000 / (1302 * 1001) = 119.63459...
-+		 *
-+		 * which is -0.1ppm from 2 x 59.8173: one frame in about 46
-+		 * hours.
-+		 *
-+		 * Same totals as the mode above, so only the pixel clock
-+		 * moves, by 0.2%. That matters more than it looks:
-+		 * drm_mode_vrefresh() rounds this to 120 exactly as it rounds
-+		 * 119.88, so the panel's frame-rate register (0x60) is still
-+		 * programmed 0x00 and the panel is not asked to do anything it
-+		 * is not already doing. The 60Hz mode this replaces was a
-+		 * different proposition - it rounds to 60, changes that
-+		 * register, and the manufacturer's implementation of that mode
-+		 * is broken, which is why it was dropped.
-+		 *
-+		 * This mode is only reachable because get_modes() exposes the
-+		 * whole table. Patch 1022 used to cut it to the first entry,
-+		 * which is why the 60Hz entry never reached the connector - and
-+		 * why, for as long as 1022 was carried, neither did this one:
-+		 * DRM advertised 119.88Hz alone and SwanStation ran on it.
-+		 */
-+		.clock = 155920,
-+		.hdisplay = 1280,
-+		.hsync_start = 1280 + 12,
-+		.hsync_end = 1280 + 12 + 2,
-+		.htotal = 1280 + 12 + 2 + 8,
-+		.vdisplay = 960,
-+		.vsync_start = 960 + 12,
-+		.vsync_end = 960 + 12 + 2,
-+		.vtotal = 960 + 12 + 2 + 27,
-+	},
-+	{
-+		/*
 +		 * 119.45505Hz, which is 2 x 59.727500 - the Game Boy, Game Boy
 +		 * Color and Game Boy Advance, all three: 4194304Hz over 70224
 +		 * cycles a frame, and 16777216Hz over 280896 for the GBA, come
@@ -328,11 +280,98 @@ index 000000000000..1c8ed849edbf
 +		 *
 +		 *   155943000 / (1302 * 1001) = 119.65224...
 +		 *
-+		 * +0.35ppm from 2 x 59.82610, a frame in about 8 hours. It sits
-+		 * 0.018Hz above the PlayStation's mode; setsettings asks for a
-+		 * mode within 0.002Hz, so the two cannot be confused.
++		 * +0.35ppm from 2 x 59.82610, a frame in about 8 hours.
++		 *
++		 * The NTSC PlayStation in 240p is the same rate: 263 lines of
++		 * 3412.5 GPU clocks at 53.693175MHz, 59.82610 too, since the
++		 * 001-ntsc-line-is-3412-5-ticks patch to SwanStation. Before
++		 * it the core rounded the line to 3413 clocks, ran at 59.8173,
++		 * and had a 155920kHz mode of its own here.
 +		 */
 +		.clock = 155943,
++		.hdisplay = 1280,
++		.hsync_start = 1280 + 12,
++		.hsync_end = 1280 + 12 + 2,
++		.htotal = 1280 + 12 + 2 + 8,
++		.vdisplay = 960,
++		.vsync_start = 960 + 12,
++		.vsync_end = 960 + 12 + 2,
++		.vtotal = 960 + 12 + 2 + 27,
++	},
++	{
++		/*
++		 * 119.84559Hz, which is 2 x 59.92274 - the NTSC Sega consoles that
++		 * Genesis Plus GX runs, Master System to Mega CD: a 53.693175MHz
++		 * master clock, 3420 clocks a line and 262 lines a frame, 896040
++		 * clocks, the rate the core reports.
++		 *
++		 *   119.880120 / 59.92274 = 2.00059   <- a frame repeated about
++		 *                                        every 28 seconds
++		 *   119.845592 / 59.92274 = 2.00000   <- this one
++		 *
++		 *   156195000 / (1302 * 1001) = 119.84559...
++		 *
++		 * +0.9ppm from 2 x 59.92274. The closest neighbour of the 119.88
++		 * mode, 0.035Hz below it; setsettings asks for a mode within
++		 * 0.002Hz and RetroArch takes the closest, so neither is confused
++		 * for the other. PicoDrive (32X) reports a flat 60 and stays on
++		 * 119.88.
++		 */
++		.clock = 156195,
++		.hdisplay = 1280,
++		.hsync_start = 1280 + 12,
++		.hsync_end = 1280 + 12 + 2,
++		.htotal = 1280 + 12 + 2 + 8,
++		.vdisplay = 960,
++		.vsync_start = 960 + 12,
++		.vsync_end = 960 + 12 + 2,
++		.vtotal = 960 + 12 + 2 + 27,
++	},
++	{
++		/*
++		 * 118.36013Hz, which is 2 x 59.18 - the Neo Geo MVS as FBNeo runs
++		 * it. The board's rate is 15625 / 264 = 59.1856 (a 24MHz crystal,
++		 * 6MHz pixel clock, 384 pixels a line, 264 lines), but FBNeo keeps
++		 * its frame rate in hundredths of a hertz and truncates, so the
++		 * core reports and paces at 59.18 exactly, and that is what the
++		 * mode has to match.
++		 *
++		 *   119.880120 / 59.18 = 2.02568   <- a frame repeated about
++		 *                                     every 0.7 seconds
++		 *   118.360134 / 59.18 = 2.00000   <- this one
++		 *
++		 *   154259000 / (1302 * 1001) = 118.36013...
++		 *
++		 * +1.1ppm from 2 x 59.18. The lowest pixel clock in the table,
++		 * 1.27% below the 119.88 mode's; drm_mode_vrefresh() rounds it to
++		 * 118 and il97680a_rate_class() still puts it in the 120Hz class.
++		 */
++		.clock = 154259,
++		.hdisplay = 1280,
++		.hsync_start = 1280 + 12,
++		.hsync_end = 1280 + 12 + 2,
++		.htotal = 1280 + 12 + 2 + 8,
++		.vdisplay = 960,
++		.vsync_start = 960 + 12,
++		.vsync_end = 960 + 12 + 2,
++		.vtotal = 960 + 12 + 2 + 27,
++	},
++	{
++		/*
++		 * 119.19954Hz, which is 2 x 59.59990 - the Neo Geo CD as NeoCD
++		 * runs it: a 24.168MHz master clock, 6.042MHz pixel clock, 384
++		 * pixels a line and 264 lines a frame, 6042000 / 101376. The AES
++		 * and the CD have this crystal; the MVS above has 24.000MHz.
++		 *
++		 *   119.880120 / 59.59990 = 2.01141   <- a frame repeated about
++		 *                                        every 1.5 seconds
++		 *   119.199541 / 59.59990 = 2.00000   <- this one
++		 *
++		 *   155353000 / (1302 * 1001) = 119.19954...
++		 *
++		 * -2.3ppm from 2 x 59.59990, a frame in about 1 hour.
++		 */
++		.clock = 155353,
 +		.hdisplay = 1280,
 +		.hsync_start = 1280 + 12,
 +		.hsync_end = 1280 + 12 + 2,
