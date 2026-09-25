@@ -8,9 +8,11 @@ PKG_LICENSE="MIT"
 PKG_SITE="https://gitlab.freedesktop.org/libdecor/libdecor"
 PKG_URL="${PKG_SITE}/-/archive/${PKG_VERSION}/${PKG_NAME}-${PKG_VERSION}.tar.bz2"
 # Without the GTK plugin: it draws decorations for Wayland windows, and there
-# is no compositor here to put a window in.
-PKG_DEPENDS_TARGET="toolchain"
+# is no compositor here to put a window in. The cairo plugin is always built
+# and needs pangocairo.
+PKG_DEPENDS_TARGET="toolchain wayland wayland-protocols cairo pango"
 PKG_LONGDESC="libdecor - A client-side decorations library for Wayland clients"
 PKG_TOOLCHAIN="meson"
 
-PKG_MESON_OPTS_TARGET="-Dgtk=disabled -Ddemo=false"
+# dbus would fetch the cursor size from a desktop settings portal; there is none.
+PKG_MESON_OPTS_TARGET="-Dgtk=disabled -Ddbus=disabled -Ddemo=false"
