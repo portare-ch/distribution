@@ -52,9 +52,18 @@ White is dimmer with the profile on, as it is on Android (they lost 10 %): a D65
 - **Their spectral correction is a generic OLED CCSS**, marked provisional by them; absolute numbers inherit that.
 - **Full-screen patches.** The brightness limiter was measured on full-screen colors; a game's average picture level is lower, so bright saturated areas in a game may sit a little differently.
 
-## What would make it exact
+## The third stage: the IGC through the LUTDMA
 
-Driving the IGC: a LUTDMA implementation in `drm/msm/dpu` (the downstream `sde_hw_reg_dma_v1.c` / `sde_hw_reg_dma_v1_color_proc.c` are the reference), then `DEGAMMA_LUT` with 256 entries. With that, their IGC, PCC and GC tables port one to one and the launcher's profile file gains a `degamma` section. Tracked in #161.
+Driving the IGC means driving the LUTDMA, and that is what kernel patches `1070-drm-msm-dpu-DSPP-IGC-through-the-LUTDMA-DEGAMMA_LUT.patch` and `1071-arm64-dts-qcom-sm8550-mdss-regdma.patch` do:
+
+- `dpu_hw_reg_dma.c`: the engine, for this one consumer. A page in the display's address space holds the command sequence — select the DSPP, a LUT bus write of the 257-entry table, the IGC's enable register — and a two-dword last command; both are queued on the CTL's queue 0, the CTL's trigger register (`+0xd4`) starts them, and the done bit (`INTR0`, bit 16 for CTL 0) is polled, 20 ms at most. Offsets and encodings are the downstream `sde_hw_reg_dma_v1.c`'s for engine version 2.0 and its `reg_dmav2_setup_dspp_igcv4()`. Only the "DB" block at `0x0aeac000` is used; the "SB" block, which downstream triggers off the DSPP flush, is not needed.
+- The catalog gains the IGC block (`0x1260`, v4) and the engine's description; the CTL's DSPP flush learns the IGC's sub-block bit (2); `dpu_crtc.c` turns the CRTC's `DEGAMMA_LUT` (256 entries, 12 bits used) into the table and the enable (`igc.base + 4`, bit 8); the device tree names the engine's registers as `regdma`. Without the region or the engine nothing changes: no `DEGAMMA_LUT`, the IGC untouched.
+
+The measurement that proved the need is in #161: with the enable written through the register path, the bit does not even stick; the block accepts its table over the LUT bus only.
+
+With the stage available, pippopapera's three tables port one to one: `sources/color/make-igc-profile.py` writes `<curve>-igc.profile` with their IGC as `degamma`, their PCC as `ctm` (now on linear light, as they meant it) and their GC as `lut`. portarelauncher 0.2.2 and later load `<key>-igc.profile` when the CRTC has a `DEGAMMA_LUT`, and `<key>.profile` otherwise, so an image carries both and the controller decides. Their measured result for the three-stage gamma 2.2 profile is a mean ΔE00 of 0.63 on the 36 boundary colors.
+
+Until a device has run it: the engine is written from downstream source, not from documentation, and a wrong descriptor is a display hang. The first test is the kernel alone (nothing changes), then a three-stage file bind-mounted over `/usr/config/color/` with SSH open, the profile switched in Settings, and `journalctl -k | grep -i lutdma`.
 
 ## Licence
 
