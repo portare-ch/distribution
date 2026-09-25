@@ -23,6 +23,7 @@ makeinstall_target() {
   cp ${PKG_DIR}/sources/scripts/ledcontrol ${INSTALL}/usr/bin
   cp ${PKG_DIR}/sources/scripts/analog_sticks_ledcontrol ${INSTALL}/usr/bin
   cp ${PKG_DIR}/sources/scripts/battery_led_status ${INSTALL}/usr/bin
+  cp ${PKG_DIR}/sources/scripts/charging_led ${INSTALL}/usr/bin
   cp ${PKG_DIR}/sources/scripts/turbomode ${INSTALL}/usr/bin
   if [ -d "${PKG_DIR}/sources/devices/${DEVICE}" ]
   then
@@ -40,3 +41,6 @@ makeinstall_target() {
   cp ${PKG_DIR}/sources/config/fancontrol.conf ${INSTALL}/usr/config/fancontrol.conf.sample
 }
 
+post_install() {
+  enable_service chargingled.service
+}
