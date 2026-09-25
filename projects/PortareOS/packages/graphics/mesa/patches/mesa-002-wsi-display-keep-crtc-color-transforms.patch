@@ -1,0 +1,35 @@
+From: PortareOS <hello@portare.org>
+Subject: [PATCH] wsi/display: keep the CRTC's color transforms
+
+The display WSI clears GAMMA_LUT, DEGAMMA_LUT and CTM on the CRTC when it
+first takes the display, so that a transform left behind by another user
+does not colour a Vulkan application. On PortareOS those properties are
+the panel's calibration - a measured correction the launcher sets once
+for everything scanned out - and clearing them undid it for every game
+started through RetroArch's Vulkan driver. Leave them as found.
+
+Signed-off-by: PortareOS <hello@portare.org>
+---
+--- a/src/vulkan/wsi/wsi_common_display.c
++++ b/src/vulkan/wsi/wsi_common_display.c
+@@ -2930,15 +2930,12 @@
+       drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[MODE_ID], blob_id);
+       drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[ACTIVE], 1);
+ 
+-      /* Disable any color transforms that may have been previously set on the
+-       * CRTC by another user.
++      /* PortareOS: the CRTC's color transforms - DEGAMMA_LUT, CTM,
++       * GAMMA_LUT - are the panel's calibration, set once by the launcher
++       * for everything that is ever scanned out. Upstream clears them here
++       * on the grounds that another user may have left them behind; on this
++       * device that other user is the one who meant them. Leave them be.
+        */
+-      if (connector->crtc_property[GAMMA_LUT] != -1)
+-         drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[GAMMA_LUT], 0);
+-      if (connector->crtc_property[DEGAMMA_LUT] != -1)
+-         drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[DEGAMMA_LUT], 0);
+-      if (connector->crtc_property[CTM] != -1)
+-         drmModeAtomicAddProperty(req, crtc_id, connector->crtc_property[CTM], 0);
+ 
+       flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
+    }
