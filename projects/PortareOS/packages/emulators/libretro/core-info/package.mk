@@ -11,9 +11,15 @@ PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="Mirror of libretro's core info files"
 PKG_TOOLCHAIN="manual"
 
-makeinstall_target() {
-  ${TOOLCHAIN}/bin/rename mednafen beetle ${PKG_BUILD}/*.info
+# Only the cores the image ships (virtual/emulators, LIBRETRO_CORES); the
+# other three hundred files described cores that are not there.
+PKG_CORE_INFO="bsnes dolphin fbneo flycast gambatte genesis_plus_gx mgba \
+               neocd nestopia parallel_n64 picodrive ppsspp snes9x \
+               swanstation mednafen_saturn"
 
+makeinstall_target() {
   mkdir -p ${INSTALL}/usr/lib/libretro
-    cp -a ${PKG_BUILD}/*.info ${INSTALL}/usr/lib/libretro/
+  for core in ${PKG_CORE_INFO}; do
+    cp -a ${PKG_BUILD}/${core}_libretro.info ${INSTALL}/usr/lib/libretro/
+  done
 }

@@ -14,7 +14,7 @@ PKG_TOOLCHAIN="cmake"
 PKG_CMAKE_OPTS_TARGET="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 
 if [ "${DISPLAYSERVER}" = "wl" ]; then
-  PKG_DEPENDS_TARGET+=" wayland ${WINDOWMANAGER} xwayland xrandr libXi libX11"
+  PKG_DEPENDS_TARGET+=" wayland ${WINDOWMANAGER} xwayland libXi libX11"
   PKG_CMAKE_OPTS_TARGET+=" -DGLEW_X11=ON"
 fi
 
