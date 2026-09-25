@@ -123,15 +123,17 @@ fi
         fi
 
   #Graphics Backend
+  #
+  #The SDL frontend has one way onto the panel, VK_KHR_display, so the
+  #renderer is Vulkan (14) or software (13) presenting through Vulkan.
+  #OpenGL (12) would need an EGL surface and there is no compositor to
+  #give one, so that choice is taken as Vulkan too. -1 lets the emulator
+  #pick, which on this frontend is Vulkan.
 	if [ "$GRENDERER" = "0" ]
 	then
   		sed -i '/^Renderer =/c\Renderer = -1' /storage/.config/ARMSX2/inis/PCSX2.ini
 	fi
-	if [ "$GRENDERER" = "1" ]
-	then
-  		sed -i '/^Renderer =/c\Renderer = 12' /storage/.config/ARMSX2/inis/PCSX2.ini
-	fi
-	if [ "$GRENDERER" = "2" ]
+	if [ "$GRENDERER" = "1" ] || [ "$GRENDERER" = "2" ]
 	then
   		sed -i '/^Renderer =/c\Renderer = 14' /storage/.config/ARMSX2/inis/PCSX2.ini
 	fi
@@ -243,35 +245,20 @@ fi
 
 #Display path.
 #
-#Under a compositor Qt is a wayland client and the renderer draws into a
-#wayland surface. With KMS there is no compositor, so neither is available:
-#Qt runs offscreen and the renderer takes the panel itself through
-#VK_KHR_display, which is what ARMSX2_VULKAN_DIRECT asks for.
-#
-#Offscreen rather than eglfs or vkkhrdisplay, both of which were tried.
-#eglfs gives an EGL surface and this renderer is Vulkan; vkkhrdisplay gives
-#a Vulkan surface but rejects every window that is not one - "vkkhrdisplay
-#platform plugin only supports QWindow with surfaceType == VulkanSurface" -
-#and the big picture UI is Qt Widgets. Offscreen sidesteps both: Qt still
-#builds its windows and runs its event loop, they are simply never shown.
-#Nothing is lost by that here, because everything is configured from files
-#and the on-screen display is drawn by the GS rather than by Qt.
-#
-#runemu.sh only sets KMSMODE for this emulator when the renderer is Vulkan.
-  if [ "${KMSMODE}" = "1" ]
-  then
-    export QT_QPA_PLATFORM=offscreen
-    export ARMSX2_VULKAN_DIRECT=1
-  else
-    export QT_QPA_PLATFORM=wayland
-  fi
+#armsx2-sdl is upstream's handheld frontend: no Qt, no window. With
+#WAYLAND_DISPLAY unset it takes the panel itself through VK_KHR_display,
+#and the GS draws the on-screen menus (FullscreenUI). runemu.sh always
+#sets KMSMODE for this emulator, so the launcher has dropped DRM master
+#by the time we get here. The game's ini keeps every setting; nothing is
+#configured from a UI.
+  unset WAYLAND_DISPLAY
 
 #Run ARMSX2 emulator
   export SDL_AUDIODRIVER=pipewire
-  set_kill set "-9 armsx2-qt"
+  set_kill set "-9 armsx2-sdl"
 
 # gptokeyb maps nothing here; it runs for its exit combo, which is the only
 # way out of ARMSX2 short of the three-button kill in input_sense.
-  ${GPTOKEYB} "armsx2-qt" -c "/storage/.config/ARMSX2/armsx2.gptk" &
-  ${EMUPERF} /usr/share/armsx2-sa/armsx2-qt -bigpicture -fullscreen "${1}"
+  ${GPTOKEYB} "armsx2-sdl" -c "/storage/.config/ARMSX2/armsx2.gptk" &
+  ${EMUPERF} /usr/share/armsx2-sa/armsx2-sdl "${1}"
   kill -9 "$(pidof gptokeyb)"

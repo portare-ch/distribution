@@ -49,20 +49,8 @@ jobs:
       OWNER_LC: ${{ inputs.OWNER_LC }}
       INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
-  build-aarch64-qt6:
-    needs: build-aarch64
-    uses: ./.github/workflows/build-aarch64-qt6.yml
-    secrets: inherit
-    with:
-      PROJECT: ${{ inputs.PROJECT }}
-      DEVICE: ${{ inputs.DEVICE }}
-      OWNER_LC: ${{ inputs.OWNER_LC }}
-      INCREMENTAL: ${{ inputs.INCREMENTAL }}
-
   build-aarch64-emu-libretro:
-    needs:
-      - build-aarch64
-      - build-aarch64-qt6
+    needs: build-aarch64
     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure')  }}
     uses: ./.github/workflows/build-aarch64-emu-libretro.yml
     secrets: inherit
@@ -73,9 +61,7 @@ jobs:
       INCREMENTAL: ${{ inputs.INCREMENTAL }}
 
   build-aarch64-emu-standalone:
-    needs:
-      - build-aarch64
-      - build-aarch64-qt6
+    needs: build-aarch64
     if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure')  }}
     uses: ./.github/workflows/build-aarch64-emu-standalone.yml
     secrets: inherit
@@ -115,5 +101,4 @@ jobs:
             aarch64-toolchain (${{ inputs.DEVICE }})
             emu-libretro (${{ inputs.DEVICE }})
             emu-standalone (${{ inputs.DEVICE }})
-            qt6 (${{ inputs.DEVICE }})
           failOnError: false    

@@ -6,7 +6,7 @@ PKG_VERSION="177542e673b1f7d2179307c176ac8dd696784bed"
 PKG_LICENSE="MIT"
 PKG_SITE="https://github.com/FEX-Emu/FEX"
 PKG_URL="https://github.com/FEX-Emu/FEX.git"
-PKG_DEPENDS_TARGET="toolchain llvm:host fex-emu:host squashfs-tools zlib squashfuse alsa-lib libxcb wayland libglvnd libdrm libX11 libXrandr xorgproto qt6"
+PKG_DEPENDS_TARGET="toolchain llvm:host fex-emu:host squashfs-tools zlib squashfuse alsa-lib libxcb wayland libglvnd libdrm libX11 libXrandr xorgproto"
 PKG_DEPENDS_HOST="toolchain:host llvm:host openssl:host"
 PKG_LONGDESC="FEX-Emu is a fast x86/x86-64 emulator for AArch64"
 PKG_TOOLCHAIN="manual"
@@ -99,11 +99,11 @@ make_target() {
     -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
     -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
     -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
-    -DBUILD_FEXCONFIG=True
+    # FEXConfig is a Qt desktop dialog; FEX is configured from files here.
+    -DBUILD_FEXCONFIG=False
     "${FEX_CMAKE_OPTS[@]}"
     -DGENERATOR_EXE="${TOOLCHAIN}/usr/bin/thunkgen"
     -DCMAKE_INSTALL_LIBDIR=lib
-    -DQT_HOST_PATH="${TOOLCHAIN}/usr/local/qt6"
     -DTUNE_CPU="${TUNE_CPU}"
   )
   cmake "${tgt_opts[@]}"
