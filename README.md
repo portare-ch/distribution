@@ -33,7 +33,7 @@ for the matching mode when a game starts, and a frame lands on a frame.
 | Panel mode | Console | Frame rate |
 | --- | --- | --- |
 | 119.880 Hz | The 59.94 Hz consoles: Dreamcast, PS2, PSP, GameCube, Xbox; and the default | 59.94 |
-| 119.635 Hz | PlayStation | 59.8173 |
+| 119.652 Hz | PlayStation, Nintendo 64 | 59.8261 |
 | 119.455 Hz | Game Boy, Game Boy Color, Game Boy Advance | 59.7275 |
 | 120.198 Hz | Super Nintendo | 60.0988 |
 

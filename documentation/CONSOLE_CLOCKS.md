@@ -28,7 +28,7 @@ The SNES and the Sega consoles also derive their clocks from the subcarrier, but
 | Game Boy Advance | 16.777216 MHz (2^24) | same | 1232 | 228 | 59.7275 | 59.7275 (mGBA) |
 | SNES | 21.477272 MHz (6 × subcarrier) | same | 1364 (1360 once every other frame) | 262 | 60.0988 | 60.0988 (Snes9x) |
 | Master System, Game Gear, Mega Drive, Mega CD, 32X | 53.693175 MHz (15 × subcarrier) | same | 3420 | 262 | 59.9227 | 59.9227 (Genesis Plus GX); 60 (PicoDrive) |
-| PlayStation | 33.8688 MHz (768 × 44100) | 53.693175 MHz (× 715909/451584) | 3412.5 | 263 (240p), 262.5 (480i) | 59.826, 59.940 | 59.8173 (SwanStation, 3413-clock line) |
+| PlayStation | 33.8688 MHz (768 × 44100) | 53.693175 MHz (× 715909/451584) | 3412.5 | 263 (240p), 262.5 (480i) | 59.826, 59.940 | 59.826 for both (SwanStation with PortareOS's patch; upstream 59.8173) |
 | Nintendo 64 | 14.318182 MHz (4 × subcarrier) | 48.681818 MHz (× 17/5) | 3094 | 263 (240p), 262.5 (480i) | 59.826, 59.940 | 59.826 / 59.94 (ParaLLEl N64 with our patch) |
 | Neo Geo MVS | 24.000 MHz | 6.000 MHz (÷ 4) | 384 pixels | 264 | 59.1856 | 59.1856 (FBNeo) |
 | Neo Geo AES | 24.167829 MHz | 6.041957 MHz (÷ 4) | 384 pixels | 264 | 59.599 | FBNeo uses the MVS rate |
@@ -84,11 +84,13 @@ Genesis Plus GX computes the rate from these constants. PicoDrive, which we use 
 
 The crystal is 33.8688 MHz = 768 × 44100, chosen for the CD's sample rate; it clocks the CPU and the SPU. The GPU clock is a PLL from it: 33868800 × 715909 / 451584 = 53.693175 MHz, again fifteen times the subcarrier. A line is the broadcast line, 3412.5 GPU clocks (the GPU alternates 3412 and 3413). A 240p frame is 263 lines: 53693175 / (3412.5 × 263) = **59.826 Hz**; 480i is 262.5 lines per field: 59.940 Hz. PAL: 53.203425 MHz, 3406 clocks, 314 lines, 49.76 Hz.
 
-SwanStation rounds the line to 3413 clocks. Its 240p rate is therefore 53693175 / (3413 × 263) = **59.8173 Hz**, 0.015 % below the console, and that is what the panel's 119.6346 Hz mode matches. If SwanStation ever alternated 3412 and 3413, the PS1 would run at the same 59.826 as the N64, and could share its mode.
+Upstream SwanStation rounds the line to 3413 clocks, so its rate is 53693175 / (3413 × 263) = **59.8173 Hz**, 0.015 % below the console. PortareOS patches it (`001-ntsc-line-is-3412-5-ticks.patch`) to alternate 3413 and 3412 like the console, and Mednafen, which gives 59.826 Hz and lets the PS1 share the N64's panel mode. SwanStation keeps 263 lines for 480i too (the console has 262.5), so 480i games run at 59.826 instead of 59.940.
 
 Audio: the SPU's rate is the crystal / 768 = 44100 Hz exactly.
 
 - psx-spx, *GPU Timings* — "NTSC video clock = 53.693175 MHz", "263 scanlines per field for NTSC non-interlaced", "3413 video cycles per scanline", "Non-interlaced: 59.826 Hz", "Interlaced: 59.940 Hz": https://psx-spx.consoledev.net/graphicsprocessingunitgpu/#gpu-timings
+- Mednafen (Beetle PSX), `mednafen/psx/gpu.c`: `GPU.LineClockCounter = 3412 + GPU.PhaseChange - 200; … GPU.PhaseChange = !GPU.PhaseChange;`
+- PortareOS, `projects/PortareOS/packages/emulators/libretro/swanstation-lr/patches/001-ntsc-line-is-3412-5-ticks.patch`
 - SwanStation, `src/core/system.h`: `MASTER_CLOCK = 44100 * 0x300; // 33868800Hz`; `src/core/gpu.h`: `NTSC_TICKS_PER_LINE = 3413, … NTSC_TOTAL_LINES = 263, PAL_TICKS_PER_LINE = 3406, … PAL_TOTAL_LINES = 314`; `src/core/gpu.cpp`, `SystemTicksToCRTCTicks`: × 715909 / 451584 (NTSC), × 709379 / 451584 (PAL)
 
 ### Nintendo 64

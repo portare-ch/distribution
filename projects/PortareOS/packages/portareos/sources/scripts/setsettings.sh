@@ -747,17 +747,19 @@ function set_ra_refresh_rate() {
                 RATE="${EXACT}"
             fi
 
-            ### SwanStation runs every NTSC PlayStation game at 59.8173 Hz,
-            ### 480i included. Its rate is the CRTC clock over 3413 ticks x
-            ### 263 lines, and the line count does not change when a game
-            ### switches to interlaced output - measured, too: five minutes
-            ### of Tekken 3's attract mode, a 480i game, reported one rate
-            ### and never another. So one mode is exactly right for all of
-            ### it:
+            ### SwanStation runs every NTSC PlayStation game at 59.8261 Hz,
+            ### 480i included. Its rate is the CRTC clock over 3412.5 ticks
+            ### x 263 lines - the line alternates 3413 and 3412 ticks since
+            ### our 001-ntsc-line-is-3412-5-ticks patch, as on the console;
+            ### upstream rounds it to 3413 and runs at 59.8173. The line
+            ### count does not change when a game switches to interlaced
+            ### output - measured, too: five minutes of Tekken 3's attract
+            ### mode, a 480i game, reported one rate and never another. So
+            ### one mode is exactly right for all of it, the N64's:
             ###
-            ###   119.634590 / 59.8173 = 2.00000   exact
-            ###   119.880120 / 59.8173 = 2.00410   +0.205%, a repeated
-            ###                                    frame every ~8 s
+            ###   119.652237 / 59.8261 = 2.00000   exact
+            ###   119.880120 / 59.8261 = 2.00380   +0.19%, a repeated
+            ###                                    frame every ~9 s
             ###
             ### A per-game display_mode still pins another rate, and the
             ### case above handles it. See #228.
@@ -778,7 +780,7 @@ function set_ra_refresh_rate() {
             ### the display cannot produce.
             local WANT="" WHY=""
             case "${CORE}" in
-                swanstation)     WANT=119.6346; WHY="2 x 59.8173" ;;
+                swanstation)     WANT=119.6522; WHY="2 x 59.8261" ;;
                 gambatte|mgba)   WANT=119.4550; WHY="2 x 59.7275" ;;
                 snes9x|bsnes)    WANT=120.1976; WHY="2 x 60.0988" ;;
                 parallel_n64)    WANT=119.6522; WHY="2 x 59.8261" ;;

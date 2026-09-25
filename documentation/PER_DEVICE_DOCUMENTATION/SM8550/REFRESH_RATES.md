@@ -9,10 +9,9 @@ Every mode uses the same 1302 × 1001 total timings and changes only the pixel c
 | Panel mode | Pixel clock | Used by |
 |---|---|---|
 | 119.880120 Hz | 156240 kHz | default (launcher, everything else) |
-| 119.634590 Hz | 155920 kHz | `swanstation` |
 | 119.455046 Hz | 155686 kHz | `gambatte`, `mgba` |
 | 120.197775 Hz | 156654 kHz | `snes9x`, `bsnes` |
-| 119.652237 Hz | 155943 kHz | `parallel_n64` |
+| 119.652237 Hz | 155943 kHz | `parallel_n64`, `swanstation` |
 
 ## Systems
 
@@ -20,12 +19,14 @@ The rates are the original NTSC hardware's frame rate, or for handhelds the hard
 
 Where an emulator runs at a different rate from the hardware, the table says so. On the N64, the hardware rate follows from the video chip's 48.681812 MHz clock: a 3094-clock line and a 263-line frame in 240p, or 262.5 lines in 480i. ParaLLEl N64 as shipped upstream does not emulate the line length: it derives the frame period from a nominal 60 Hz and the frame height the game sets, so it runs at about 60.02 Hz. PortareOS patches it (`003-vi-frame-period-from-h-sync.patch`) to take the period from the `V_SYNC` and `H_SYNC` registers, which gives the console's 59.826 Hz, and matches a panel mode to it.
 
+The PlayStation's line is 3412.5 GPU clocks, the broadcast line. SwanStation rounds it to 3413 and so runs at 59.8173 Hz; PortareOS patches it (`001-ntsc-line-is-3412-5-ticks.patch`) to alternate 3413 and 3412 like the console, which gives 59.826 Hz, the same as the N64, so the two share a mode. SwanStation keeps 263 lines in 480i as well, where the console has 262.5, so a 480i game runs at 59.826 rather than the console's 59.94: 0.19 % slow, the same compromise as the N64's.
+
 | Systems (default emulator) | Native rate (Hz) | Panel mode (Hz) |
 |---|---|---|
 | gb, gbh, gbc, gbch (Gambatte) | 59.7275 | 119.455 |
 | gba, gbah, gbav (mGBA) | 59.7275 | 119.455 |
 | snes, snesh, sfc, satellaview, sufami, snesmsu1 (Snes9x) | 60.0988 | 120.198 |
-| psx (SwanStation) | 59.8173 | 119.635 |
+| psx (SwanStation) | 59.826 (480i too, see above) | 119.652 |
 | mastersystem, sg-1000, gamegear, ggh (Genesis Plus GX) | 59.9227 | 119.880 |
 | megadrive, megadrive-japan, megadriveh, genesis, genh (Genesis Plus GX) | 59.9227 | 119.880 |
 | segacd, megacd (Genesis Plus GX) | 59.9227 | 119.880 |
