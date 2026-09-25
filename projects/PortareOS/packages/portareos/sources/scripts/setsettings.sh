@@ -781,6 +781,7 @@ function set_ra_refresh_rate() {
                 swanstation)     WANT=119.6346; WHY="2 x 59.8173" ;;
                 gambatte|mgba)   WANT=119.4550; WHY="2 x 59.7275" ;;
                 snes9x|bsnes)    WANT=120.1976; WHY="2 x 60.0988" ;;
+                parallel_n64)    WANT=119.6522; WHY="2 x 59.8261" ;;
             esac
             if [ -n "${WANT}" ]
             then

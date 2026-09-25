@@ -10,12 +10,13 @@ Every mode uses the same 1302 × 1001 total timings and changes only the pixel c
 | 119.634590 Hz | 155920 kHz | `swanstation` |
 | 119.455046 Hz | 155686 kHz | `gambatte`, `mgba` |
 | 120.197775 Hz | 156654 kHz | `snes9x`, `bsnes` |
+| 119.652237 Hz | 155943 kHz | `parallel_n64` |
 
 ## Systems
 
 The rates are the original NTSC hardware's frame rate, or for handhelds the hardware's own rate.
 
-Where an emulator runs at a different rate from the hardware, the table says so. On the N64, the hardware rate follows from the video chip's 48.681812 MHz clock: a 3094-clock line and a 263-line frame in 240p, or 262.5 lines in 480i. ParaLLEl N64 does not emulate the line length. It derives the frame period from a nominal 60 Hz and the frame height the game sets, so it runs at about 60.02 Hz and reports that rate to RetroArch. Versions before August 2026 (upstream c32f20a7) reported a flat 60.13.
+Where an emulator runs at a different rate from the hardware, the table says so. On the N64, the hardware rate follows from the video chip's 48.681812 MHz clock: a 3094-clock line and a 263-line frame in 240p, or 262.5 lines in 480i. ParaLLEl N64 as shipped upstream does not emulate the line length: it derives the frame period from a nominal 60 Hz and the frame height the game sets, so it runs at about 60.02 Hz. PortareOS patches it (`003-vi-frame-period-from-h-sync.patch`) to take the period from the `V_SYNC` and `H_SYNC` registers, which gives the console's 59.826 Hz, and matches a panel mode to it.
 
 | Systems (default emulator) | Native rate (Hz) | Panel mode (Hz) |
 |---|---|---|
@@ -27,7 +28,7 @@ Where an emulator runs at a different rate from the hardware, the table says so.
 | megadrive, megadrive-japan, megadriveh, genesis, genh (Genesis Plus GX) | 59.9227 | 119.880 |
 | segacd, megacd (Genesis Plus GX) | 59.9227 | 119.880 |
 | sega32x (PicoDrive) | 59.9227 (the emulator reports 60) | 119.880 |
-| n64, n64dd (ParaLLEl N64) | 59.826 in 240p, 59.94 in 480i (the emulator runs at about 60.02) | 119.880 |
+| n64, n64dd (ParaLLEl N64) | 59.826 in 240p, 59.94 in 480i | 119.652 |
 | neogeo (FBNeo), neocd (NeoCD) | 59.1856 | 119.880 |
 | arcade (FBNeo) | depends on the game's board (about 54–61) | 119.880 |
 | dreamcast, naomi, atomiswave (Flycast) | 59.94 | 119.880 (exactly 2×) |
