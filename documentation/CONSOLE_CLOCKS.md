@@ -30,8 +30,8 @@ The SNES and the Sega consoles also derive their clocks from the subcarrier, but
 | Master System, Game Gear, Mega Drive, Mega CD, 32X | 53.693175 MHz (15 × subcarrier) | same | 3420 | 262 | 59.9227 | 59.9227 (Genesis Plus GX); 60 (PicoDrive) |
 | PlayStation | 33.8688 MHz (768 × 44100) | 53.693175 MHz (× 715909/451584) | 3412.5 | 263 (240p), 262.5 (480i) | 59.826, 59.940 | 59.826 for both (SwanStation with PortareOS's patch; upstream 59.8173) |
 | Nintendo 64 | 14.318182 MHz (4 × subcarrier) | 48.681818 MHz (× 17/5) | 3094 | 263 (240p), 262.5 (480i) | 59.826, 59.940 | 59.826 / 59.94 (ParaLLEl N64 with our patch) |
-| Neo Geo MVS | 24.000 MHz | 6.000 MHz (÷ 4) | 384 pixels | 264 | 59.1856 | 59.1856 (FBNeo) |
-| Neo Geo AES | 24.167829 MHz | 6.041957 MHz (÷ 4) | 384 pixels | 264 | 59.599 | FBNeo uses the MVS rate |
+| Neo Geo MVS | 24.000 MHz | 6.000 MHz (÷ 4) | 384 pixels | 264 | 59.1856 | 59.18 (FBNeo keeps hundredths) |
+| Neo Geo AES, Neo Geo CD | 24.167829 MHz | 6.041957 MHz (÷ 4) | 384 pixels | 264 | 59.599 | 59.5999 (NeoCD); FBNeo runs cartridges at the MVS rate |
 | Dreamcast, NAOMI, Atomiswave | 27 MHz video clock | 13.5 MHz (÷ 2), 27 MHz for VGA | 858 | 263 (240p), 525 half-lines (480i) | 59.826, 59.940 | 59.827 / 59.9453 (Flycast) |
 | GameCube, Wii | 27 MHz video clock (54 MHz progressive) | same | 858 (2 × 429) | 525 half-lines per field | 59.940 | 59.94 (Dolphin) |
 | PlayStation 2 | GS CRTC on the standard line | – | – | 525 (480i), 263 (240p) | 59.940, 59.82 | 59.94 always (PCSX2/ARMSX2 vsync timer) |
@@ -116,12 +116,13 @@ Audio: the AI's sample rate is VCLK / (`AI_DACRATE` + 1), so it is whatever divi
 
 ### Neo Geo
 
-The MVS (arcade) board has a 24.000 MHz crystal. The pixel clock is a quarter of it, 6.000 MHz; a line is 384 pixels, 15625 Hz, and a frame 264 lines: 15625 / 264 = **59.1856 Hz**. The AES (home console) has a 24.167829 MHz crystal instead, which puts its line on the broadcast 15734 Hz and its frame at 59.599 Hz. FBNeo runs cartridge games with the MVS timing and Neo Geo CD games at 6041957 / (264 × 384) = 59.599 Hz.
+The MVS (arcade) board has a 24.000 MHz crystal. The pixel clock is a quarter of it, 6.000 MHz; a line is 384 pixels, 15625 Hz, and a frame 264 lines: 15625 / 264 = **59.1856 Hz**. The AES (home console) has a 24.167829 MHz crystal instead, which puts its line on the broadcast 15734 Hz and its frame at 59.599 Hz. FBNeo runs cartridge games with the MVS timing, but keeps its frame rate as an integer number of hundredths of a hertz, `nBurnFPS = (INT32)(100.0 * dFrameRate)`, so it reports and paces at **59.18 Hz**, not 59.1856; the panel mode matches 59.18. NeoCD, which runs the Neo Geo CD, uses the CD's crystal, rounded to 24.168 MHz and a 6.042 MHz pixel clock: 6042000 / (384 × 264) = **59.5999 Hz**.
 
 Audio: the YM2610 is clocked at 8 MHz and outputs a sample every 144 clocks: 55555.6 Hz.
 
 - NeoGeo Development Wiki, *Framerate* — MVS "24.000000MHz main clock", "6.000000MHz" pixel clock, 384 pixels, 264 lines, "15.625kHz", "59.1856 frames/second"; AES "24.167829MHz", "59.599": https://wiki.neogeodev.org/index.php?title=Framerate
-- FBNeo, `src/burn/drv/neogeo/neo_run.cpp`: `#define NEO_HREFRESH (15625.0)`, `#define NEO_VREFRESH (NEO_HREFRESH / 264.0)`, `#define NEO_CDVREFRESH (6041957.0 / (264 * 384))`; `src/burn/drv/neogeo/d_neogeo.cpp`: "vsync: ~59.18 Hz (264 scanlines make up a single frame)"
+- FBNeo, `src/burn/drv/neogeo/neo_run.cpp`: `#define NEO_HREFRESH (15625.0)`, `#define NEO_VREFRESH (NEO_HREFRESH / 264.0)`, `#define NEO_CDVREFRESH (6041957.0 / (264 * 384))`; `src/burn/burn.cpp`, `BurnSetRefreshRate`: `nBurnFPS = (INT32)(100.0 * dFrameRate)`; `src/burner/libretro/libretro.cpp`: `timing = { nBurnFPS / 100.0, … }`
+- NeoCD, `src/timer.h`: `MASTER_CLOCK = 24168000.0`, `PIXEL_CLOCK = 6042000.0`, `SCREEN_WIDTH = 384`, `SCREEN_HEIGHT = 264`, `FRAME_RATE = PIXEL_CLOCK / (SCREEN_WIDTH * SCREEN_HEIGHT)`; `src/burn/drv/neogeo/d_neogeo.cpp`: "vsync: ~59.18 Hz (264 scanlines make up a single frame)"
 
 ### Dreamcast, NAOMI, Atomiswave
 

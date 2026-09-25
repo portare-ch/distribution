@@ -12,6 +12,9 @@ Every mode uses the same 1302 × 1001 total timings and changes only the pixel c
 | 119.455046 Hz | 155686 kHz | `gambatte`, `mgba` |
 | 120.197775 Hz | 156654 kHz | `snes9x`, `bsnes` |
 | 119.652237 Hz | 155943 kHz | `parallel_n64`, `swanstation` |
+| 119.845592 Hz | 156195 kHz | `genesis_plus_gx` |
+| 118.360134 Hz | 154259 kHz | `fbneo`, for `neogeo` only |
+| 119.199541 Hz | 155353 kHz | `neocd` |
 
 ## Systems
 
@@ -27,12 +30,13 @@ The PlayStation's line is 3412.5 GPU clocks, the broadcast line. SwanStation rou
 | gba, gbah, gbav (mGBA) | 59.7275 | 119.455 |
 | snes, snesh, sfc, satellaview, sufami, snesmsu1 (Snes9x) | 60.0988 | 120.198 |
 | psx (SwanStation) | 59.826 (480i too, see above) | 119.652 |
-| mastersystem, sg-1000, gamegear, ggh (Genesis Plus GX) | 59.9227 | 119.880 |
-| megadrive, megadrive-japan, megadriveh, genesis, genh (Genesis Plus GX) | 59.9227 | 119.880 |
-| segacd, megacd (Genesis Plus GX) | 59.9227 | 119.880 |
+| mastersystem, sg-1000, gamegear, ggh (Genesis Plus GX) | 59.9227 | 119.846 |
+| megadrive, megadrive-japan, megadriveh, genesis, genh (Genesis Plus GX) | 59.9227 | 119.846 |
+| segacd, megacd (Genesis Plus GX) | 59.9227 | 119.846 |
 | sega32x (PicoDrive) | 59.9227 (the emulator reports 60) | 119.880 |
 | n64, n64dd (ParaLLEl N64) | 59.826 in 240p, 59.94 in 480i | 119.652 |
-| neogeo (FBNeo), neocd (NeoCD) | 59.1856 | 119.880 |
+| neogeo (FBNeo) | 59.1856 (the emulator keeps hundredths: 59.18) | 118.360 |
+| neocd (NeoCD) | 59.5999 (the CD's 24.168 MHz crystal) | 119.200 |
 | arcade (FBNeo) | depends on the game's board (about 54–61) | 119.880 |
 | dreamcast, naomi, atomiswave (Flycast) | 59.94 | 119.880 (exactly 2×) |
 | gamecube, triforce, wii, wiiware (Dolphin) | 59.94 | 119.880 (exactly 2×) |
@@ -63,7 +67,7 @@ The first rate column is the console's own: the rate its sound hardware produces
 | segacd, megacd (Genesis Plus GX) | as the Mega Drive, plus 32,552 (RF5C164 PCM) and 44,100 (CD audio) | 44,100 | 44,100 |
 | sega32x (PicoDrive) | as the Mega Drive, plus the 32X's PWM at a rate the game sets | 44,100 (`native` would give 53,267) | 44,100 |
 | n64, n64dd (ParaLLEl N64) | set by the game (commonly 22,050 to 44,100) | the game's rate, exactly, e.g. 22,037.94; 32,040 until the game sets one | 48,000 |
-| neogeo (FBNeo) | 55,555 (YM2610) | about 48,000 (47,995 at 59.1856 fps) | 48,000 |
+| neogeo (FBNeo) | 55,555 (YM2610) | about 48,000 (47,990 at 59.18 fps) | 48,000 |
 | neocd (NeoCD) | 55,555 (YM2610), plus 44,100 (CD audio) | 44,100 | 44,100 |
 | arcade (FBNeo) | depends on the board | about 48,000, depending on the game's frame rate | 48,000 |
 | dreamcast, naomi, atomiswave (Flycast) | 44,100 (AICA) | 44,100 | 44,100 |
@@ -87,4 +91,4 @@ In short:
 3. Add the emulator and the rate `2 × f` to `set_ra_refresh_rate` in `setsettings.sh`. RetroArch accepts a mode within 1 Hz of the requested rate, and `setsettings.sh` only asks for a mode that the panel lists within 0.002 Hz.
 4. Test the mode on the device: `modetest -c` lists it, and the picture stays stable while a game runs.
 
-Open work, including candidate modes for Neo Geo (118.371 Hz) and Sega 8/16-bit (119.846 Hz), is tracked in #284.
+Open work is tracked in #284.

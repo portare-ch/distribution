@@ -774,6 +774,19 @@ function set_ra_refresh_rate() {
             ###   Super Nintendo (NTSC)     60.0988 = 21477272.7 / 357366
             ###                             at 119.88 a frame dropped
             ###                             about every 3.2 s; 120.198 exact
+            ###   Nintendo 64 (NTSC)        59.8261 = 48681812 / 813722
+            ###                             at 119.88 a frame repeated
+            ###                             about every 4.3 s; 119.652 exact
+            ###   Sega, SMS to Mega CD      59.9227 = 53693175 / 896040
+            ###                             at 119.88 a frame repeated
+            ###                             about every 28 s; 119.846 exact
+            ###   Neo Geo (FBNeo)           59.18, the board's 15625 / 264 =
+            ###                             59.1856 kept in hundredths
+            ###                             at 119.88 a frame repeated
+            ###                             about every 0.7 s; 118.360 exact
+            ###   Neo Geo CD (NeoCD)        59.5999 = 6042000 / 101376
+            ###                             at 119.88 a frame repeated
+            ###                             about every 1.5 s; 119.200 exact
             ###
             ### Asked for by rate rather than by index, so this does nothing
             ### at all on a panel without the mode rather than naming a rate
@@ -784,6 +797,16 @@ function set_ra_refresh_rate() {
                 gambatte|mgba)   WANT=119.4550; WHY="2 x 59.7275" ;;
                 snes9x|bsnes)    WANT=120.1976; WHY="2 x 60.0988" ;;
                 parallel_n64)    WANT=119.6522; WHY="2 x 59.8261" ;;
+                genesis_plus_gx) WANT=119.8455; WHY="2 x 59.9227" ;;
+                neocd)           WANT=119.1998; WHY="2 x 59.5999" ;;
+                fbneo)
+                    ### Only the Neo Geo: arcade boards run at anything from
+                    ### 54 to 61 Hz, and no one mode fits them.
+                    if [ "${PLATFORM}" = "neogeo" ]
+                    then
+                        WANT=118.3600; WHY="2 x 59.18, FBNeo's Neo Geo rate"
+                    fi
+                ;;
             esac
             if [ -n "${WANT}" ]
             then
