@@ -84,18 +84,6 @@
         <image>./images/pcsx2.svg</image>
     </game>
     <game>
-        <path>./Start PPSSPP.sh</path>
-        <name>Start PPSSPP</name>
-        <desc>Opens PPSSPP's own settings, for the PSP.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
-        <players>1</players>
-        <image>./images/ppsspp.svg</image>
-    </game>
-    <game>
         <path>./Start 64bit Retroarch.sh</path>
         <name>Start RetroArch (64-bit)</name>
         <desc>Opens RetroArch's own menu, for settings that apply to every core.</desc>
