@@ -1,127 +1,115 @@
 # Roadmap
 
 Intent, not promise. Ordered roughly by how much difference each would make.
-
-**Most of this has not been tested on hardware.** The tree builds and the
-changes are internally consistent; whether the Nova behaves with them is
-largely unverified. The audio work is the exception, and it only got confirmed
-by ear. Several items are blocked on measurement rather than code, and there is
-no test rig yet: a 240 fps camera and a way to trigger a known input.
+Last revised 26 September 2026, at nightly 149.
 
 ## The goal
 
 A straight replacement for the stock Android install. Write the card, copy the
 games across, and every emulator is already set up for this handheld. Not
 generic defaults, but per-system settings picked for the Nova. Latency first,
-because that is what Android on this device is worst at, then performance and
-visuals wherever they can be had without being paid for in input lag.
+because that is what Android on this device is worst at, then correctness of
+rates and geometry, then performance and visuals wherever they can be had
+without being paid for in input lag.
+
+## Where it stands
+
+What the earlier roadmap listed as planned has largely landed. sway and
+EmulationStation are gone; every program takes the panel through KMS and
+[portarelauncher](https://github.com/portare-ch/portarelauncher) is the
+front-end. The panel runs one mode per console family and RetroArch times each
+frame to its vblank. The audio link follows the stream at 32, 44.1 or 48 kHz
+and RetroArch picks the rate from the core's, per game on the N64. The
+pulse-free audio stack, the color profile, the incremental build and the
+package purge (about 250 MB) are in. Details are in the README and in
+`documentation/`.
+
+Most of it was tested on the device by the person who wrote it, some of it
+only by ear, and the last day's changes not at all yet (see BUGS.md). There
+is still no test rig: a 240 fps camera and a way to trigger a known input.
 
 ## Planned
 
-### Suspend that actually suspends
+### Verify the last day on hardware
 
-Deep suspend is enabled, but the battery still goes down overnight and waking
-the device takes longer than it should. Closing the lid on this thing should
-cost nothing and coming back should be instant.
+Four changes went into `next` on 26 September without a device run: the
+charger current limit and the throttle that drives it (#354, #355),
+RetroArch's automatic output rate (#356), and strace 7.2 (#357). Each has its
+check written down in BUGS.md. Doing them is the first job, before anything
+is built on top.
 
-Nothing is measured yet, so the first job is finding out where the power goes:
-what is still clocked, which wakeup sources are firing, and what
-`/sys/kernel/debug/suspend_stats` and the s2idle residency counters say about
-whether the SoC is reaching its deepest state at all. Resume time then needs
-splitting between the kernel bringing devices back and userspace, where the
-compositor, the gamepad MCU handshake (`1012`) and the panel are all candidates.
+### Suspend that costs nothing
 
-### Every emulator configured on arrival
+Tracked in [#62](https://github.com/portare-ch/portareos/issues/62). The
+device still loses charge overnight. Three hypotheses were tested and were
+wrong; DDR never reaches its 200 MHz floor and the reason is not known. The
+next step has not changed since the last revision of this file: measure
+`current_now` in suspend instead of proxies, then find out which of the CX
+holders (the gamepad's UART, PCIe for Wi-Fi, the display controller) keeps the
+SoC up. Resume is at about 10 s to Wi-Fi association and the split is known;
+the scan is the target.
 
-Per-system settings tuned for this panel and this gamepad, shipped as
-defaults rather than left to the user. The display geometry work below is the
-start of this; the rest is a long tail of per-emulator configuration.
+### Black frame insertion
 
-### Replace sway
+A 120 Hz panel showing 60 Hz content can spend the second refresh on black,
+for CRT-like motion clarity. `video_black_frame_insertion` is 0 today. Wants
+a panel measurement first: brightness loss, and whether the mode switch and
+the timed presents keep their cadence with it on.
 
-sway is a tiling compositor built for desktops with a keyboard and a pointer.
-On a 4:3 handheld driven by a d-pad and four face buttons it gets in the way:
-configuration dialogs in standalone emulators such as ARMSX2 open at sizes
-this panel cannot show, with no comfortable way to scroll, reach or dismiss
-them. The device needs something that draws one fullscreen window at a fixed
-resolution. It may not want a compositor at all, which is where this meets the
-latency question below.
+### The SNES core
 
-### Button glyphs that match the buttons
+Snes9x ships; bsnes is built and unused. bsnes resamples to 48 kHz internally,
+so it cannot use the 32 kHz link, and it is slower. The question is accuracy
+on the games people play here, and it needs a side-by-side on the device.
 
-The Nova's face buttons are physically swappable, so the glyphs drawn on
-screen and the buttons under a thumb can disagree about both symbol and
-position. Wanted: a configurator recording which set is fitted, covering glyph
-style (PlayStation, GameCube, Xbox, Nintendo) and layout, applied system-wide.
+### The last 130 MB
 
-The work is in `portare-ch/emulationstation-sdl3`, not in a driver. ES resolves
-help glyphs through a flat table in
-`es-core/src/components/HelpComponent.cpp` mapping names to a single set of
-SVGs under `resources/help/`. There is no style switch today. RetroArch draws
-its own glyphs and will need separate work.
+From `documentation/PACKAGE_INVENTORY.md`: slang-shaders trimmed to the three
+families in use (~60 MB), Python replaced under the Bluetooth pairing agent
+(34 MB), GStreamer (8 MB), gconv and locales (~25 MB). Tracked in
+[#333](https://github.com/portare-ch/portareos/issues/333).
 
-### Performance
+### Panel modes still open
 
-GPU frequency and operating points, pinning emulator threads to the Cortex-X3
-rather than letting the scheduler move them onto the little cores mid-frame,
-and governor tuning.
+[#284](https://github.com/portare-ch/portareos/issues/284) and
+`documentation/PortareOS_Modelines.md`: the 32X, whose core reports a flat
+60 Hz; Dreamcast games in 240p at 59.827 Hz; and arcade boards, which run at
+whatever their board did. Each needs either a core fix or a mode of its own.
 
-`scx_lavd` covers part of this already, below.
+### Move off the 7.2.5 kernel pin
 
-## In progress
+[#194](https://github.com/portare-ch/portareos/issues/194): 7.2.6 breaks
+the WCN7850's firmware load and Wi-Fi never comes up. The regression is
+upstream, between 7.2.5 and 7.2.6, and needs bisecting before the kernel can
+move.
 
-### More 4:3
+### Measure, then tune
 
-The render geometry is corrected and integer scaling is on where the maths
-works out. Bezels and overlays are still drawn for 16:9, shader presets still
-assume a widescreen viewport, and there are more defaults carrying 1080p
-assumptions than the ones found so far.
+The performance and latency work so far was reasoned, not measured: the 1000
+Hz tick, teo, schedutil with the energy model, the two-image swapchain, timed
+presents. A camera at 240 fps pointed at the panel and a button wired to a
+GPIO would turn the remaining decisions (frame delay, BFI, thread pinning to
+the Cortex-X3, the `irqaffinity=0-2` and `096-cpuidle` inheritances) into
+numbers. [#13](https://github.com/portare-ch/portareos/issues/13).
 
-Lives in `projects/PortareOS/packages/hardware/quirks/devices/Retroid Pocket Nova/`.
+### The launcher
 
-### sched_ext and scx_lavd
+Its own repository and its own issues. Open here:
+[#258](https://github.com/portare-ch/portareos/issues/258) page and letter
+jumps, [#259](https://github.com/portare-ch/portareos/issues/259) remember
+the selected game, [#260](https://github.com/portare-ch/portareos/issues/260)
+say when a game exits with an error,
+[#226](https://github.com/portare-ch/portareos/issues/226) M1 and M2 through
+InputPlumber.
 
-`scx_lavd`, the latency-aware big.LITTLE scheduler, is packaged and the kernel
-config chain is enabled: `SCHED_CLASS_EXT`, BTF, and the tracing core it needs.
-Built but never run.
+### A game session that is not root
 
-The service switches the governor to schedutil on start and restores
-performance on stop, so a device not running it behaves as before. That makes
-it a clean A/B once there is a way to measure.
-
-### Audio stack
-
-Landed: pulse is gone from the tree entirely and everything speaks PipeWire,
-natively where the upstream project has a backend and through SDL or the alsa
-plugin where it does not. The latency floor went from 960 frames to 256, 20ms
-to 5.3ms, without crackling on hardware. EmulationStation's volume control was
-rewritten on libpipewire. The README has the full picture.
-
-Remaining: none of it is measured. The floor was walked down until it stopped
-sounding worse, which is not the same as knowing what the pipeline costs.
-
-### A build that does not waste hours
-
-Landed: the Docker image is rebuilt only when its Dockerfile changes, which
-also stops the host compiler drifting under the compiler cache; an opt-in
-incremental mode that skips packages whose recipes have not changed; builds
-serialised, because two at once overwrote each other's caches; and
-`check-package-deps.py` catching a dependency naming a package that is not in
-the tree, in seconds rather than part-way through a build.
-
-Remaining: stage-output caching, and a `kernel_only` dispatch input.
-
-## Open questions
-
-### Input latency without Wayland
-
-The emulator frame queue is already at zero. The larger question is whether
-the compositor can be taken out of the path entirely and emulators handed the
-display directly through KMS/DRM. Best case that removes a whole frame.
-
-Overlaps with replacing sway: one answer may make the other unnecessary.
+[#204](https://github.com/portare-ch/portareos/issues/204). Everything runs
+as root today, as it did upstream. A dedicated user for the emulators is the
+right shape; what it costs is every path that assumes `/storage` is writable
+by whoever asks.
 
 ## Not planned
 
-Support for any device other than the Retroid Pocket Nova. Everything else was
-removed from the tree deliberately; see the README.
+Support for any device other than the Retroid Pocket Nova. PAL modes. A
+compositor. More than one emulator per system. See the README's rules.

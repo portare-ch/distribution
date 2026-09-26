@@ -10,6 +10,36 @@ Add to it when you leave something behind. When something is fixed, move it to
 Resolved at the bottom rather than deleting it: what was wrong and why is worth
 keeping, especially where the first few explanations were wrong.
 
+## Landed on 26 September, not yet run on the device
+
+Each has its check; do them before building on top.
+
+* **Charger current limit, kernel patch `0510` (#354).**
+  `/sys/class/power_supply/battery/constant_charge_current_max` should read
+  the firmware's ceiling in µA, and while charging `echo 2000000 >
+  .../constant_charge_current` should bring `current_now` to about 2 A. An
+  error on the write means the firmware rejects the property and charging is
+  unaffected. The protocol was read from Qualcomm's downstream
+  `qti_battery_charger.c`, not from a device.
+* **`charge-throttle` (#355)**, the service that steps the current at 40, 42
+  and 44 °C of battery temperature. `journalctl -u charge-throttle -f` while
+  charging and playing: a line such as `battery 402: charge current 3000000
+  uA` when the battery crosses 40 °C, and `current_now` following it. `no
+  charge current limit on this kernel` means the patch above is not working.
+* **RetroArch's automatic output rate (#356)**, `audio_out_rate = "0"`. The
+  log carries `[Audio] Output rate picked for the core's … Hz: … Hz` at
+  every audio init. On an N64 game the second such line, after the game
+  programs its DAC, should name 32000 or 44100, and `hw_params` should show
+  the same rate. A regression here would sound like every game at once, so
+  a session across systems is the test.
+* **strace 7.2 (#357).** The SHA-256 in the recipe came from the GitHub
+  release asset because strace.io was unreachable from the sandbox. A hash
+  mismatch at unpack is that, and the fix is the checksum of the tarball
+  strace.io serves.
+* **Which N64 games run at 32 kHz.** Super Mario 64 and the two Zeldas are
+  believed to; RetroArch's statistics overlay, or the `Sink rate` log line,
+  says. Nothing depends on the list any more, it is only worth knowing.
+
 ## Unexplained
 
 ### Suspend power draw
@@ -65,31 +95,35 @@ power awake as well as asleep if the ath12k link never reaches L1SS.
 
 `scripts/unpack` runs `patch -p1`, which takes GNU patch's default fuzz factor
 of 2. A hunk can apply with two lines of context discarded and the build says
-nothing. Verified by unpacking the real trees and applying the real patch sets.
+nothing. Re-measured on 26 September against a clean 7.2.5 tree, applying the
+97 kernel patches in the build's order: **20 apply with fuzz, none fail.**
 
-**Kernel, 17 of 83** need reduced context, identically on 7.2.2 and 7.2.4, so
-the version bump did not cause it:
+`0002` input-polldev, `0005` btrtl RTL8733BU, `0033` HTR3212 leds, `0054`
+goodix, `0055` `0056` `0057`x2 `0104` `0105` panels, `0058` Odin2 Mini
+backlight, `0059` hynitron, `0121` rpmhpd gmu rails, `0210` sdhci-msm,
+`0501` wifi/bt mac, `0504` compat input syscalls, `1003` rsinput ff, `1007`
+ufs hibern8, `1048` PCI suspend opp, and the qce runtime-pm patch.
 
-`0002` input-polldev, `0005` btrtl RTL8733BU, `0033` HTR3212 leds,
-`0055` `0056` `0057`x2 `0104` `0105` panels, `0058` Odin2 Mini backlight,
-`0059` hynitron, `0121` rpmhpd gmu rails, `0210` sdhci-msm,
-`0501` wifi/bt mac, `0504` compat input syscalls, `1003` rsinput ff, and the
-qce runtime-pm patch.
+Most are for hardware this fork does not build and could go. Ours among them:
+`0105` the Nova panel, `0210` microSD SDR104, `1003` gamepad force feedback,
+`1007`, `1048` and `0501`.
 
-Most are for hardware this fork does not build. Three are ours: `0105` is the
-Nova panel, `0210` is the microSD SDR104 work, `1003` is gamepad force
-feedback.
+`1051` is not in the list: GNU `patch` takes it cleanly. `git apply` reports
+`corrupt patch at line 32` because its final context line is bare rather than
+a single space; the build does not use `git apply`.
 
-**`1051`** makes `git apply` report `corrupt patch at line 32` on both
-kernels. It is not corrupt in any way that matters: its final context line is
-bare rather than a single space, which `git apply` refuses and GNU `patch`
-accepts. Confirmed by padding that line, after which the 124.8 MHz GPU
-operating point lands at `sm8550.dtsi:2644`. The real build has it.
+A trap for whoever measures this next: `patch -s` silences the "succeeded
+with fuzz" lines along with everything else, and a run with it reports zero.
+The first count on 26 September was taken that way and was wrong.
 
-Making the build reject fuzz outright (`patch -F0`) would need all of these
+Making the build reject fuzz outright (`patch -F0`) would need all twenty
 regenerated first.
 
 ## Dolphin
+
+Both findings below were made on the standalone Dolphin. The image now runs
+Dolphin as its libretro core inside RetroArch, and neither has been re-tested
+there. They stay until someone does.
 
 ### Soul Calibur II freezes
 
@@ -135,6 +169,13 @@ affect only that one resolution. Left alone because picking a rounding is a
 design call, not a fix.
 
 ## Flycast
+
+Found on the standalone Flycast, with its own audio backend, `emu.cfg` and
+`start_flycast.sh`. The image now runs Flycast as its libretro core, where
+RetroArch owns audio, vsync and pacing, so most of the reasoning below is
+about a program that is no longer shipped. Whether Tony Hawk still stutters
+under the core is the one thing worth checking; if it does not, this moves to
+Resolved as "gone with the standalone".
 
 ### Tony Hawk's Pro Skater stutters
 
@@ -220,44 +261,13 @@ writes 0.
 
 ## Audio
 
-### 44.1 kHz on the speakers: five gates, the last two found late
-
-The Dreamcast's AICA, the PS1 SPU and the PSP are 44.1 kHz with no 48 kHz
-mode. Five things pinned the speaker path (`PRIMARY_MI2S_RX` into two
-`awinic,aw88166`) to 48 kHz:
-
-| gate | where | fix |
-|---|---|---|
-| backend DAI rate masks | `q6dsp-lpass-ports.c` | `1052` |
-| backend hw_params fixup | `sc8280xp.c` | `1053` |
-| MI2S bit clock fixed by the device tree | `sc8280xp.c` | `1054` |
-| frontend PCM caps `rate_min = rate_max = 48000` | `AYN-Odin2-tplg.bin` | `extra-firmware/sources/tplg-allow-44100.py` |
-| bit clock rate set but not re-voted | `sc8280xp.c` | `1054`, second version |
-
-The fourth is why `1052`-`1054` changed nothing on their own: the topology
-caps the frontend before any kernel mask is consulted, so `aplay -r 44100`
-was refined to 48000 and PipeWire's allowed rates never mattered. Neither the
-amps nor the DSP were ever the limit.
-
-The fifth was measured on hardware with the topology widened by hand. A q6dsp
-clock only reaches the DSP when it is prepared, and startup prepares it before
-`1054` sets the rate, so each stream started on the previous stream's bit
-clock and `APM_CMD_GRAPH_START` failed on every rate change. Opening the same
-rate twice ran cleanly the second time, at 44100 (bit clock 1411200) as at
-48000, which is what gave it away. It also made one failed 44.1 stream take
-48 kHz down with it until the next rate change, which looked like a wedged DSP.
-
-**Not yet verified end to end on a build.** Also open: the headphone path
-(`RX_CODEC_DMA_RX_0`) is untested at 44.1, and PipeWire was seen holding the
-speaker sink open with no streams, which would stop it switching rates.
-
-
 ### hdmi_sense sink match is unverified
 
 The external display is DisplayPort over USB-C alt mode, so the connector is
-`DP-1`. The script now scans DP connectors and matches sinks on `hdmi`,
+`DP-1`. The script scans DP connectors and matches sinks on `hdmi`,
 `displayport` and `dp`, on the assumption that the ALSA device behind a DP
-output is still named for HDMI on this SoC. **Nobody has docked the device and
+output is still named for HDMI on this SoC. Its header comment still points
+at `111-sway-init`, which no longer exists. **Nobody has docked the device and
 run `wpctl status` to check.** If the sink matches none of those, the regex
 needs another alternative.
 
@@ -279,16 +289,18 @@ needs another alternative.
 
 ### /usr/bin/external-display is not in the tree
 
-`power-handler` calls it and degrades to a sway fallback. The helper is
-referenced in comments as the thing that blanks internal panels only, and it
-has never existed here. Either write it or finish removing the indirection.
+`power-handler` calls it when it exists and otherwise answers "no external
+display" and blanks through the front-end. The helper is referenced in
+comments as the thing that blanks internal panels only, and it has never
+existed here. Either write it or finish removing the indirection.
 
 ### The DPMS toggle is gone
 
 `system.suspend.dpms` chose between a real DPMS off and dropping the backlight.
 Its only reader was `portareos-fake-suspend`, removed in `a61c3f72a4`, and the
-setting went with it. The blank path now always does a real DPMS off through
-sway, which is the better default, but the choice no longer exists.
+setting went with it. The blank path now always does a real DPMS off, through
+the front-end since sway went, which is the better default, but the choice no
+longer exists.
 
 ### The power LED does not exist
 
@@ -301,26 +313,6 @@ and that code stays.
 Worth knowing: `power-handler` lights the LED at press time specifically so the
 press does not feel dead while WiFi tears down. On this device that comfort
 feature does nothing.
-
-## EmulationStation
-
-### Unknown element of type "notification"
-
-`es_log.txt` carries repeated `Unknown element of type "notification"!`
-warnings from theme parsing. Cause unknown, and no symptom is attached to them.
-
-### The frontend has no damage tracking
-
-`main.cpp` calls `window.render()` and `Renderer::swapBuffers()` every loop
-iteration regardless of whether anything changed. The fps cap and the freeze on
-blank work around it; neither fixes it. Damage tracking is the real answer and
-is a large piece of work.
-
-### isAvailable() is gone
-
-Removed in `emulationstation-sdl3#12` because its only caller hid the whole
-VOLUME group, including two settings that have nothing to do with PipeWire.
-Noted here in case a future import expects it.
 
 ## rsinput
 
@@ -416,6 +408,54 @@ Turning it on is cheap and would make this measurable.
 
 Kept rather than deleted. Several of these took more than one explanation to
 find, and the wrong ones are recorded too.
+
+### 44.1 kHz on the speakers: five gates, the last two found late
+
+The Dreamcast's AICA, the PS1 SPU and the PSP are 44.1 kHz with no 48 kHz
+mode. Five things pinned the speaker path (`PRIMARY_MI2S_RX` into two
+`awinic,aw88166`) to 48 kHz:
+
+| gate | where | fix |
+|---|---|---|
+| backend DAI rate masks | `q6dsp-lpass-ports.c` | `1052` |
+| backend hw_params fixup | `sc8280xp.c` | `1053` |
+| MI2S bit clock fixed by the device tree | `sc8280xp.c` | `1054` |
+| frontend PCM caps `rate_min = rate_max = 48000` | `AYN-Odin2-tplg.bin` | `extra-firmware/sources/tplg-allow-44100.py` |
+| bit clock rate set but not re-voted | `sc8280xp.c` | `1054`, second version |
+
+The fourth is why `1052`-`1054` changed nothing on their own: the topology
+caps the frontend before any kernel mask is consulted, so `aplay -r 44100`
+was refined to 48000 and PipeWire's allowed rates never mattered. Neither the
+amps nor the DSP were ever the limit.
+
+The fifth was measured on hardware with the topology widened by hand. A q6dsp
+clock only reaches the DSP when it is prepared, and startup prepares it before
+`1054` sets the rate, so each stream started on the previous stream's bit
+clock and `APM_CMD_GRAPH_START` failed on every rate change. Opening the same
+rate twice ran cleanly the second time, at 44100 (bit clock 1411200) as at
+48000, which is what gave it away. It also made one failed 44.1 stream take
+48 kHz down with it until the next rate change, which looked like a wedged DSP.
+
+**Confirmed on hardware** on 24 September (#290): with the widened topology
+loaded live and the kernel from nightly 126, Tekken 3 ran with the link at
+44100 and a bit clock of 1,411,200, Super Mario World at 32000 and
+1,024,000, and the link switched 48 → 32 → 48 → 44.1 kHz between games with
+nothing in `dmesg`. The same gates, widened once more, are what carry 32 kHz
+(#291, #297). Not recorded in that test: the headphone path
+(`RX_CODEC_DMA_RX_0`) at 44.1 or 32 kHz, which `AUDIO_SAMPLE_RATES.md` covers
+in theory and nobody has listened to.
+
+### Gone with EmulationStation and sway
+
+Three items were about the old front-end and went with it (#222,
+portarelauncher replaced both). Kept in one place so a future import does
+not trip over them: the repeated `Unknown element of type "notification"`
+theme warning, never explained and now moot; the frontend redrawing every
+loop iteration with no damage tracking, which the launcher's dumb-buffer
+text rendering does not have; and `isAvailable()`, removed from
+`emulationstation-sdl3` because its only caller hid the whole VOLUME group.
+The `pactl` findings above stay, since the scripts they concern are still
+in the image.
 
 ### The gamepad failed to resume
 

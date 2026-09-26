@@ -55,17 +55,22 @@ rate the way a real PlayStation does, so there is nothing to follow.
 
 The Nova's audio link runs at 48, 44.1 or 32 kHz, following the stream.
 That took kernel patches (`1052` to `1055`) to unpin the DSP ports and derive
-the I2S bit clock from the stream, and each emulator asks for its console's
-rate:
+the I2S bit clock from the stream, an edit to the DSP topology, and a
+RetroArch patch that picks the link rate from whatever the core produces,
+every time the audio device opens:
 
 | Link rate | Consoles |
 | --- | --- |
-| 44.1 kHz | PlayStation, Dreamcast, PSP, Neo Geo CD, every Sega system |
-| 32 kHz | Super Nintendo |
+| 44.1 kHz | PlayStation, Dreamcast, PSP, Neo Geo CD, every Sega system; N64 games at 22 or 44.1 kHz |
+| 32 kHz | Super Nintendo; N64 games at 32 kHz |
 | 48 kHz | PS2, Xbox, GameCube and Wii, and everything else |
 
-No resampling where the console's rate can be carried. The full table, with
-every emulator's output rate, is in
+The N64 is per game: each game programs its own rate, the core reports it
+once the game has, and the device reopens at the matching link rate. No
+resampling where the console's rate can be carried. An exact 32040 Hz, the
+real SNES's, is not one the hardware can carry; the analysis is in
+[AUDIO_SAMPLE_RATES.md](documentation/PER_DEVICE_DOCUMENTATION/SM8550/AUDIO_SAMPLE_RATES.md).
+The full table, with every emulator's output rate, is in
 [REFRESH_RATES.md](documentation/PER_DEVICE_DOCUMENTATION/SM8550/REFRESH_RATES.md).
 
 ### KMS, no compositor
@@ -113,7 +118,7 @@ the settings nobody had tuned for them.
 | PSP | PPSSPP |
 | Xbox | xemu |
 | Point-and-click | ScummVM |
-| Ports, streaming, PC | PortMaster, Moonlight, Steam |
+| Ports, streaming, PC | PortMaster (as a platform of its own, with the pad's buttons as printed), Moonlight, Steam |
 | Movies, music | mpv, gmu |
 
 Every emulator quits with the same buttons, Home + Start. M1 with the
@@ -149,11 +154,17 @@ scanlines, because a DVD was made for a CRT. Position is saved on quit.
 
 ### Lightweight
 
-* The image is about 610 MB compressed.
+* The image is about 540 MB compressed.
 * PipeWire and nothing else. PulseAudio is banned, and a check in CI fails the
   build if it comes back. The graph's minimum quantum is 256 frames, 5.3 ms.
-* No EmulationStation, no sway, no artwork scraping, no media centre.
-* Wrappers and duplicate tools are removed as they are found.
+* No EmulationStation, no sway, no artwork scraping, no media centre, no file
+  manager, no Qt: ARMSX2 runs as its SDL frontend.
+* Wrappers and duplicate tools are removed as they are found. What is in the
+  image, what has gone and what is still on the list is in
+  [PACKAGE_INVENTORY.md](documentation/PACKAGE_INVENTORY.md): about 250 MB
+  out so far, about 130 MB still to go.
+* Debug tools, gdb and strace, come only in builds that are not official
+  releases.
 
 ### Latency
 
@@ -185,6 +196,9 @@ About.
 * microSD at UHS-I SDR104.
 * The lowest GPU operating point, 124.8 MHz, so a menu or a film keeps the
   fan off.
+* Charging that eases off as the battery warms: full current below 40 °C,
+  then 3, 2 and 1 A at 40, 42 and 44 °C, the way Android's thermal
+  mitigation does, through a charger limit the kernel now exposes.
 
 Several of the kernel patches behind these came from
 [pocknix-os](https://github.com/shuuri-labs/pocknix-os); authorship is kept
@@ -228,8 +242,8 @@ with games, the counts, and the four numbers that matter in the header.
 
 [ROADMAP.md](ROADMAP.md) is where this is going and
 [BUGS.md](BUGS.md) is what is known to be broken or unfinished. Ongoing:
-black frame insertion, the SNES core choice, further footprint reduction, and
-removing the remaining wrappers.
+verifying today's changes on the device, suspend power, black frame
+insertion, the SNES core choice, and the last 130 MB of footprint.
 
 ## Building
 
