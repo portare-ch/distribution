@@ -44,7 +44,7 @@ The rule this applies is the README's: if it is not needed for a smooth game, it
 | **tailscale** (`tailscaled`, enabled at boot) | 26 | A Go VPN mesh daemon on a handheld, the second-largest binary after ScummVM. Keep if it is used; otherwise out. **zerotier-one** (2 MB) is the same question. |
 | **avahi, nss-mdns** | 3 | mDNS. Useful for `portareos.local` over SSH; otherwise off. |
 | **mangohud, mangoapp** | 12 | A performance overlay: handy for development, an anti-feature for a player. gamescope runs without it. |
-| **scummvm-lr** | ~70 | ScummVM, now as the libretro core, built with every engine. A build with the engines that matter would halve it. |
+| **scummvm-lr** | 99 | ScummVM as the libretro core, with the 96 engines the standalone had and their sub-engines. Every engine in the tree would be 120; the engines that matter would halve it. |
 | **fbneo** core | 76 | The largest core: every arcade driver. Fine for as long as arcade is a system. |
 | **`/usr/lib/compat`**: libavcodec 58, librsvg, x265, aom, openssl 1.1, SDL2 | 41 | Old-ABI libraries for PortMaster ports: a second copy of ffmpeg and friends. Stays exactly as long as PortMaster does. |
 | **portmaster** | – | Ports need the compat set above and their own launcher scripts. If ports are not a goal, it and the 41 MB leave together. |
@@ -73,7 +73,7 @@ Done in #335:
 
 | Package | MB | How |
 |---|---|---|
-| scummvm as a standalone, fluidsynth and its service | ~10 | ScummVM is the libretro core now, with FluidLite inside it for MIDI; the soundfont stays. The standalone's 76 MB is replaced by the core's, so the saving is fluidsynth and the service. |
+| scummvm as a standalone, fluidsynth and its service | ~10 | ScummVM is the libretro core now, with FluidLite inside it for MIDI; the soundfont stays. The standalone's 76 MB is replaced by the core's 99: the same engines, compiled in rather than shared, at the core's -O3. The saving is fluidsynth and the service. |
 | qt6, and the CI job that built it | ~60 | ARMSX2 is built as upstream's SDL frontend, `armsx2-sdl`: VK_KHR_display to the panel, FullscreenUI for the menus, no window. Tested on the Nova before the switch. FEXConfig, a Qt desktop dialog, is not built. |
 
 ## The sum
