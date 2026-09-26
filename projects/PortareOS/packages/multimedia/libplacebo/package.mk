@@ -9,6 +9,9 @@ PKG_URL="${PKG_SITE}.git"
 PKG_DEPENDS_TARGET="toolchain ffmpeg SDL2 luajit libass"
 PKG_LONGDESC="The core rendering algorithms and ideas of mpv rewritten as an independent library."
 
+# No demos: plplay is a player nobody runs here; mpv is the player.
+PKG_MESON_OPTS_TARGET+=" -Ddemos=false"
+
 if [ "${VULKAN_SUPPORT}" = "yes" ]; then
   PKG_DEPENDS_TARGET+=" ${VULKAN} glslang spirv-tools"
   PKG_MESON_OPTS_TARGET+=" -Dvulkan=enabled -Dglslang=enabled"

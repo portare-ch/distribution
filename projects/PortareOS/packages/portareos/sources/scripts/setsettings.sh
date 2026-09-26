@@ -334,7 +334,7 @@ content_database_path = "/tmp/database/rdb"
 joypad_autoconfig_dir = "/tmp/joypads"
 libretro_directory = "/tmp/cores"
 libretro_info_path = "/tmp/cores"
-overlay_directory = "/tmp/overlays"
+overlay_directory = "~/overlays"
 video_shader_dir = "/tmp/shaders"
 EOF
 }
