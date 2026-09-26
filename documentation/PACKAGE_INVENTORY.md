@@ -72,10 +72,10 @@ Done in #347:
 | libretro-database, all but our systems | 95 | the package copies the cheat folders of the systems we build, 77 MB, instead of all 172 |
 | tailscale, zerotier-one | 28 | out of the network metapackage and the options |
 | retroarch-overlays and its overlay mount | 13 | out of the RetroArch set; RetroArch's overlay directory is `~/overlays`, for anyone's own |
-| glslc, plplay | 5 | shaderc's command line compiler and libplacebo's demo player, dropped at install |
+| plplay | 0 | libplacebo's demo player, not built |
 | usb-modeswitch | 1 | out of the image |
 | bluez's meshctl and mesh-cfgclient | 1 | bluez built without mesh |
-| apitrace, renderdoc, nvtop, memtester, valgrind, kmsxx, libva-utils | 0 | never in an image: the debug set was off for official builds, which the nightlies are. The set is gdb and strace now, in every image (+12 MB). |
+| apitrace, renderdoc, nvtop, memtester, valgrind, kmsxx, libva-utils | 0 | never in an image: the debug set is off for official builds, which the nightlies are. The set is gdb and strace now, 12 MB, in unofficial builds only. |
 | v4l-utils | 3 | already gone from fresh builds since IR remote support went off (#422373c); the image on the device predates that |
 
 Done in #335:
@@ -87,7 +87,7 @@ Done in #335:
 
 ## The sum
 
-Still on the table: slang-shaders ~60 + Python 34 + GStreamer 8 + locales and gconv ~25: **about 130 MB**, without touching a supported system. About 250 MB is out already (above), less the 12 MB gdb and strace now cost.
+Still on the table: slang-shaders ~60 + Python 34 + GStreamer 8 + locales and gconv ~25: **about 130 MB**, without touching a supported system. About 250 MB is out already (above); gdb and strace, 12 MB, come only with an unofficial build.
 
 ## Method
 

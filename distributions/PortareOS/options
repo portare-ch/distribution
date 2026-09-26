@@ -121,12 +121,15 @@
 # Build modules packages
   MODULES_PKG="${MODULES_PKG:-yes}"
 
-# Debug tools: gdb and strace, in every image. The set used to be forty
-# megabytes of GPU tracers and monitors and was switched off for
-# official builds, which the nightlies are, so no image ever had a
-# debugger. These two are what a problem on a device gets debugged with,
-# and a dozen megabytes.
-  DEBUG_PACKAGES="${DEBUG_PACKAGES:-yes}"
+# Debug tools: gdb and strace, a dozen megabytes, in builds that are not
+# official. The set used to be forty megabytes of GPU tracers and
+# monitors nobody ran on a device; these two are what a problem gets
+# debugged with. DEBUG_PACKAGES=yes still overrides either way.
+  if [ "${OFFICIAL}" = "yes" ]; then
+    DEBUG_PACKAGES="${DEBUG_PACKAGES:-no}"
+  else
+    DEBUG_PACKAGES="${DEBUG_PACKAGES:-yes}"
+  fi
 
 # Windowmanager to use (swaywm-env / no)
   WINDOWMANAGER="none"
