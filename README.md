@@ -116,7 +116,8 @@ the settings nobody had tuned for them.
 | Ports, streaming, PC | PortMaster, Moonlight, Steam |
 | Movies, music | mpv, gmu |
 
-Every emulator quits with the same buttons, Home + Start.
+Every emulator quits with the same buttons, Home + Start. M1 with the
+volume keys sets the brightness, anywhere.
 
 ### Configured for this panel
 
