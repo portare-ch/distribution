@@ -9,9 +9,11 @@ PKG_SITE="http://www.libsdl.org/projects/SDL_mixer/release"
 PKG_URL="${PKG_SITE}/${PKG_NAME}-${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain opusfile alsa-lib SDL2 libogg libvorbis flac mpg123 libmodplug wavpack libxmp"
 PKG_LONGDESC="SDL2 mixer"
+PKG_TOOLCHAIN="cmake"
 
-pre_configure_target() {
-  # No fluidsynth on the image: ScummVM, the one thing that played MIDI
-  # through it, synthesizes in its own core now.
-  PKG_CONFIGURE_OPTS_TARGET="${PKG_CONFIGURE_OPTS_TARGET} --enable-music-mp3 --disable-music-midi-fluidsynth"
-}
+# No fluidsynth on the image: ScummVM, the one thing that played MIDI
+# through it, synthesizes in its own core now. The tarball carries a
+# CMakeLists.txt, so the auto-detected toolchain is cmake, and a
+# configure-style --disable flag never reached it: FluidSynth stayed on
+# and find_package(FluidSynth REQUIRED) failed. MIDI keeps timidity.
+PKG_CMAKE_OPTS_TARGET="-DSDL2MIXER_MIDI_FLUIDSYNTH=OFF"
