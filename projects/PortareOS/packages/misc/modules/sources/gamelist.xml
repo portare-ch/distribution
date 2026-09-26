@@ -1,18 +1,6 @@
 <?xml version="1.0"?>
 <gameList>
     <game>
-        <path>./commander.sh</path>
-        <name>File Manager</name>
-        <desc>Browse the filesystem and manage files, on the device and on a USB drive.</desc>
-        <developer>Tardigrade and PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2022</releasedate>
-        <genre>Tool</genre>
-        <players>1</players>
-        <image>./images/file-manager.svg</image>
-    </game>
-    <game>
         <path>./Install PortareOS.sh</path>
         <name>Install PortareOS</name>
         <desc>Installs PortareOS to the internal storage. Wipes the drive you choose.</desc>

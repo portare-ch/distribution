@@ -28,8 +28,9 @@ PKG_DEPENDS_TARGET="toolchain squashfs-tools:host dosfstools:host fakeroot:host 
 # sdl2notify were only ever started from its Tools menu, lowerdeck is the
 # second-screen UI of dual-screen handhelds and the Nova has one screen,
 # poppler rendered PDF manuals for ES, and nothing on the device calls
-# ImageMagick at all. The two tools worth keeping - the file manager and the
-# gamepad tester - stay, reached from the launcher's Tools entry.
+# ImageMagick at all. The gamepad tester stays, reached from the launcher's
+# Tools entry. The file manager went too: files are managed over SSH, and
+# its one screen, drawn once, never reached a KMS panel anyway.
 PKG_UI="portarelauncher"
 
 # grim went with the compositor: it screenshots a wayland output and there
