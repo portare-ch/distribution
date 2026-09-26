@@ -29,9 +29,3 @@ pre_configure_target() {
   echo '"$(PKG_VERSION)\n"' > ${PKG_BUILD}/glslc/src/build-version.inc
   export TARGET_LDFLAGS="${LDFLAGS} -lglslang"
 }
-
-post_makeinstall_target() {
-  # ARMSX2 loads libshaderc_shared at run time; the glslc command line
-  # compiler, 4.5 MB, is for a shell nobody compiles shaders in.
-  rm -f ${INSTALL}/usr/bin/glslc
-}
