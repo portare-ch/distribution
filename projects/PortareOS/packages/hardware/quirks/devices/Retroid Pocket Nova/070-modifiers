@@ -1,0 +1,15 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
+
+# M1, the left back button, is the brightness modifier: hold it and the
+# volume keys set the brightness instead of the volume. The platform's
+# default is Home, and Home is now a button of its own in the launcher
+# (back to the consoles list), so a brightness change there would also
+# leave the screen. The pad InputPlumber presents reports M1 as
+# BTN_TRIGGER_HAPPY3 and M2 as BTN_TRIGGER_HAPPY4. START stays the
+# second modifier, for the LEDs.
+cat <<EOF >/storage/.config/profile.d/050-modifiers
+DEVICE_FUNC_KEYA_MODIFIER="BTN_TRIGGER_HAPPY3"
+DEVICE_FUNC_KEYB_MODIFIER="BTN_START"
+EOF
