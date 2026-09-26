@@ -7,9 +7,11 @@ PKG_SHA256="1cfb34c87b26dbdbc7afd68c4f545c0116ab5f90bbfecc5aebe2a9cb4bb31549"
 PKG_LICENSE="GPLv3"
 PKG_SITE="http://www.libsdl.org/projects/SDL_mixer/release"
 PKG_URL="${PKG_SITE}/${PKG_NAME}-${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain fluidsynth opusfile alsa-lib SDL2 libogg libvorbis flac mpg123 libmodplug wavpack libxmp"
+PKG_DEPENDS_TARGET="toolchain opusfile alsa-lib SDL2 libogg libvorbis flac mpg123 libmodplug wavpack libxmp"
 PKG_LONGDESC="SDL2 mixer"
 
 pre_configure_target() {
-  PKG_CONFIGURE_OPTS_TARGET="${PKG_CONFIGURE_OPTS_TARGET} --enable-music-mp3"
+  # No fluidsynth on the image: ScummVM, the one thing that played MIDI
+  # through it, synthesizes in its own core now.
+  PKG_CONFIGURE_OPTS_TARGET="${PKG_CONFIGURE_OPTS_TARGET} --enable-music-mp3 --disable-music-midi-fluidsynth"
 }
