@@ -18,7 +18,21 @@ PKG_TOOLCHAIN="make"
 # and the soundfont it plays is the one the shipped scummvm.ini names.
 # `all` builds the core and scummvm.zip, the data files and themes of
 # this exact version, which have to travel with it.
-PKG_MAKE_OPTS_TARGET="-C backends/platform/libretro platform=unix all"
+#
+# LITE=1 builds only the engines in lite_engines.list, and the list is
+# ours (config/engines.list): the 96 engines the standalone shipped, as
+# its release build chose them, with each one's default sub-engines
+# named as well, since the list does not imply them. Without it the
+# core takes every engine in the tree, eleven more than the standalone
+# had, AGS and Titanic the largest of them, and comes out at 120 MB
+# against 88. FORCE_OPENGLNONE=1 is the standalone's --opengl-mode=none:
+# no GL renderer in the core, so it never asks RetroArch for a GL
+# context and RetroArch stays on Vulkan, where the timed presents are.
+PKG_MAKE_OPTS_TARGET="-C backends/platform/libretro platform=unix LITE=1 FORCE_OPENGLNONE=1 all"
+
+pre_make_target() {
+  cp ${PKG_DIR}/config/engines.list ${PKG_BUILD}/backends/platform/libretro/lite_engines.list
+}
 
 makeinstall_target() {
   local LR="${PKG_BUILD}/backends/platform/libretro"
