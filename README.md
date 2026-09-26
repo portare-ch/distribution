@@ -81,8 +81,8 @@ Nothing draws through a compositor. Each program takes the panel itself:
   the GS takes the panel.
 * **mpv** plays films through Vulkan direct to the display too, so a movie
   never passes through a compositor either.
-* **xemu, ScummVM, PortMaster and Moonlight** run on SDL's KMS driver: there
-  is no compositor in the image to give them a window.
+* **xemu, PortMaster and Moonlight** run on SDL's KMS driver: there is no
+  compositor in the image to give them a window.
 * **Steam** is the one exception. It brings gamescope, its own compositor, on
   the DRM backend, because the Steam runtime cannot be recompiled.
 

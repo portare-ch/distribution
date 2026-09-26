@@ -318,11 +318,6 @@ case ${EMULATOR} in
       "atomiswave")
         rm ${ROMNAME}.nvmem*
       ;;
-      "scummvm")
-        GAMEDIR=$(cat "${ROMNAME}" | awk 'BEGIN {FS="\""}; {print $2}')
-        cd "${GAMEDIR}"
-        RUNTHIS='${RUN_SHELL} /usr/bin/start_scummvm.sh libretro .'
-      ;;
     esac
 
     ### Configure retroarch

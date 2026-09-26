@@ -15,13 +15,13 @@ PKG_TOOLCHAIN="manual"
 # shipped the old es_systems.cfg.
 PKG_NEED_UNPACK="${ROOT}/config/emulators"
 
-PKG_EMUS="moonlight scummvmsa"
+PKG_EMUS="moonlight"
 
 # retropie-shaders and the GLSL shader packs are gone: they are for the gl
 # driver, and this image runs RetroArch on Vulkan, which takes slang only.
 PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays slang-shaders"
 
-LIBRETRO_CORES=" beetle-saturn-lr fbneo-lr flycast-lr gambatte-lr genesis-plus-gx-lr mgba-lr neocd_lr nestopia-lr parallel-n64-lr picodrive-lr snes9x-lr swanstation-lr"
+LIBRETRO_CORES=" beetle-saturn-lr fbneo-lr flycast-lr gambatte-lr genesis-plus-gx-lr mgba-lr neocd_lr nestopia-lr parallel-n64-lr picodrive-lr scummvm-lr snes9x-lr swanstation-lr"
 
 if [ "${ARCH}" = "aarch64" ]; then
   LIBRETRO_CORES+=" ppsspp-lr"
@@ -347,10 +347,9 @@ makeinstall_target() {
   add_es_system pspminis
 
   ### ScummVM
-  add_emu_core scummvm scummvmsa scummvm true
+  add_emu_core scummvm retroarch scummvm true
   add_es_system scummvm
   add_system_dir /storage/roms/scummvm
-  install_script "Scan ScummVM Games.sh"
   install_script "Start ScummVM.sh"
 
   ### Sega Saturn

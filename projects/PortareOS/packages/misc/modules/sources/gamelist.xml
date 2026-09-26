@@ -98,7 +98,7 @@
     <game>
         <path>./Start ScummVM.sh</path>
         <name>Start ScummVM</name>
-        <desc>Opens ScummVM's own settings. A mouse and keyboard help.</desc>
+        <desc>ScummVM's own launcher: add a game there, then Tools, Playlist Generator, to list it here.</desc>
         <developer>PortareOS</developer>
         <publisher>PortareOS</publisher>
         <rating>5.0</rating>
@@ -118,17 +118,6 @@
         <genre>Emulator</genre>
         <players>1</players>
         <image>./images/xemu.svg</image>
-    </game>
-    <game>
-        <path>./Scan ScummVM Games.sh</path>
-        <name>Scan ScummVM Games</name>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2021</releasedate>
-        <genre>Emulator</genre>
-        <players>1</players>
-        <image>./images/scummvm.svg</image>
     </game>
     <game>
         <path>./Test Gamepad.sh</path>
