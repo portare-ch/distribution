@@ -29,7 +29,24 @@ makeinstall_target() {
     cp -a ${PKG_DIR}/scripts/* ${INSTALL}/usr/bin
 
   mkdir -p ${INSTALL}/usr/config/PortMaster/release
-    curl -Lo ${INSTALL}/usr/config/PortMaster/release/PortMaster.zip ${PKG_URL}
+    curl -Lo ${PKG_BUILD}/PortMaster.zip ${PKG_URL}
+
+  # PortMaster knows its platforms by the OS name and PortareOS is not one
+  # of them, so it would take its default platform, which never copies
+  # our control.txt, mapper.txt and controller database into its folder.
+  # patches/ adds a PortareOS platform to harbourmaster. The code lives in
+  # pylibs.zip inside the release archive, so both are opened, patched
+  # and closed again.
+  rm -rf ${PKG_BUILD}/release
+  mkdir -p ${PKG_BUILD}/release/pylibs
+    unzip -qo ${PKG_BUILD}/PortMaster.zip -d ${PKG_BUILD}/release
+    unzip -qo ${PKG_BUILD}/release/PortMaster/pylibs.zip -d ${PKG_BUILD}/release/pylibs
+    for p in ${PKG_DIR}/patches/*.patch; do
+      patch -d ${PKG_BUILD}/release/pylibs -p1 < ${p}
+    done
+    rm -f ${PKG_BUILD}/release/PortMaster/pylibs.zip
+    (cd ${PKG_BUILD}/release/pylibs && zip -qr ../PortMaster/pylibs.zip .)
+    (cd ${PKG_BUILD}/release && zip -qr ${INSTALL}/usr/config/PortMaster/release/PortMaster.zip PortMaster)
 
   mkdir -p ${INSTALL}/usr/lib/compat
     curl -Lo ${PKG_BUILD}/compat.tar.gz ${COMPAT_URL}
