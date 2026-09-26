@@ -82,13 +82,8 @@ else
   PKG_MESON_OPTS_TARGET+=" -Dllvm=disabled"
 fi
 
-if [ "${VAAPI_SUPPORT}" = "yes" ] && listcontains "${GRAPHIC_DRIVERS}" "(r600|radeonsi)"; then
-  PKG_DEPENDS_TARGET+=" libva"
-  PKG_MESON_OPTS_TARGET+=" -Dgallium-va=enabled \
-                           -Dvideo-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc"
-else
-  PKG_MESON_OPTS_TARGET+=" -Dgallium-va=disabled"
-fi
+# Gallium VA-API is for AMD; the libva package is gone with the x86 drivers.
+PKG_MESON_OPTS_TARGET+=" -Dgallium-va=disabled"
 
 if [ "${OPENGLES_SUPPORT}" = "yes" ]; then
   PKG_MESON_OPTS_TARGET+=" -Dgles1=enabled -Dgles2=enabled"

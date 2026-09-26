@@ -67,18 +67,14 @@ else
   PKG_FFMPEG_V4L2="--disable-v4l2_m2m --disable-libudev --disable-v4l2-request"
 fi
 
-if [ "${VAAPI_SUPPORT}" = "yes" ]; then
-  PKG_DEPENDS_TARGET+=" libva"
-  PKG_NEED_UNPACK+=" $(get_pkg_directory libva)"
-  PKG_FFMPEG_VAAPI="--enable-vaapi"
-else
-  PKG_FFMPEG_VAAPI="--disable-vaapi"
-fi
+# VA-API is an x86 thing; the libva package went with the Intel and NVIDIA
+# drivers, and the Adreno decodes through V4L2 above.
+PKG_FFMPEG_VAAPI="--disable-vaapi"
 
 if [ "${DISPLAYSERVER}" != "wl" ]; then
   PKG_DEPENDS_TARGET+=" libdrm"
   PKG_NEED_UNPACK+=" $(get_pkg_directory libdrm)"
-  PKG_FFMPEG_VAAPI=" --enable-libdrm"
+  PKG_FFMPEG_VAAPI+=" --enable-libdrm"
 fi
 
 # VDPAU_SUPPORT is not set by any distribution, project or device in this
@@ -101,12 +97,6 @@ fi
 if [ "${TARGET_ARCH}" = "x86_64" ]; then
   PKG_DEPENDS_TARGET+=" nasm:host"
 fi
-
-case ${DEVICE} in
-  RK*)
-    PKG_DEPENDS_TARGET+=" rkmpp"
-  ;;
-esac
 
 if target_has_feature "(neon|sse)"; then
   PKG_DEPENDS_TARGET+=" dav1d"
