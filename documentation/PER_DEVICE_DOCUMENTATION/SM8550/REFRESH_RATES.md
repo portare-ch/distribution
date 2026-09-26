@@ -76,7 +76,7 @@ The PlayStation's line is 3412.5 GPU clocks, the broadcast line. SwanStation rou
 
 The Nova's speaker and headphone link runs at **48 kHz, 44.1 kHz or 32 kHz**. Three things had to allow that: the AudioReach topology blob, which caps the playback PCMs at 48 kHz until `extra-firmware`'s `tplg-playback-rates.py` widens it; kernel patches 1052–1055, which open the DSP ports and the machine driver's fixup to 44.1 and 32 kHz; and the I2S bit clock, which follows the stream (1054). PipeWire allows all three rates (`default.clock.allowed-rates = [ 48000 44100 32000 ]`). [AUDIO_SAMPLE_RATES.md](AUDIO_SAMPLE_RATES.md) describes the whole procedure, for carrying it to another distribution. No rate is a resampling stage in itself: the link switches to the rate of the stream that opens it.
 
-**RetroArch outputs 48 kHz** (`audio_out_rate = 48000`), except for the cores that produce 44.1 kHz: SwanStation, Flycast, PPSSPP, NeoCD, Genesis Plus GX and PicoDrive. Their per-core configs (`config/<core>/<core>.cfg`) ask for 44.1 kHz. Snes9x asks for 32 kHz, and its games in `snesmsu1` for 44.1 kHz (`config/Snes9x/snesmsu1.cfg`, a content-directory override), because MSU-1 games output 44.1 kHz. RetroArch resamples each core's audio to that rate with its sinc resampler, and dynamic rate control keeps the stream in step with the display. So every core is resampled at least a little, even one whose rate matches the output, because rate control adjusts the ratio by up to 0.5 %. mpv plays a file at its own rate.
+**RetroArch picks the link rate from the core's** (`audio_out_rate = "0"`, RetroArch patch 0015): the smallest of 32, 44.1 and 48 kHz that the core's rate divides into within 0.5 % (32,040 → 32,000; 22,050 → 44,100; 44,100 → 44,100), else the smallest above it so nothing is cut (32,768 → 44,100), else 48 kHz (65,536 → 48,000). The pick is made every time the audio driver initialises, so a core that changes its rate through `SET_SYSTEM_AV_INFO`, as ParaLLEl N64 does once the game has programmed its DAC, reopens the device at the new game's rate. A non-zero `audio_out_rate` in a per-core config (`config/<core>/<core>.cfg`) still overrides the pick; the shipped ones for SwanStation, Flycast, PPSSPP, NeoCD, Genesis Plus GX, PicoDrive (44.1 kHz) and Snes9x (32 kHz, 44.1 kHz for `snesmsu1`) name the rate the pick would make anyway. RetroArch resamples each core's audio to that rate with its sinc resampler, and dynamic rate control keeps the stream in step with the display. So every core is resampled at least a little, even one whose rate matches the output, because rate control adjusts the ratio by up to 0.5 %. mpv plays a file at its own rate.
 
 The first rate column is the console's own: the rate its sound hardware produces samples at, or "analog" where the chip's channels are mixed as analog signals and there is no sample rate to speak of. The second is what the emulator hands RetroArch, taken from its source code at the pinned commit with PortareOS's options.
 
@@ -93,7 +93,7 @@ The first rate column is the console's own: the rate its sound hardware produces
 | megadrive, megadrive-japan, megadriveh, genesis, genh (Genesis Plus GX) | 53,267 (YM2612), plus the SN76489 | 44,100 | 44,100 |
 | segacd, megacd (Genesis Plus GX) | as the Mega Drive, plus 32,552 (RF5C164 PCM) and 44,100 (CD audio) | 44,100 | 44,100 |
 | sega32x (PicoDrive) | as the Mega Drive, plus the 32X's PWM at a rate the game sets | 44,100 (`native` would give 53,267) | 44,100 |
-| n64, n64dd (ParaLLEl N64) | set by the game (commonly 22,050 to 44,100) | the game's rate, exactly, e.g. 22,037.94; 32,040 until the game sets one | 48,000 |
+| n64, n64dd (ParaLLEl N64) | set by the game (commonly 22,050 to 44,100) | the game's rate, exactly, e.g. 22,037.94; 32,040 until the game sets one | the link rate picked for the game's: 32,000 for ~32 kHz games, 44,100 for ~22 kHz and 44.1 kHz ones |
 | neogeo (FBNeo) | 55,555 (YM2610) | about 48,000 (47,990 at 59.18 fps) | 48,000 |
 | neocd (NeoCD) | 55,555 (YM2610), plus 44,100 (CD audio) | 44,100 | 44,100 |
 | arcade (FBNeo) | depends on the board | about 48,000, depending on the game's frame rate | 48,000 |
@@ -109,7 +109,7 @@ In short:
 
 - **No resampling needed:** the 44.1 kHz cores play at 44.1 kHz: PS1, Saturn, Dreamcast, NAOMI, Atomiswave, PSP, NeoCD and every other Sega system. Xbox, PS2, Dolphin and Nestopia already produce 48 kHz.
 - **Nearly native:** the SNES plays at 32 kHz. The 32,040 → 32,000 conversion (0.125 %) is smaller than what rate control adjusts anyway.
-- **Resampled as on any other device:** Game Boy, GBA, N64 and Neo Geo. Their rates match none of the link's rates, so they need resampling either way.
+- **Resampled as on any other device:** Game Boy, GBA and Neo Geo. Their rates match none of the link's rates, so they need resampling either way. The N64 is per game: ~32 kHz games get the 32 kHz link, ~22 kHz games an exact 2:1 into 44.1 kHz, 44.1 kHz games play native.
 
 ## Adding a mode
 
