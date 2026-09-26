@@ -72,78 +72,6 @@
         <image>./images/steam.svg</image>
     </game>
     <game>
-        <path>./Install Heroic Games Launcher.sh</path>
-        <name>Install Heroic</name>
-        <desc>Installs the Heroic Games Launcher, for GOG, Epic and Amazon games.</desc>
-        <developer>Heroic Games Launcher</developer>
-        <publisher>Heroic Games Launcher</publisher>
-        <rating>5.0</rating>
-        <releasedate>2026</releasedate>
-        <genre>Tool</genre>
-        <players>1</players>
-        <image>./images/heroic.svg</image>
-    </game>
-    <game>
-        <path>./Uninstall Heroic Games Launcher.sh</path>
-        <name>Uninstall Heroic</name>
-        <desc>Removes Heroic. Keeps its settings and the launchers of its games.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2026</releasedate>
-        <genre>Tool</genre>
-        <players>1</players>
-        <image>./images/heroic.svg</image>
-    </game>
-    <game>
-        <path>./Scan Heroic Games.sh</path>
-        <name>Scan Heroic Games</name>
-        <desc>Makes a launcher for every game Heroic has installed.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2026</releasedate>
-        <genre>Script</genre>
-        <players>1</players>
-        <image>./images/heroic.svg</image>
-    </game>
-    <game>
-        <path>./Start Azahar.sh</path>
-        <name>Start Azahar</name>
-        <desc>Opens Azahar's own settings, for the 3DS. A mouse and keyboard help.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2026</releasedate>
-        <genre>Emulator</genre>
-        <players>1</players>
-        <image>./images/azahar.svg</image>
-    </game>
-    <game>
-        <path>./Start MelonDS.sh</path>
-        <name>Start MelonDS</name>
-        <desc>Opens melonDS's own settings, for the DS. A mouse and keyboard help.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2024</releasedate>
-        <genre>Emulator</genre>
-        <players>1</players>
-        <image>./images/melonds.svg</image>
-    </game>
-    <game>
-        <path>./Start Moonlight.sh</path>
-        <name>Start Moonlight</name>
-        <desc>Opens Moonlight's own settings, for streaming games from a PC.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2023</releasedate>
-        <genre>Game Stream</genre>
-        <players>1</players>
-        <image>./images/moonlight.svg</image>
-    </game>
-    <game>
         <path>./Start ARMSX2.sh</path>
         <name>Start ARMSX2</name>
         <desc>Opens ARMSX2's own menus, for PS2 settings.</desc>
@@ -204,17 +132,6 @@
         <image>./images/xemu.svg</image>
     </game>
     <game>
-        <path>./Scan id Tech Games.sh</path>
-        <name>Scan id Tech Games</name>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2023</releasedate>
-        <genre>Script</genre>
-        <players>1</players>
-        <image>./images/idtech.svg</image>
-    </game>
-    <game>
         <path>./Scan ScummVM Games.sh</path>
         <name>Scan ScummVM Games</name>
         <developer>PortareOS</developer>
@@ -249,16 +166,4 @@
         <players>1</players>
         <image>./images/calibrate-gamepad.svg</image>
     </game>
-    <game>
-        <path>./Mount NFS.sh</path>
-        <name>Mount NFS</name>
-        <desc>Mounts the NFS share named in /storage/.nfs-mount over the internal games storage.</desc>
-        <developer>PortareOS</developer>
-        <publisher>PortareOS</publisher>
-        <rating>5.0</rating>
-        <releasedate>2024</releasedate>
-        <genre>tool</genre>
-        <players>1</players>
-        <image>./images/nfs.svg</image>
-     </game>
 </gameList>
