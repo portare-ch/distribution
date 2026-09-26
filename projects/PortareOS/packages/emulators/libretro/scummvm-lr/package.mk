@@ -20,14 +20,17 @@ PKG_TOOLCHAIN="make"
 # this exact version, which have to travel with it.
 #
 # LITE=1 builds only the engines in lite_engines.list, and the list is
-# ours (config/engines.list): the 96 engines the standalone shipped, as
-# its release build chose them, with each one's default sub-engines
-# named as well, since the list does not imply them. Without it the
-# core takes every engine in the tree, eleven more than the standalone
-# had, AGS and Titanic the largest of them, and comes out at 120 MB
-# against 88. FORCE_OPENGLNONE=1 is the standalone's --opengl-mode=none:
-# no GL renderer in the core, so it never asks RetroArch for a GL
-# context and RetroArch stays on Vulkan, where the timed presents are.
+# ours (config/engines.list): the engines the standalone shipped, as its
+# release build chose them, with each one's default sub-engines named as
+# well, since the list does not imply them, less ten that are no use on
+# a handheld: glk, ultima and mm want a keyboard (text adventures, the
+# Ultima and Might and Magic RPGs); director, bagel, mtropolis-class
+# multimedia CD-ROMs and the one-title engines crab, ngi, hypno, gamos
+# and plumbers carry nothing anyone will play here. Every engine in the
+# tree came to 120 MB, the standalone's set to 99, this to 77.
+# FORCE_OPENGLNONE=1 is the standalone's --opengl-mode=none: no GL
+# renderer in the core, so it never asks RetroArch for a GL context and
+# RetroArch stays on Vulkan, where the timed presents are.
 PKG_MAKE_OPTS_TARGET="-C backends/platform/libretro platform=unix LITE=1 FORCE_OPENGLNONE=1 all"
 
 pre_make_target() {
