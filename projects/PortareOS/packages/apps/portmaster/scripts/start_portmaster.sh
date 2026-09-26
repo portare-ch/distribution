@@ -70,6 +70,15 @@ else
   xmlstarlet ed --inplace --subnode "/gameList/folder[last()]" --type elem -n hidden -v "true" /storage/roms/ports/gamelist.xml
 fi
 
+#No splash. PortMaster.sh starts a LOVE program in the background to show
+#a splash while its front end loads, and stops it only once the front end
+#has a window. Under a compositor the two share the display; on KMS one
+#program owns the panel at a time, so the splash holds it and the front
+#end dies with "No available video device". The splash script is replaced
+#before every start because PortMaster updates itself and brings it back.
+printf '# No splash on PortareOS: one program owns the panel at a time.\n' \
+  > /storage/roms/ports/PortMaster/utils/pmsplash.txt
+
 #Start PortMaster
 cd /storage/roms/ports/PortMaster
 ./PortMaster.sh 2>/dev/null
