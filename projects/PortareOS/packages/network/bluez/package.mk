@@ -49,7 +49,7 @@ PKG_CONFIGURE_OPTS_TARGET="--disable-dependency-tracking \
                            --enable-avrcp \
                            --enable-btpclient \
                            --enable-midi \
-                           --enable-mesh \
+                           --disable-mesh \
                            --enable-hid2hci \
                            --enable-experimental \
                            --enable-hid \

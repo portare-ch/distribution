@@ -19,7 +19,7 @@ PKG_EMUS="moonlight"
 
 # retropie-shaders and the GLSL shader packs are gone: they are for the gl
 # driver, and this image runs RetroArch on Vulkan, which takes slang only.
-PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads retroarch-overlays slang-shaders"
+PKG_RETROARCH="core-info libretro-database retroarch retroarch-assets retroarch-joypads slang-shaders"
 
 LIBRETRO_CORES=" beetle-saturn-lr fbneo-lr flycast-lr gambatte-lr genesis-plus-gx-lr mgba-lr neocd_lr nestopia-lr parallel-n64-lr picodrive-lr scummvm-lr snes9x-lr swanstation-lr"
 

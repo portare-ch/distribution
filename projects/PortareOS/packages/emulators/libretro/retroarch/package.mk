@@ -144,5 +144,4 @@ post_install() {
   enable_service tmp-database.mount
   enable_service tmp-assets.mount
   enable_service tmp-shaders.mount
-  enable_service tmp-overlays.mount
 }
