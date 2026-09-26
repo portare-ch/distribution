@@ -1,0 +1,173 @@
+From 84c971a8580bbb558ce8120ab9d577b47f95fa40 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 26 Sep 2026 09:20:06 +0000
+Subject: [PATCH] power: supply: qcom_battmgr: expose the charge current limit
+ on SM8550
+
+The battery manager firmware takes a fast-charge current limit through
+BATT_CHG_CTRL_LIM and reports its ceiling through BATT_CHG_CTRL_LIM_MAX,
+both in uA. The downstream qti_battery_charger driver uses them for
+thermal mitigation; mainline defines both and uses neither, so the
+charger always runs at its maximum.
+
+Expose them as constant_charge_current (writable) and
+constant_charge_current_max, and restore the limit when the firmware
+comes back up, as downstream does.
+---
+ drivers/power/supply/qcom_battmgr.c | 77 +++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
+
+diff --git a/drivers/power/supply/qcom_battmgr.c b/drivers/power/supply/qcom_battmgr.c
+index c12db708d..a7793a148 100644
+--- a/drivers/power/supply/qcom_battmgr.c
++++ b/drivers/power/supply/qcom_battmgr.c
+@@ -260,6 +260,10 @@ struct qcom_battmgr_info {
+ 	unsigned int charge_count;
+ 	unsigned int charge_ctrl_start;
+ 	unsigned int charge_ctrl_end;
++	unsigned int charge_current_max;
++	unsigned int charge_current_limit;
++	/* the firmware forgets the limit when it restarts, so it is restored */
++	bool charge_current_limited;
+ 	char model_number[BATTMGR_STRING_LEN];
+ 	char serial_number[BATTMGR_STRING_LEN];
+ 	char oem_info[BATTMGR_STRING_LEN];
+@@ -439,6 +443,8 @@ static const u8 sm8350_bat_prop_map[] = {
+ 	[POWER_SUPPLY_PROP_TEMP] = BATT_TEMP,
+ 	[POWER_SUPPLY_PROP_TECHNOLOGY] = BATT_TECHNOLOGY,
+ 	[POWER_SUPPLY_PROP_CHARGE_COUNTER] =  BATT_CHG_COUNTER,
++	[POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT] = BATT_CHG_CTRL_LIM_MAX,
++	[POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX] = BATT_CHG_CTRL_LIM_MAX,
+ 	[POWER_SUPPLY_PROP_CYCLE_COUNT] = BATT_CYCLE_COUNT,
+ 	[POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN] =  BATT_CHG_FULL_DESIGN,
+ 	[POWER_SUPPLY_PROP_CHARGE_FULL] = BATT_CHG_FULL,
+@@ -634,6 +640,15 @@ static int qcom_battmgr_bat_get_property(struct power_supply *psy,
+ 	case POWER_SUPPLY_PROP_CHARGE_CONTROL_END_THRESHOLD:
+ 		val->intval = battmgr->info.charge_ctrl_end;
+ 		break;
++	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT:
++		if (battmgr->info.charge_current_limited)
++			val->intval = battmgr->info.charge_current_limit;
++		else
++			val->intval = battmgr->info.charge_current_max;
++		break;
++	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX:
++		val->intval = battmgr->info.charge_current_max;
++		break;
+ 	case POWER_SUPPLY_PROP_MANUFACTURE_YEAR:
+ 		val->intval = battmgr->info.year;
+ 		break;
+@@ -728,6 +743,42 @@ static int qcom_battmgr_set_charge_end_threshold(struct qcom_battmgr *battmgr, i
+ 	return 0;
+ }
+ 
++static int qcom_battmgr_set_charge_current(struct qcom_battmgr *battmgr, int current_ua)
++{
++	int ret;
++
++	if (current_ua < 0)
++		return -EINVAL;
++
++	mutex_lock(&battmgr->lock);
++
++	if (!battmgr->info.charge_current_max) {
++		ret = qcom_battmgr_request_property(battmgr, BATTMGR_BAT_PROPERTY_GET,
++						    BATT_CHG_CTRL_LIM_MAX, 0);
++		if (ret < 0)
++			goto out_unlock;
++	}
++
++	/* Clamping to an unknown maximum would write 0 and stop charging */
++	if (!battmgr->info.charge_current_max) {
++		ret = -ENODATA;
++		goto out_unlock;
++	}
++
++	current_ua = min_t(u32, current_ua, battmgr->info.charge_current_max);
++
++	ret = qcom_battmgr_request_property(battmgr, BATTMGR_BAT_PROPERTY_SET,
++					    BATT_CHG_CTRL_LIM, current_ua);
++	if (!ret) {
++		battmgr->info.charge_current_limit = current_ua;
++		battmgr->info.charge_current_limited = true;
++	}
++
++out_unlock:
++	mutex_unlock(&battmgr->lock);
++	return ret;
++}
++
+ static int qcom_battmgr_charge_control_thresholds_init(struct qcom_battmgr *battmgr)
+ {
+ 	int ret;
+@@ -763,6 +814,7 @@ static int qcom_battmgr_bat_is_writeable(struct power_supply *psy,
+ 	switch (psp) {
+ 	case POWER_SUPPLY_PROP_CHARGE_CONTROL_START_THRESHOLD:
+ 	case POWER_SUPPLY_PROP_CHARGE_CONTROL_END_THRESHOLD:
++	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT:
+ 		return 1;
+ 	default:
+ 		return 0;
+@@ -785,6 +837,8 @@ static int qcom_battmgr_bat_set_property(struct power_supply *psy,
+ 		return qcom_battmgr_set_charge_start_threshold(battmgr, pval->intval);
+ 	case POWER_SUPPLY_PROP_CHARGE_CONTROL_END_THRESHOLD:
+ 		return qcom_battmgr_set_charge_end_threshold(battmgr, pval->intval);
++	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT:
++		return qcom_battmgr_set_charge_current(battmgr, pval->intval);
+ 	default:
+ 		return -EINVAL;
+ 	}
+@@ -919,6 +973,8 @@ static const enum power_supply_property sm8550_bat_props[] = {
+ 	POWER_SUPPLY_PROP_POWER_NOW,
+ 	POWER_SUPPLY_PROP_CHARGE_CONTROL_START_THRESHOLD,
+ 	POWER_SUPPLY_PROP_CHARGE_CONTROL_END_THRESHOLD,
++	POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT,
++	POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX,
+ };
+ 
+ static const struct power_supply_desc sm8550_bat_psy_desc = {
+@@ -1475,6 +1531,9 @@ static void qcom_battmgr_sm8350_callback(struct qcom_battmgr *battmgr,
+ 		case BATT_CHG_CTRL_END_THR:
+ 			battmgr->info.charge_ctrl_end = le32_to_cpu(resp->intval.value);
+ 			break;
++		case BATT_CHG_CTRL_LIM_MAX:
++			battmgr->info.charge_current_max = le32_to_cpu(resp->intval.value);
++			break;
+ 		default:
+ 			dev_warn(battmgr->dev, "unknown property %#x\n", property);
+ 			break;
+@@ -1556,6 +1615,17 @@ static void qcom_battmgr_sm8350_callback(struct qcom_battmgr *battmgr,
+ 			break;
+ 		}
+ 		break;
++	case BATTMGR_BAT_PROPERTY_SET:
++		if (payload_len != sizeof(resp->intval)) {
++			dev_warn(battmgr->dev,
++				 "invalid payload length for %#x: %zd\n",
++				 opcode, payload_len);
++			battmgr->error = -ENODATA;
++			break;
++		}
++
++		battmgr->error = le32_to_cpu(resp->intval.result) ? -EIO : 0;
++		break;
+ 	case BATTMGR_REQUEST_NOTIFICATION:
+ 	case BATTMGR_CHG_CTRL_LIMIT_EN:
+ 		battmgr->error = 0;
+@@ -1597,6 +1667,13 @@ static void qcom_battmgr_enable_worker(struct work_struct *work)
+ 	ret = qcom_battmgr_request(battmgr, &req, sizeof(req));
+ 	if (ret)
+ 		dev_err(battmgr->dev, "failed to request power notifications\n");
++
++	if (battmgr->info.charge_current_limited) {
++		ret = qcom_battmgr_set_charge_current(battmgr,
++						      battmgr->info.charge_current_limit);
++		if (ret)
++			dev_err(battmgr->dev, "failed to restore charge current limit\n");
++	}
+ }
+ 
+ static void qcom_battmgr_pdr_notify(void *priv, int state)
+-- 
+2.43.0
+
