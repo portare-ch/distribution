@@ -72,7 +72,7 @@ Done in #347:
 | libretro-database, all but our systems | 95 | the package copies the cheat folders of the systems we build, 77 MB, instead of all 172 |
 | tailscale, zerotier-one | 28 | out of the network metapackage and the options |
 | retroarch-overlays and its overlay mount | 13 | out of the RetroArch set; RetroArch's overlay directory is `~/overlays`, for anyone's own |
-| glslc, plplay | 5 | shaderc's command line compiler and libplacebo's demo player, dropped at install |
+| plplay | 0 | libplacebo's demo player, not built |
 | usb-modeswitch | 1 | out of the image |
 | bluez's meshctl and mesh-cfgclient | 1 | bluez built without mesh |
 | apitrace, renderdoc, nvtop, memtester, valgrind, kmsxx, libva-utils | 0 | never in an image: the debug set was off for official builds, which the nightlies are. The set is gdb and strace now, in every image (+12 MB). |
