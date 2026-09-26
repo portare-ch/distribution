@@ -10,7 +10,7 @@ PKG_URL=""
 # package drops in here is what the Tools entry offers. rclone and qterminal
 # are gone: cloud backup was driven from EmulationStation, and a terminal
 # needed a compositor to draw in.
-PKG_DEPENDS_TARGET="toolchain commander"
+PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="OS Modules Package"
 PKG_TOOLCHAIN="manual"
 
