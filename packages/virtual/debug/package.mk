@@ -11,13 +11,6 @@ PKG_DEPENDS_TARGET="toolchain gdb memtester strace kmsxx"
 PKG_SECTION="virtual"
 PKG_LONGDESC="debug is a Metapackage for installing debugging tools"
 
-# configure GPU drivers and dependencies:
-  get_graphicdrivers
-
-if [ "${VAAPI_SUPPORT}" = "yes" ]; then
-  PKG_DEPENDS_TARGET+=" libva-utils"
-fi
-
 if [ "${VALGRIND}" = "yes" ]; then
   PKG_DEPENDS_TARGET+=" valgrind"
 fi
