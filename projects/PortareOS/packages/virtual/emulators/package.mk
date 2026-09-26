@@ -341,7 +341,6 @@ makeinstall_target() {
   ### Sony Playstation Portable
   add_emu_core psp retroarch ppsspp true
   add_es_system psp
-  install_script "Start PPSSPP.sh"
 
   ### Sony Playstation Portable Minis
   add_emu_core pspminis retroarch ppsspp true
