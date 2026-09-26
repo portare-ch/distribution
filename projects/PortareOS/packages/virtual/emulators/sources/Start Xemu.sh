@@ -7,6 +7,4 @@ source /etc/profile
 
 set_kill set "xemu"
 
-sway_fullscreen "xemu" &
-
 /usr/bin/xemu >/dev/null 2>&1

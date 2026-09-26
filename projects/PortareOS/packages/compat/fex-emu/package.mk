@@ -117,8 +117,6 @@ makeinstall_target() {
   mkdir -p "${INSTALL}/usr/config/fex-emu"
   cp -rf "${PKG_DIR}/config/fex-emu/." "${INSTALL}/usr/config/fex-emu"
   cp -rf "${PKG_DIR}/config/gptk" "${INSTALL}/usr/config/fex-emu"
-  mkdir -p "${INSTALL}/usr/config/modules"
-  cp -rf "${PKG_DIR}/scripts/"* "${INSTALL}/usr/config/modules"
 
 }
 
