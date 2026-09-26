@@ -159,6 +159,16 @@ fi
 ################################################################################
 
 # Copy aethersx2 bios files for armsx2 for convenience
+### ScummVM's core looks for its themes and engine data under RetroArch's
+### system directory, and they have to match the core's version, so they
+### are copied from the image after every update. The ini next to them is
+### where added games live, so it is only put in place when there is none.
+mkdir -p /storage/roms/bios/scummvm
+rsync -a /usr/share/scummvm/ /storage/roms/bios/scummvm/
+if [ ! -f /storage/roms/bios/scummvm.ini ]; then
+  cp /usr/config/scummvm/scummvm.ini /storage/roms/bios/scummvm.ini
+fi
+
 if [ -d "/storage/roms/bios/aethersx2/bios" ] && [ ! -d "/storage/roms/bios/armsx2" ]; then
   cp -rf /storage/roms/bios/aethersx2/bios /storage/roms/bios/armsx2
 fi

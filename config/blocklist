@@ -11,5 +11,4 @@ portmaster # Manually update version
 ppsspp-sa # Manually update to release versions.
 retroarch # Manually update to release versions.
 rpcs3-sa # Need to update to llvm 16
-scummvmsa # Updating breaks build packages
 mupen64plus-nx-lr #Upstream brakes video out. 

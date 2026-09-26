@@ -13,7 +13,7 @@ The rule this applies is the README's: if it is not needed for a smooth game, it
 | pipewire, wireplumber, alsa-lib, alsa-ucm-conf, alsa-topology-conf | Audio; the 32 / 44.1 / 48 kHz link runs through it. |
 | networkmanager, iwd, wireless-regdb, openssh, rsync, bluez | Wi-Fi, SSH, controllers. |
 | retroarch, core-info, slang-shaders (trimmed, see below), the 15 cores (193 MB) | The systems. |
-| armsx2-sa, xemu-sa (19 MB), scummvmsa (76 MB), ppsspp-lr, moonlight, mpv, ffmpeg, libplacebo, luajit | The standalone systems; mpv's Lua runs our seek script. |
+| armsx2-sa, xemu-sa (19 MB), scummvm-lr, ppsspp-lr, moonlight, mpv, ffmpeg, libplacebo, luajit | The standalone systems and the two large cores; mpv's Lua runs our seek script. |
 | portarelauncher, portareos, system-utils, quirks, autostart, powerstate, sleep, inputplumber (10 MB) | Our own stack; inputplumber is the gamepad. |
 | steam, gamescope, xwayland, seatd, fex-emu, pressure-vessel, the X11 libraries | The one compositor exception, about 35 MB on the image; the runtime lives on `/storage`. |
 | retroarch-assets (33 MB) | RetroArch's own menu needs its assets. Trimmable to one menu driver's. |
@@ -43,9 +43,8 @@ The rule this applies is the README's: if it is not needed for a smooth game, it
 | **python3** with pyudev, six, pyyaml, setuptools | 34 | Real users: `portareos-bluetooth-agent`, the pairing agent that runs as a service, and Steam's `steamdeps`. Rewrite the agent in C against bluez's D-Bus API, or as a bluetoothctl script, and Python goes. |
 | **tailscale** (`tailscaled`, enabled at boot) | 26 | A Go VPN mesh daemon on a handheld, the second-largest binary after ScummVM. Keep if it is used; otherwise out. **zerotier-one** (2 MB) is the same question. |
 | **avahi, nss-mdns** | 3 | mDNS. Useful for `portareos.local` over SSH; otherwise off. |
-| **fluidsynth, soundfont-generaluser** (30 MB), `fluidsynth.service` | 31 | MIDI for ScummVM. Worth having for ScummVM, but a 30 MB General MIDI soundfont plus a system-wide synth service is a lot: ScummVM can load a soundfont itself, and smaller ones exist. |
 | **mangohud, mangoapp** | 12 | A performance overlay: handy for development, an anti-feature for a player. gamescope runs without it. |
-| **scummvm** | 76 | A supported system, built with every engine. A build with the engines that matter would halve it. |
+| **scummvm-lr** | ~70 | ScummVM, now as the libretro core, built with every engine. A build with the engines that matter would halve it. |
 | **fbneo** core | 76 | The largest core: every arcade driver. Fine for as long as arcade is a system. |
 | **`/usr/lib/compat`**: libavcodec 58, librsvg, x265, aom, openssl 1.1, SDL2 | 41 | Old-ABI libraries for PortMaster ports: a second copy of ffmpeg and friends. Stays exactly as long as PortMaster does. |
 | **portmaster** | – | Ports need the compat set above and their own launcher scripts. If ports are not a goal, it and the 41 MB leave together. |
@@ -54,7 +53,7 @@ The rule this applies is the README's: if it is not needed for a smooth game, it
 
 ## Services that start at boot and deserve a look
 
-`tailscaled`, `zerotier-one`, `avahi-daemon`, `fluidsynth`, `batteryledstatus` (idle unless `led.color=battery`), `hdmi-hotplug` (the Nova has USB-C DisplayPort; keep), `debug-shell`, `debugconfig`.
+`tailscaled`, `zerotier-one`, `avahi-daemon`, `batteryledstatus` (idle unless `led.color=battery`), `hdmi-hotplug` (the Nova has USB-C DisplayPort; keep), `debug-shell`, `debugconfig`.
 
 ## Removed
 
@@ -74,6 +73,7 @@ Done in #335:
 
 | Package | MB | How |
 |---|---|---|
+| scummvm as a standalone, fluidsynth and its service | ~10 | ScummVM is the libretro core now, with FluidLite inside it for MIDI; the soundfont stays. The standalone's 76 MB is replaced by the core's, so the saving is fluidsynth and the service. |
 | qt6, and the CI job that built it | ~60 | ARMSX2 is built as upstream's SDL frontend, `armsx2-sdl`: VK_KHR_display to the panel, FullscreenUI for the menus, no window. Tested on the Nova before the switch. FEXConfig, a Qt desktop dialog, is not built. |
 
 ## The sum
