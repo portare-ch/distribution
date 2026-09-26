@@ -1,0 +1,9 @@
+[Unit]
+Description=Battery temperature charge current throttle
+
+[Service]
+ExecStart=/usr/lib/autostart/quirks/platforms/SM8550/bin/charge-throttle
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

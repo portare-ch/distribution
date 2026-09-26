@@ -1,0 +1,60 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2026-present PortareOS (https://github.com/portare-ch)
+
+# Steps the charge current down as the battery warms, the way Android's
+# thermal mitigation does. The firmware charges at ~5 A until its own
+# JEITA cut-off around 45 C, and gaming on the charger holds the cell
+# near that for the whole session, which ages it.
+#
+# Battery temp is in tenths of a degree. A step down happens as soon as a
+# threshold is reached; a step back up waits until the cell is HYST below
+# it, so the current does not flap at a boundary.
+
+BAT="${BAT:-/sys/class/power_supply/battery}"
+INTERVAL="${INTERVAL:-10}"
+HYST=20
+
+TEMPS=(0 400 420 440)
+LIMITS=(0 3000000 2000000 1000000)
+
+for i in $(seq 30); do
+  [ -w "${BAT}/constant_charge_current" ] && break
+  sleep 2
+done
+if [ ! -w "${BAT}/constant_charge_current" ]; then
+  echo "no charge current limit on this kernel, exiting"
+  exit 0
+fi
+
+MAX=$(cat "${BAT}/constant_charge_current_max")
+LIMITS[0]=${MAX}
+
+set_limit() {
+  local ua=${LIMITS[$1]}
+  (( ua > MAX )) && ua=${MAX}
+  echo ${ua} >"${BAT}/constant_charge_current"
+  echo "battery ${2}: charge current ${ua} uA"
+}
+
+trap 'echo ${MAX} >"${BAT}/constant_charge_current"; exit 0' TERM INT
+
+LEVEL=0
+set_limit ${LEVEL} "$(cat "${BAT}/temp")"
+
+while true; do
+  TEMP=$(cat "${BAT}/temp" 2>/dev/null) || { sleep ${INTERVAL}; continue; }
+  NEW=${LEVEL}
+  while (( NEW < ${#TEMPS[@]} - 1 )) && (( TEMP >= TEMPS[NEW + 1] )); do
+    NEW=$(( NEW + 1 ))
+  done
+  while (( NEW > 0 )) && (( TEMP < TEMPS[NEW] - HYST )); do
+    NEW=$(( NEW - 1 ))
+  done
+  if (( NEW != LEVEL )); then
+    LEVEL=${NEW}
+    set_limit ${LEVEL} ${TEMP}
+  fi
+  sleep ${INTERVAL} &
+  wait $!
+done

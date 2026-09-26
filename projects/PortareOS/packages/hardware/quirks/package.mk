@@ -22,4 +22,5 @@ makeinstall_target() {
 
 post_install() {
   enable_service led-poweroff.service
+  enable_service charge-throttle.service
 }
