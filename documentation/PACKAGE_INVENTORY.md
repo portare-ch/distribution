@@ -65,6 +65,18 @@ Done in #334, from the lists above:
 | xorg-launch-helper, its `xorg.service`, xrandr | 1 | xwayland listed the helper, glew the CLI; neither needed them |
 | the 310 `.info` files of cores we do not ship | 1 | `core-info` installs the fifteen we have, under their own names: Saturn's is `mednafen_saturn`, as the core file is, which the old rename to `beetle_` had broken |
 
+Done in #351:
+
+| Package | MB | How |
+|---|---|---|
+| rust, rustc-snapshot, rust-std-snapshot, cargo, cargo-snapshot, cbindgen, bindgen-cli | 0 | never in an image and no package built with them: Mesa has rusticl off and there is no NVK on an Adreno. Out of both trees with their update scripts. |
+| libbluray, libaacs, libbdplus, libudfread, libdvdcss, libdvdread, libdvdnav, rtmpdump, zvbi, aom, libdvbpsi | 0 | no dependents anywhere; never built |
+| libva, intel-vaapi-driver, media-driver, gmmlib, nvidia-vaapi-driver, nv-codec-headers, libva-utils, vadumpcaps | 0 | x86 and NVIDIA only; ffmpeg and mesa lose the VA-API branch that could not fire |
+| rkmpp | 0 | Rockchip only; ffmpeg loses its `RK*` case |
+| the root ffmpeg folder | 0 | shadowed by the project's package and never read |
+
+gmu stays: it is the music player system, not a leftover. The GStreamer plugins, libmpeg2 and x264 stay as well, kept in reserve for playback; nothing links them today (gmu decodes with mpg123, vorbis, flac and opus, mpv through ffmpeg).
+
 Done in #347:
 
 | Package | MB | How |
