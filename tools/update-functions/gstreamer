@@ -16,4 +16,5 @@ function create_pr() {
 function custom_post_commit() {
   export run_sub_package=1
   ${progname} gst-plugins-base ${pkgver}
+  ${progname} gst-plugins-bad ${pkgver}
 }

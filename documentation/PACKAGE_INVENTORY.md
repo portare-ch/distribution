@@ -27,7 +27,7 @@ The rule this applies is the README's: if it is not needed for a smooth game, it
 | **kernel-overlays** | 59 | Not what it looked like: 16 MB of modules, the rest the Nova's own firmware, already trimmed to this device's DSP, GPU, Wi-Fi and Bluetooth blobs. Nothing worth cutting. |
 | **slang-shaders** — trim, not drop | 70 → ~10 | We use `crt/crt-guest-advanced`, `handheld/lcd-grid-v2` and our own `portare/`. Keep those families and what they include; drop the other 60 MB. |
 | **renderdoc, apitrace (with glretrace, eglretrace), gdb, gdbserver, perf, vulkan-tools, glslc, binutils (strings, readelf), v4l-utils, edid-decode, cec-ctl, plplay, gltrim, wflinfo** | ~55 | Debugging and GPU tracing tools, in a release image. `DEBUG_PACKAGES` is off, so they arrive as somebody's dependency; find whose. |
-| **gstreamer, gst-plugins-base** | ~5 | No binary links it. qt6 pulled it and is gone; portmaster still lists gst-plugins-base, for ports. Goes with portmaster. gst-plugins-good and gst-libav went in #351. |
+| **gstreamer, gst-plugins-base, gst-plugins-good, gst-libav** | 8 | No binary links it. qt6 pulled it and is gone; portmaster still lists gst-plugins-base, for ports. Goes with portmaster. |
 | The sqlite3 CLI, nano and dialog, bluez's btmon, two of p7zip's three binaries | ~4 | Duplicates and unused command-line tools. |
 | **iwd_get-networks, ukify, spit** | – | Leftover scripts; the launcher uses nmcli. |
 | **gconv** — trim to UTF-8 and Latin-1 | 19 | glibc's charset converters for every encoding there is. |
@@ -70,13 +70,12 @@ Done in #351:
 | Package | MB | How |
 |---|---|---|
 | rust, rustc-snapshot, rust-std-snapshot, cargo, cargo-snapshot, cbindgen, bindgen-cli | 0 | never in an image and no package built with them: Mesa has rusticl off and there is no NVK on an Adreno. Out of both trees with their update scripts. |
-| libbluray, libaacs, libbdplus, libudfread, libdvdcss, libdvdread, libdvdnav, libmpeg2, rtmpdump, zvbi, aom, x264, libdvbpsi | 0 | no dependents anywhere; never built |
+| libbluray, libaacs, libbdplus, libudfread, libdvdcss, libdvdread, libdvdnav, rtmpdump, zvbi, aom, libdvbpsi | 0 | no dependents anywhere; never built |
 | libva, intel-vaapi-driver, media-driver, gmmlib, nvidia-vaapi-driver, nv-codec-headers, libva-utils, vadumpcaps | 0 | x86 and NVIDIA only; ffmpeg and mesa lose the VA-API branch that could not fire |
 | rkmpp | 0 | Rockchip only; ffmpeg loses its `RK*` case |
-| gst-plugins-good, gst-libav, gst-plugins-bad | ~3 | no dependents; gstreamer and gst-plugins-base stay for portmaster |
 | the root ffmpeg folder | 0 | shadowed by the project's package and never read |
 
-gmu stays: it is the music player system, not a leftover.
+gmu stays: it is the music player system, not a leftover. The GStreamer plugins, libmpeg2 and x264 stay as well, kept in reserve for playback; nothing links them today (gmu decodes with mpg123, vorbis, flac and opus, mpv through ffmpeg).
 
 Done in #347:
 
