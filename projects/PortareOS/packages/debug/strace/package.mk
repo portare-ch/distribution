@@ -9,20 +9,10 @@ PKG_LONGDESC="strace is a diagnostic, debugging and instructional userspace util
 PKG_TOOLCHAIN="autotools"
 PKG_BUILD_FLAGS="-cfg-libs"
 
-case "${DEVICE}" in
-  SM8650|SM8750|SM8550|SM8250|H700)
-    PKG_VERSION="6.19"
-    PKG_SHA256="e076c851eec0972486ec842164fdc54547f9d17abd3d1449de8b120f5d299143"
-    ;;
-  RK3399|S922X|RK3566|SM6115)
-    PKG_VERSION="6.18"
-    PKG_SHA256="0ad5dcba973a69e779650ef1cb335b12ee60716fc7326609895bd33e6d2a7325"
-    ;;
-  *)
-    PKG_VERSION="6.17"
-    PKG_SHA256="0a7c7bedc7efc076f3242a0310af2ae63c292a36dd4236f079e88a93e98cb9c0"
-    ;;
-esac
+# 7.2 is the first release that knows the 7.2 kernel's headers: 6.19 stops
+# in io_uring.c on struct io_uring_zcrx_ifq_reg, which 7.x reshaped.
+PKG_VERSION="7.2"
+PKG_SHA256="4bde6246926890dcee824f6e6ac42a06752f47d77e5097d86e3c0d6d4b709fe5"
 PKG_URL="https://strace.io/files/${PKG_VERSION}/strace-${PKG_VERSION}.tar.xz"
 
 if [ "${TARGET_ARCH}" = x86_64 -o "${TARGET_ARCH}" = "aarch64" ]; then
