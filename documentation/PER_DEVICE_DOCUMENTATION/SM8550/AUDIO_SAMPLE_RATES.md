@@ -79,12 +79,14 @@ the graph, and the link, to the rate of the stream that opens it.
 
 ### 4. Applications
 
-RetroArch outputs 48 kHz unless a per-core config says otherwise
-(`config/<core>/<core>.cfg`, `audio_out_rate = "44100"` or `"32000"`).
-PortareOS ships those for SwanStation, Flycast, PPSSPP, NeoCD, Genesis Plus
-GX and PicoDrive (44.1 kHz) and Snes9x (32 kHz, with a content-directory
-override keeping MSU-1 games at 44.1 kHz). mpv and gmu play at the file's
-rate. [REFRESH_RATES.md](REFRESH_RATES.md) has the table.
+RetroArch picks the output rate from the core's when `audio_out_rate` is
+`"0"` (patch `0015-audio-out-rate-from-the-core.patch`): the smallest of
+32000, 44100 and 48000 the core's rate divides into within 0.5 %, else the
+smallest above it, else 48000, re-picked at every audio init so a core that
+changes rate mid-session (ParaLLEl N64, per game) reopens the device to
+match. A non-zero `audio_out_rate` in a per-core config
+(`config/<core>/<core>.cfg`) overrides the pick. mpv and gmu play at the
+file's rate. [REFRESH_RATES.md](REFRESH_RATES.md) has the table.
 
 ## Verifying on the device
 
